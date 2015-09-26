@@ -13,6 +13,7 @@
 #include "shader/bpt.h"
 #include "shader/pt.h"
 #include "tonemap/reinhard.h"
+#include "tonemap/gamma.h"
 #include "vector.h"
 
 int main()
@@ -47,8 +48,10 @@ int main()
 
   amber::render(shader, scene, camera);
 
-  amber::tonemap::Reinhard<RealType> tonemapper;
-  amber::save_ppm("output.ppm", tonemapper(image->down_sample(ssaa_factor)));
+  amber::tonemap::Reinhard<RealType> reinhard;
+  amber::tonemap::Gamma<RealType> gamma;
+  amber::save_rgbe("output.hdr", image->down_sample(ssaa_factor));
+  amber::save_ppm("output.ppm", gamma(reinhard(image->down_sample(ssaa_factor))));
 
   return 0;
 }

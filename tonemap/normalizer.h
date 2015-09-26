@@ -2,16 +2,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include "constant.h"
 #include "image.h"
 #include "rgb.h"
-#include "tonemap/normalizer.h"
 
 namespace amber {
 namespace tonemap {
 
 template <typename RealType>
-class Reinhard
+class Normalizer
 {
 public:
   using real_type      = RealType;
@@ -20,15 +20,17 @@ public:
 
   using hdr_image_type = Image<hdr_type>;
 
-private:
-  static constexpr RealType kDelta = 1e-3;
+  using evaluator_type = std::function<real_type(hdr_type)>;
 
-  RealType m_key;
+private:
+  evaluator_type m_evaluator;
 
 public:
-  explicit Reinhard(real_type key = 0.18) :
-    m_key(key)
+  explicit Normalizer() :
+    m_evaluator([](const hdr_type& hdr){ return std::max({hdr.x, hdr.y, hdr.z}); })
   {}
+
+  explicit Normalizer(evaluator_type e) : m_evaluator(e) {}
 
   hdr_image_type operator()(const hdr_image_type& image) const
   {
@@ -41,33 +43,27 @@ public:
     const auto& width = image.m_width;
     const auto& height = image.m_height;
 
-    Normalizer<real_type> normalizer(&luminance);
-    normalizer(image);
-
-    real_type log_sum_luminance = 0;
+    real_type max = 0;
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        const auto l = luminance(image.pixel(i, j));
-        log_sum_luminance += std::log(kDelta + (std::isfinite(l) ? l : 0));
+        const auto value = m_evaluator(image.pixel(i, j));
+        if (std::isfinite(value)) {
+          max = std::max(max, value);
+        }
       }
     }
-    const auto log_average_luminance = std::exp(log_sum_luminance / width / height);
+
+    if (max == 0) {
+      return image;
+    }
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        auto& p = image.pixel(i, j);
-        p *= m_key / log_average_luminance;
-        p /= RGB<RealType>(1) + p;
+        image.pixel(i, j) /= max;
       }
     }
 
     return image;
-  }
-
-private:
-  static real_type luminance(const hdr_type& pixel)
-  {
-    return 0.27 * pixel.x + 0.67 * pixel.y + 0.06 * pixel.z;
   }
 };
 
