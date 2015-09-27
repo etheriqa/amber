@@ -20,8 +20,6 @@ public:
   using real_type       = typename material_type::real_type;
   using vector3_type    = typename material_type::vector3_type;
 
-  using lambertian_type = Lambertian<flux_type>;
-
 private:
   flux_type m_emittance;
 
@@ -50,7 +48,7 @@ public:
 
   ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
   {
-    return lambertian_type(flux_type()).sample_ray_bsdf(hit, ray, random);
+    return Lambertian<flux_type>(flux_type()).sample_ray_bsdf(hit, ray, random);
   }
 };
 

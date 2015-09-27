@@ -35,7 +35,7 @@ int main()
 
   const auto ssaa_factor = 4;
   const auto pt_spp = 1024;
-  const auto bpt_spp = 128;
+  const auto bpt_spp = 64;
 
   const auto scene = amber::scene::cornel_box<Scene>();
   //const auto scene  = amber::scene::spheres<Scene>();

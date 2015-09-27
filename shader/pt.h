@@ -123,7 +123,7 @@ private:
       }
 
       const auto sample = object.sample_ray_bsdf(hit, ray, random);
-      weight *= sample.bsdf / sample.probability;
+      weight *= sample.bsdf / sample.psa_probability;
       ray = sample.ray;
 
       const auto p_russian_roulette = max(weight);

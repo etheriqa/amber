@@ -120,76 +120,87 @@ private:
 
   flux_type sample_pixel(const scene_type& scene, const light_set_type& lights, const camera_type& camera, size_t x, size_t y, Random& random) const
   {
-    const auto light_subpath = sample_light_subpath(scene, lights, random);
-    const auto eye_subpath = sample_eye_subpath(scene, camera, x, y, random);
-    const auto max_path_length = light_subpath.size() + eye_subpath.size() - 1;
+    while (true) {
+      const auto light_subpath = sample_light_subpath(scene, lights, random);
+      const auto eye_subpath = sample_eye_subpath(scene, camera, x, y, random);
+      const auto max_path_length = light_subpath.size() + eye_subpath.size() - 1;
 
-    std::vector<std::vector<Contribution>> contributions(max_path_length);
+      std::vector<std::vector<Contribution>> contributions(max_path_length);
 
-    for (size_t s = 0; s <= light_subpath.size(); s++) {
-      for (size_t t = 0; t <= eye_subpath.size(); t++) {
-        Contribution contribution;
-        if (s + t < 2) {
-          continue;
-        } else if (s == 0) {
-          // zero light subpath vertices
-          const auto e0 = eye_subpath[t - 1];
-          contribution.power = e0.object.emittance() / static_cast<real_type>(kPI) * e0.weight;
-          contribution.probability = e0.probability;
-        } else if (s == 1) {
-          // one light subpath vertex
-          if (t < 2) {
+      for (size_t s = 0; s <= light_subpath.size(); s++) {
+        for (size_t t = 0; t <= eye_subpath.size(); t++) {
+          Contribution contribution;
+          if (s + t < 2) {
             continue;
+          } else if (s == 0) {
+            // zero light subpath vertices
+            const auto l = eye_subpath[t - 1];
+            if (!l.object.is_emissive()) {
+              continue;
+            }
+            contribution.power =
+              l.object.emittance() / static_cast<real_type>(kPI) *
+              l.weight;
+            contribution.probability = l.probability;
+          } else if (s == 1) {
+            // one light subpath vertex
+            if (t < 2) {
+              continue;
+            }
+            const auto l = light_subpath[s - 1];
+            const auto e0 = eye_subpath[t - 2];
+            const auto e1 = eye_subpath[t - 1];
+            if (e1.object.is_specular()) {
+              continue;
+            }
+            contribution.power =
+              l.weight *
+              flux_type(1 / static_cast<real_type>(kPI)) *
+              geometry_factor(scene, l, e1) *
+              e1.object.bsdf(normalize(l.position - e1.position), -e0.direction, e1.normal) *
+              e1.weight;
+            contribution.probability = l.probability * e1.probability;
+          } else if (t == 0) {
+            continue; // TODO zero eye subpath vertices
+          } else if (t == 1) {
+            continue; // TODO one eye subpath vertex
+          } else {
+            const auto& l0 = light_subpath[s - 2];
+            const auto& l1 = light_subpath[s - 1];
+            const auto& e0 = eye_subpath[t - 2];
+            const auto& e1 = eye_subpath[t - 1];
+            if (l1.object.is_specular() || e1.object.is_specular()) {
+              continue;
+            }
+            contribution.power =
+              l1.weight *
+              l1.object.bsdf(-l0.direction, normalize(e1.position - l1.position), l1.normal) *
+              geometry_factor(scene, l1, e1) *
+              e1.object.bsdf(normalize(l1.position - e1.position), -e0.direction, e1.normal) *
+              e1.weight;
+            contribution.probability = l1.probability * e1.probability;
           }
-          const auto l0 = light_subpath[s - 1];
-          const auto e0 = eye_subpath[t - 2];
-          const auto e1 = eye_subpath[t - 1];
-          if (e1.object.is_specular()) {
-            continue;
-          }
-          contribution.power =
-            l0.weight *
-            static_cast<real_type>(1 / kPI) *
-            geometry_factor(scene, l0, e1) *
-            e1.object.bsdf(normalize(l0.position - e1.position), -e0.direction, e1.normal) *
-            e1.weight;
-          contribution.probability = l0.probability * e1.probability;
-        } else if (t == 0) {
-          continue; // TODO zero eye subpath vertices
-        } else if (t == 1) {
-          continue; // TODO one eye subpath vertex
-        } else {
-          const auto& l0 = light_subpath[s - 2];
-          const auto& l1 = light_subpath[s - 1];
-          const auto& e0 = eye_subpath[t - 2];
-          const auto& e1 = eye_subpath[t - 1];
-          if (l1.object.is_specular() || e1.object.is_specular()) {
-            continue;
-          }
-          contribution.power =
-            l1.weight *
-            l1.object.bsdf(-l0.direction, normalize(e1.position - l1.position), l1.normal) *
-            geometry_factor(scene, l1, e1) *
-            e1.object.bsdf(normalize(l1.position - e1.position), -e0.direction, e1.normal) *
-            e1.weight;
-          contribution.probability = l1.probability * e1.probability;
+          contributions[s + t - 2].push_back(contribution);
         }
-        contributions[s + t - 2].push_back(contribution);
       }
-    }
 
-    flux_type power;
-    for (size_t i = 0; i < max_path_length; i++) {
-      for (const auto& c0 : contributions[i]) {
-        real_type weight = 0;
-        for (const auto& c1 : contributions[i]) {
-          weight += std::pow(c1.probability / c0.probability, 2);
+      flux_type power;
+      for (size_t i = 0; i < max_path_length; i++) {
+        for (const auto& c0 : contributions[i]) {
+          real_type weight = 0;
+          for (const auto& c1 : contributions[i]) {
+            weight += std::pow(c1.probability / c0.probability, 2);
+          }
+          power += c0.power / weight;
         }
-        power += c0.power / weight;
       }
-    }
 
-    return power;
+      if (!std::isfinite(max(power))) { // FIXME biased
+        continue;
+      }
+
+      return power;
+    }
   }
 
   std::vector<Event> sample_light_subpath(const scene_type& scene, const light_set_type& lights, Random& random) const
@@ -197,47 +208,53 @@ private:
     // s = 0
     const auto object = lights.sample(random);
     const auto sample = object.sample_initial_ray(random);
-    const auto probability = 1 / lights.total_area(); // FIXME
+    const auto area_probability = 1 / lights.total_area();        // FIXME
+    const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
 
     Event event;
     event.object      = object;
     event.position    = sample.ray.origin;
     event.normal      = sample.normal;
     event.direction   = sample.ray.direction;
-    event.probability = probability;
-    event.weight      = object.emittance() / probability;
+    event.probability = area_probability;
+    event.weight      = object.emittance() / area_probability;
 
     // s > 0
-    return extend_subpath(scene, event, flux_type(probability), static_cast<real_type>(1 / kPI), random);
+    return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
   }
 
   std::vector<Event> sample_eye_subpath(const scene_type& scene, const camera_type& camera, size_t x, size_t y, Random& random) const
   {
     // t = 0
+    const auto importance = flux_type(1);                         // FIXME
     const auto sample = camera.sample_initial_ray(x, y, random);
-    const auto probability = 1 / static_cast<real_type>(kEPS); // TODO
-    const auto importance = flux_type(1);                      // TODO
+    const auto area_probability = static_cast<real_type>(1);      // FIXME
+    const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
+
 
     Event event;
     event.object      = object_type(nullptr, nullptr);
     event.position    = sample.ray.origin;
     event.normal      = sample.normal;
     event.direction   = sample.ray.direction;
-    event.probability = probability;
-    event.weight      = importance / probability;
+    event.probability = area_probability;
+    event.weight      = importance / area_probability;
 
     // t > 0
-    return extend_subpath(scene, event, flux_type(probability), static_cast<real_type>(1 / kPI), random);
+    return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
   }
 
   std::vector<Event> extend_subpath(const scene_type& scene, Event event, flux_type bsdf, real_type probability, Random& random) const
   {
-    std::vector<Event> subpath({event});
+    std::vector<Event> subpath;
+    subpath.reserve(16);
+    subpath.push_back(event);
+
     ray_type ray(event.position, event.direction);
     hit_type hit;
     object_type object;
 
-    while (true) {
+    for (size_t i = 0;; i++) {
       std::tie(hit, object) = scene.intersect(ray);
       if (!hit) {
         break;
@@ -255,17 +272,17 @@ private:
       event.weight      *= bsdf / probability;
       subpath.push_back(event);
 
-      if (!object.is_specular()) {
-        const auto p_russian_roulette = std::min(real_type(1), max(sample.bsdf / sample.probability));
+      ray = sample.ray;
+      bsdf = sample.bsdf;
+      probability = sample.psa_probability;
+
+      if (i >= 4) {
+        const auto p_russian_roulette = max(bsdf / probability);
         if (random.uniform<real_type>() > p_russian_roulette) {
           break;
         }
-        sample.probability *= p_russian_roulette;
+        probability *= p_russian_roulette;
       }
-
-      ray = sample.ray;
-      bsdf = sample.bsdf;
-      probability = sample.probability;
     }
 
     return subpath;

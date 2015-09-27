@@ -187,12 +187,6 @@ RealType norm(const Vector3<RealType>& a) noexcept
 }
 
 template <typename RealType>
-RealType l1norm(const Vector3<RealType>& a)
-{
-  return std::abs(a.x) + std::abs(a.y) + std::abs(a.z);
-}
-
-template <typename RealType>
 Vector3<RealType> normalize(const Vector3<RealType>& a) noexcept
 {
   return a / norm(a);

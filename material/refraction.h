@@ -60,8 +60,8 @@ public:
       // Full reflection
       return ray_sample_type(
         reflection_ray,
-        flux_type(1) / static_cast<real_type>(kEPS),
-        1 / static_cast<real_type>(kEPS)
+        flux_type(static_cast<real_type>(1 / kEPS)),
+        static_cast<real_type>(1 / kEPS)
       );
     }
 
@@ -73,8 +73,8 @@ public:
       // Partial reflection
       return ray_sample_type(
         reflection_ray,
-        flux_type(1) / static_cast<real_type>(kEPS) * p_reflection,
-        1 / static_cast<real_type>(kEPS) * p_reflection
+        flux_type(static_cast<real_type>(1 / kEPS)) * p_reflection,
+        static_cast<real_type>(1 / kEPS) * p_reflection
       );
     } else {
       // Refraction
@@ -83,8 +83,8 @@ public:
           hit.position,
           ray.direction + (cos_i - cos_o / ri) * hit.normal
         ),
-        flux_type(1) / static_cast<real_type>(kEPS) * (1 - p_reflection),
-        1 / static_cast<real_type>(kEPS) * (1 - p_reflection)
+        flux_type(static_cast<real_type>(1 / kEPS)) * (1 - p_reflection),
+        static_cast<real_type>(1 / kEPS) * (1 - p_reflection)
       );
     }
   }

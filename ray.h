@@ -50,10 +50,10 @@ struct RaySample
 
   ray_type ray;
   flux_type bsdf;
-  real_type probability;
+  real_type psa_probability;
 
-  explicit RaySample(const ray_type& ray, const flux_type& bsdf, real_type probability) :
-    ray(ray), bsdf(bsdf), probability(probability)
+  explicit RaySample(const ray_type& ray, const flux_type& bsdf, real_type psa_probability) :
+    ray(ray), bsdf(bsdf), psa_probability(psa_probability)
   {}
 };
 

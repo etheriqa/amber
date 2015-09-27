@@ -61,13 +61,12 @@ public:
     const auto normal = signed_cos_i < 0 ? hit.normal : -hit.normal;
 
     vector3_type direction_o;
-    real_type cos_o;
-    std::tie(direction_o, cos_o) = random.hemisphere_psa(normal);
+    std::tie(direction_o, std::ignore) = random.hemisphere_psa(normal);
 
     return ray_sample_type(
       ray_type(hit.position, direction_o),
       m_reflectance / static_cast<real_type>(kPI),
-      1 / static_cast<real_type>(kPI)
+      static_cast<real_type>(1 / kPI)
     );
   }
 };

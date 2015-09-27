@@ -49,13 +49,13 @@ public:
 
   ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
   {
-    const auto signed_cos_o = dot(ray.direction, hit.normal);
-    const auto direction_i = ray.direction - 2 * signed_cos_o * hit.normal;
+    const auto signed_cos_i = dot(ray.direction, hit.normal);
+    const auto direction_o = ray.direction - 2 * signed_cos_i * hit.normal;
 
     return ray_sample_type(
-      ray_type(hit.position, direction_i),
+      ray_type(hit.position, direction_o),
       m_reflectance / static_cast<real_type>(kEPS),
-      1 / static_cast<real_type>(kEPS)
+      static_cast<real_type>(1 / kEPS)
     );
   }
 };
