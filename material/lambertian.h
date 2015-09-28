@@ -11,14 +11,12 @@ template <class Flux>
 class Lambertian : public Material<Flux>
 {
 public:
-  using material_type   = Material<Flux>;
+  using material_type          = Material<Flux>;
 
-  using flux_type       = typename material_type::flux_type;
-  using hit_type        = typename material_type::hit_type;
-  using ray_sample_type = typename material_type::ray_sample_type;
-  using ray_type        = typename material_type::ray_type;
-  using real_type       = typename material_type::real_type;
-  using vector3_type    = typename material_type::vector3_type;
+  using flux_type              = typename material_type::flux_type;
+  using real_type              = typename material_type::real_type;
+  using scattering_sample_type = typename material_type::ScatteringSample;
+  using vector3_type           = typename material_type::vector3_type;
 
 private:
   flux_type m_kd;
@@ -50,19 +48,17 @@ public:
     }
   }
 
-  ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
+  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    const auto signed_cos_i = dot(ray.direction, hit.normal);
-    const auto normal = signed_cos_i < 0 ? hit.normal : -hit.normal;
-
+    const auto w = dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(normal);
+    std::tie(direction_o, std::ignore) = random.hemisphere_psa(w);
 
-    return ray_sample_type(
-      ray_type(hit.position, direction_o),
-      m_kd / static_cast<real_type>(kPI),
-      static_cast<real_type>(1 / kPI)
-    );
+    scattering_sample_type sample;
+    sample.direction_o = direction_o;
+    sample.bsdf = m_kd / static_cast<real_type>(kPI);
+    sample.psa_probability = static_cast<real_type>(1 / kPI);
+    return sample;
   }
 };
 

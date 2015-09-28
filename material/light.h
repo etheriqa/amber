@@ -11,14 +11,12 @@ template <class Flux>
 class Light : public Material<Flux>
 {
 public:
-  using material_type   = Material<Flux>;
+  using material_type          = Material<Flux>;
 
-  using flux_type       = typename material_type::flux_type;
-  using hit_type        = typename material_type::hit_type;
-  using ray_sample_type = typename material_type::ray_sample_type;
-  using ray_type        = typename material_type::ray_type;
-  using real_type       = typename material_type::real_type;
-  using vector3_type    = typename material_type::vector3_type;
+  using flux_type              = typename material_type::flux_type;
+  using real_type              = typename material_type::real_type;
+  using scattering_sample_type = typename material_type::ScatteringSample;
+  using vector3_type           = typename material_type::vector3_type;
 
 private:
   flux_type m_emittance;
@@ -46,9 +44,9 @@ public:
     return flux_type();
   }
 
-  ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
+  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    return Lambertian<flux_type>(flux_type()).sample_ray_bsdf(hit, ray, random);
+    return Lambertian<flux_type>(flux_type()).sample_scattering(direction_i, normal, random);
   }
 };
 

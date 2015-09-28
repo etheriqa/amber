@@ -266,7 +266,7 @@ private:
         break;
       }
 
-      const auto sample = object.sample_ray_bsdf(hit, ray, random);
+      const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
 
       const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
 
@@ -274,12 +274,12 @@ private:
       event.position    = hit.position;
       event.normal      = hit.normal;
       event.direction_i = -ray.direction;
-      event.direction_o = sample.ray.direction;
+      event.direction_o = sample.direction_o;
       event.probability *= probability * geometry_factor;
       event.weight      *= bsdf / probability;
       subpath.push_back(event);
 
-      ray = sample.ray;
+      ray = ray_type(hit.position, sample.direction_o);
       bsdf = sample.bsdf;
       probability = sample.psa_probability;
 

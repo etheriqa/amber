@@ -11,14 +11,12 @@ template <class Flux>
 class Refraction : public Material<Flux>
 {
 public:
-  using material_type   = Material<Flux>;
+  using material_type          = Material<Flux>;
 
-  using flux_type       = typename material_type::flux_type;
-  using hit_type        = typename material_type::hit_type;
-  using ray_sample_type = typename material_type::ray_sample_type;
-  using ray_type        = typename material_type::ray_type;
-  using real_type       = typename material_type::real_type;
-  using vector3_type    = typename material_type::vector3_type;
+  using flux_type              = typename material_type::flux_type;
+  using real_type              = typename material_type::real_type;
+  using scattering_sample_type = typename material_type::ScatteringSample;
+  using vector3_type           = typename material_type::vector3_type;
 
 private:
   real_type m_refractive_index;
@@ -46,24 +44,21 @@ public:
     return flux_type();
   }
 
-  ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
+  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    const auto signed_cos_i = dot(ray.direction, hit.normal);
-    const ray_type reflection_ray(
-      hit.position,
-      ray.direction - 2 * signed_cos_i * hit.normal
-    );
+    const auto signed_cos_i = dot(direction_i, normal);
+    const auto reflection_direction_o = 2 * signed_cos_i * normal - direction_i;
 
-    const auto ri = signed_cos_i > 0 ? m_refractive_index : 1 / m_refractive_index;
+    const auto ri = signed_cos_i > 0 ? 1 / m_refractive_index : m_refractive_index;
     const auto square_cos_o = 1 - (1 - signed_cos_i * signed_cos_i) * (ri * ri);
 
     if (square_cos_o < 0) {
       // Full reflection
-      return ray_sample_type(
-        reflection_ray,
-        flux_type(static_cast<real_type>(1 / kEPS)),
-        static_cast<real_type>(1 / kEPS)
-      );
+      scattering_sample_type sample;
+      sample.direction_o = reflection_direction_o;
+      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS));
+      sample.psa_probability = static_cast<real_type>(1 / kEPS);
+      return sample;
     }
 
     const auto cos_i = std::abs(signed_cos_i);
@@ -72,21 +67,18 @@ public:
 
     if (p_reflection > random.uniform<real_type>()) {
       // Partial reflection
-      return ray_sample_type(
-        reflection_ray,
-        flux_type(static_cast<real_type>(1 / kEPS)) * p_reflection,
-        static_cast<real_type>(1 / kEPS) * p_reflection
-      );
+      scattering_sample_type sample;
+      sample.direction_o = reflection_direction_o;
+      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS)) * p_reflection;
+      sample.psa_probability = static_cast<real_type>(1 / kEPS) * p_reflection;
+      return sample;
     } else {
       // Refraction
-      return ray_sample_type(
-        ray_type(
-          hit.position,
-          ray.direction + (cos_i - cos_o / ri) * hit.normal
-        ),
-        flux_type(static_cast<real_type>(1 / kEPS)) * (1 - p_reflection),
-        static_cast<real_type>(1 / kEPS) * (1 - p_reflection)
-      );
+      scattering_sample_type sample;
+      sample.direction_o = (cos_i - cos_o / ri) * normal - direction_i;
+      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS)) * (1 - p_reflection);
+      sample.psa_probability = static_cast<real_type>(1 / kEPS) * (1 - p_reflection);
+      return sample;
     }
   }
 

@@ -37,24 +37,6 @@ struct InitialRaySample
   {}
 };
 
-template <typename Flux>
-struct RaySample
-{
-  using flux_type = Flux;
-
-  using real_type = typename flux_type::real_type;
-
-  using ray_type  = Ray<real_type>;
-
-  ray_type ray;
-  flux_type bsdf;
-  real_type psa_probability;
-
-  explicit RaySample(const ray_type& ray, const flux_type& bsdf, real_type psa_probability) :
-    ray(ray), bsdf(bsdf), psa_probability(psa_probability)
-  {}
-};
-
 template <typename RealType>
 std::ostream& operator<<(std::ostream& os, const Ray<RealType>& r)
 {

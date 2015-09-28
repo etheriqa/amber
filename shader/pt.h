@@ -24,6 +24,7 @@ public:
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
+  using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
   using scene_type               = typename shader_type::scene_type;
 
@@ -122,9 +123,9 @@ private:
         break;
       }
 
-      const auto sample = object.sample_ray_bsdf(hit, ray, random);
+      const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
       weight *= sample.bsdf / sample.psa_probability;
-      ray = sample.ray;
+      ray = ray_type(hit.position, sample.direction_o);
 
       const auto p_russian_roulette = max(weight);
       if (random.uniform<real_type>() >= p_russian_roulette) {

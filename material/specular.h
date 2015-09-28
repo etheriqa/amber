@@ -11,14 +11,12 @@ template <class Flux>
 class Specular : public Material<Flux>
 {
 public:
-  using material_type   = Material<Flux>;
+  using material_type          = Material<Flux>;
 
-  using flux_type       = typename material_type::flux_type;
-  using hit_type        = typename material_type::hit_type;
-  using ray_sample_type = typename material_type::ray_sample_type;
-  using ray_type        = typename material_type::ray_type;
-  using real_type       = typename material_type::real_type;
-  using vector3_type    = typename material_type::vector3_type;
+  using flux_type              = typename material_type::flux_type;
+  using real_type              = typename material_type::real_type;
+  using scattering_sample_type = typename material_type::ScatteringSample;
+  using vector3_type           = typename material_type::vector3_type;
 
 private:
   flux_type m_ks;
@@ -46,16 +44,15 @@ public:
     return flux_type();
   }
 
-  ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
+  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    const auto signed_cos_i = dot(ray.direction, hit.normal);
-    const auto direction_o = ray.direction - 2 * signed_cos_i * hit.normal;
+    const auto direction_o = 2 * dot(direction_i, normal) * normal - direction_i;
 
-    return ray_sample_type(
-      ray_type(hit.position, direction_o),
-      m_ks / static_cast<real_type>(kEPS),
-      static_cast<real_type>(1 / kEPS)
-    );
+    scattering_sample_type sample;
+    sample.direction_o = direction_o;
+    sample.bsdf = m_ks / static_cast<real_type>(kEPS);
+    sample.psa_probability = static_cast<real_type>(1 / kEPS);
+    return sample;
   }
 };
 

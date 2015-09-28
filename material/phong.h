@@ -12,14 +12,12 @@ template <class Flux>
 class Phong : public Material<Flux>
 {
 public:
-  using material_type = Material<Flux>;
+  using material_type          = Material<Flux>;
 
-  using flux_type       = typename material_type::flux_type;
-  using hit_type        = typename material_type::hit_type;
-  using ray_sample_type = typename material_type::ray_sample_type;
-  using ray_type        = typename material_type::ray_type;
-  using real_type       = typename material_type::real_type;
-  using vector3_type    = typename material_type::vector3_type;
+  using flux_type              = typename material_type::flux_type;
+  using real_type              = typename material_type::real_type;
+  using scattering_sample_type = typename material_type::ScatteringSample;
+  using vector3_type           = typename material_type::vector3_type;
 
 private:
   flux_type m_kd; // diffuse reflectivity
@@ -62,33 +60,31 @@ public:
     }
   }
 
-  ray_sample_type sample_ray_bsdf(const hit_type& hit, const ray_type& ray, Random& random) const
+  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    const auto direction = m_p_diffuse > random.uniform<real_type>()
-      ? sample_diffuse_direction(hit, ray, random)
-      : sample_specular_direction(hit, ray, random);
-    const auto cos_alpha = dot(direction, ray.direction - 2 * dot(ray.direction, hit.normal) * hit.normal);
+    const auto direction_o = m_p_diffuse > random.uniform<real_type>()
+      ? sample_diffuse_direction(direction_i, normal, random)
+      : sample_specular_direction(direction_i, normal, random);
+    const auto cos_alpha = dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
 
     const auto psa_probability = m_p_diffuse / static_cast<real_type>(kPI)
       + (1 - m_p_diffuse) * (m_n + 1) / static_cast<real_type>(2 * kPI) * std::pow(std::max<real_type>(0, cos_alpha), m_n);
 
-    return ray_sample_type(
-      ray_type(hit.position, direction),
-      bsdf(-ray.direction, direction, hit.normal),
-      psa_probability
-    );
+    scattering_sample_type sample;
+    sample.direction_o = direction_o;
+    sample.bsdf = bsdf(direction_i, direction_o, normal);
+    sample.psa_probability = psa_probability;
+    return sample;
   }
 
 private:
-  vector3_type sample_diffuse_direction(const hit_type& hit, const ray_type& ray, Random& random) const
+  vector3_type sample_diffuse_direction(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    const auto signed_cos_i = dot(ray.direction, hit.normal);
-    const auto normal = signed_cos_i < 0 ? hit.normal : -hit.normal;
-
-    return std::get<0>(random.hemisphere_psa(normal));
+    const auto w = dot(direction_i, normal) > 0 ? normal : -normal;
+    return std::get<0>(random.hemisphere_psa(w));
   }
 
-  vector3_type sample_specular_direction(const hit_type& hit, const ray_type& ray, Random& random) const
+  vector3_type sample_specular_direction(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
     while (true) {
       const auto r0 = random.uniform<real_type>(), r1 = random.uniform<real_type>();
@@ -100,16 +96,16 @@ private:
       const auto y = sin_alpha * std::sin(phi);
       const auto z = cos_alpha;
 
-      vector3_type w = ray.direction - 2 * dot(ray.direction, hit.normal) * hit.normal;
+      vector3_type w = 2 * dot(direction_i, normal) * normal - direction_i;
       vector3_type u, v;
       std::tie(u, v) = orthonormal_basis(w);
-      const auto direction = u * x + v * y + w * z;
+      const auto direction_o = u * x + v * y + w * z;
 
-      if (dot(ray.direction, hit.normal) * dot(direction, hit.normal) > 0) {
+      if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
         continue;
       }
 
-      return direction;
+      return direction_o;
     }
   }
 };
