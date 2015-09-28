@@ -1,10 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include <tuple>
 #include "constant.h"
 #include "material/material.h"
-#include "vector.h"
 
 namespace amber {
 namespace material {
@@ -20,16 +18,13 @@ public:
   using ray_sample_type = typename material_type::ray_sample_type;
   using ray_type        = typename material_type::ray_type;
   using real_type       = typename material_type::real_type;
-
-  using vector3_type    = Vector3<real_type>;
+  using vector3_type    = typename material_type::vector3_type;
 
 private:
-  flux_type m_reflectance;
+  flux_type m_kd;
 
 public:
-  Lambertian(const flux_type& r) :
-    m_reflectance(r)
-  {}
+  explicit Lambertian(const flux_type& kd) : m_kd(kd) {}
 
   bool is_emissive() const noexcept
   {
@@ -51,7 +46,7 @@ public:
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
       return flux_type();
     } else {
-      return m_reflectance / static_cast<real_type>(kPI);
+      return m_kd / static_cast<real_type>(kPI);
     }
   }
 
@@ -65,7 +60,7 @@ public:
 
     return ray_sample_type(
       ray_type(hit.position, direction_o),
-      m_reflectance / static_cast<real_type>(kPI),
+      m_kd / static_cast<real_type>(kPI),
       static_cast<real_type>(1 / kPI)
     );
   }

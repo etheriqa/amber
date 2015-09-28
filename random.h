@@ -75,7 +75,7 @@ public:
     const auto phi = static_cast<RealType>(2 * kPI) * r1;
 
     return std::make_tuple(
-      u * cos_theta * std::cos(phi) + v * cos_theta * std::sin(phi) + w * sin_theta,
+      u * sin_theta * std::cos(phi) + v * sin_theta * std::sin(phi) + w * cos_theta,
       cos_theta
     );
   }
@@ -100,7 +100,7 @@ public:
     const auto phi = static_cast<RealType>(2 * kPI) * r1;
 
     return std::make_tuple(
-      u * cos_theta * std::cos(phi) + v * cos_theta * std::sin(phi) + w * sin_theta,
+      u * sin_theta * std::cos(phi) + v * sin_theta * std::sin(phi) + w * cos_theta,
       cos_theta
     );
   }

@@ -2,6 +2,7 @@
 
 #include "material/lambertian.h"
 #include "material/light.h"
+#include "material/phong.h"
 #include "material/refraction.h"
 #include "material/specular.h"
 #include "rgb.h"
@@ -24,6 +25,7 @@ Container cornel_box()
 
   using Lambertian = material::Lambertian<RGB>;
   using Light = material::Light<RGB>;
+  using Phong = material::Phong<RGB>;
   using Refraction = material::Refraction<RGB>;
   using Specular = material::Specular<RGB>;
 
@@ -34,10 +36,10 @@ Container cornel_box()
   // light source
   objects.insert(
     new ConvexPolygon({
-      Vector3(0.25, 0.25, 0.999),
-      Vector3(0.25, -0.25, 0.999),
-      Vector3(-0.25, -0.25, 0.999),
-      Vector3(-0.25, 0.25, 0.999),
+      Vector3(0.25, 0.25, 0.99),
+      Vector3(0.25, -0.25, 0.99),
+      Vector3(-0.25, -0.25, 0.99),
+      Vector3(-0.25, 0.25, 0.99),
     }),
     new Light(RGB(10, 10, 10))
   );
@@ -79,7 +81,7 @@ Container cornel_box()
       Vector3(-1, -1, -1),
       Vector3(1, -1, -1),
     }),
-    new Lambertian(RGB(.5, .5, .5))
+    new Phong(RGB(.1, .1, .1), RGB(.5, .5, .5), 100)
   );
   // ceiling
   objects.insert(
@@ -94,7 +96,7 @@ Container cornel_box()
   // diffuse sphere
   objects.insert(new Sphere(Vector3(0.4, 0.5, -0.6), 0.4), new Lambertian(RGB(.5, .5, .5)));
   // specular sphere
-  objects.insert(new Sphere(Vector3(-0.4, -0.1, -0.7), 0.3), new Specular(RGB(.9, .9, .9)));
+  objects.insert(new Sphere(Vector3(-0.4, -0.1, -0.7), 0.3), new Specular(RGB(.95, .95, .95)));
   // refraction sphere
   objects.insert(new Sphere(Vector3(0.1, -0.6, -0.8), 0.2), new Refraction(1.5));
 

@@ -206,7 +206,7 @@ template <typename RealType>
 std::tuple<Vector3<RealType>, Vector3<RealType>> orthonormal_basis(const Vector3<RealType>& w) noexcept
 {
   const auto u = normalize(cross(w, std::abs(w.x) < std::abs(w.y) ? Vector3<RealType>(1, 0, 0) : Vector3<RealType>(0, 1, 0)));
-  const auto v = cross(w, u);
+  const auto v = normalize(cross(w, u));
   return std::make_tuple(u, v);
 }
 

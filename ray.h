@@ -15,8 +15,6 @@ struct Ray
 
   vector3_type origin, direction;
 
-  explicit Ray() {}
-
   Ray(const vector3_type& o, const vector3_type& d) :
     origin(o),
     direction(normalize(d))

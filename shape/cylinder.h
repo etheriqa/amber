@@ -30,7 +30,7 @@ private:
 
 public:
   Cylinder(const vector3_type& center, const vector3_type& normal, real_type radius, real_type height) :
-    m_center(center), m_normal(normal), m_radius(radius), m_height(height) {}
+    m_center(center), m_normal(normalize(normal)), m_radius(radius), m_height(height) {}
 
   real_type surface_area() const noexcept
   {

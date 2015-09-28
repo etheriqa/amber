@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "constant.h"
 #include "material/material.h"
 
 namespace amber {
@@ -20,12 +21,10 @@ public:
   using vector3_type    = typename material_type::vector3_type;
 
 private:
-  flux_type m_reflectance;
+  flux_type m_ks;
 
 public:
-  Specular(const flux_type& r) :
-    m_reflectance(r)
-  {}
+  explicit Specular(const flux_type& ks) : m_ks(ks) {}
 
   bool is_emissive() const noexcept
   {
@@ -54,7 +53,7 @@ public:
 
     return ray_sample_type(
       ray_type(hit.position, direction_o),
-      m_reflectance / static_cast<real_type>(kEPS),
+      m_ks / static_cast<real_type>(kEPS),
       static_cast<real_type>(1 / kEPS)
     );
   }

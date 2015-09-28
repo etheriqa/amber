@@ -39,7 +39,8 @@ private:
     object_type object;
     vector3_type position;
     vector3_type normal;
-    vector3_type direction;
+    vector3_type direction_i;
+    vector3_type direction_o;
     real_type probability;
     flux_type weight;
   };
@@ -132,53 +133,56 @@ private:
           Contribution contribution;
           if (s + t < 2) {
             continue;
-          } else if (s == 0) {
+          } else if (s == 0 && t >= 2) {
             // zero light subpath vertices
             const auto l = eye_subpath[t - 1];
+            const auto e = eye_subpath[t - 2];
             if (!l.object.is_emissive()) {
+              continue;
+            }
+            if (dot(e.position - l.position, l.normal) <= 0) {
               continue;
             }
             contribution.power =
               l.object.emittance() / static_cast<real_type>(kPI) *
               l.weight;
             contribution.probability = l.probability;
-          } else if (s == 1) {
+          } else if (s == 1 && t >= 2) {
             // one light subpath vertex
-            if (t < 2) {
+            const auto l = light_subpath[s - 1];
+            const auto e = eye_subpath[t - 1];
+            if (e.object.is_specular()) {
               continue;
             }
-            const auto l = light_subpath[s - 1];
-            const auto e0 = eye_subpath[t - 2];
-            const auto e1 = eye_subpath[t - 1];
-            if (e1.object.is_specular()) {
+            if (dot(e.position - l.position, l.normal) <= 0) {
               continue;
             }
             contribution.power =
               l.weight *
               flux_type(1 / static_cast<real_type>(kPI)) *
-              geometry_factor(scene, l, e1) *
-              e1.object.bsdf(normalize(l.position - e1.position), -e0.direction, e1.normal) *
-              e1.weight;
-            contribution.probability = l.probability * e1.probability;
-          } else if (t == 0) {
+              geometry_factor(scene, l, e) *
+              e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
+              e.weight;
+            contribution.probability = l.probability * e.probability;
+          } else if (s >= 2 && t == 0) {
             continue; // TODO zero eye subpath vertices
-          } else if (t == 1) {
+          } else if (s >= 2 && t == 1) {
             continue; // TODO one eye subpath vertex
+          } else if (s == 1 && t == 1) {
+            continue; // TODO one light subpath vertex and one eye subpath vertex
           } else {
-            const auto& l0 = light_subpath[s - 2];
-            const auto& l1 = light_subpath[s - 1];
-            const auto& e0 = eye_subpath[t - 2];
-            const auto& e1 = eye_subpath[t - 1];
-            if (l1.object.is_specular() || e1.object.is_specular()) {
+            const auto& l = light_subpath[s - 1];
+            const auto& e = eye_subpath[t - 1];
+            if (l.object.is_specular() || e.object.is_specular()) {
               continue;
             }
             contribution.power =
-              l1.weight *
-              l1.object.bsdf(-l0.direction, normalize(e1.position - l1.position), l1.normal) *
-              geometry_factor(scene, l1, e1) *
-              e1.object.bsdf(normalize(l1.position - e1.position), -e0.direction, e1.normal) *
-              e1.weight;
-            contribution.probability = l1.probability * e1.probability;
+              l.weight *
+              l.object.bsdf(l.direction_i, normalize(e.position - l.position), l.normal) *
+              geometry_factor(scene, l, e) *
+              e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
+              e.weight;
+            contribution.probability = l.probability * e.probability;
           }
           contributions[s + t - 2].push_back(contribution);
         }
@@ -215,7 +219,8 @@ private:
     event.object      = object;
     event.position    = sample.ray.origin;
     event.normal      = sample.normal;
-    event.direction   = sample.ray.direction;
+    event.direction_i = vector3_type();
+    event.direction_o = sample.ray.direction;
     event.probability = area_probability;
     event.weight      = object.emittance() / area_probability;
 
@@ -236,7 +241,8 @@ private:
     event.object      = object_type(nullptr, nullptr);
     event.position    = sample.ray.origin;
     event.normal      = sample.normal;
-    event.direction   = sample.ray.direction;
+    event.direction_i = vector3_type();
+    event.direction_o = sample.ray.direction;
     event.probability = area_probability;
     event.weight      = importance / area_probability;
 
@@ -250,24 +256,25 @@ private:
     subpath.reserve(16);
     subpath.push_back(event);
 
-    ray_type ray(event.position, event.direction);
+    ray_type ray(event.position, event.direction_o);
     hit_type hit;
     object_type object;
 
-    for (size_t i = 0;; i++) {
+    while (true) {
       std::tie(hit, object) = scene.intersect(ray);
       if (!hit) {
         break;
       }
 
-      auto sample = object.sample_ray_bsdf(hit, ray, random);
+      const auto sample = object.sample_ray_bsdf(hit, ray, random);
 
       const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
 
       event.object      = object;
       event.position    = hit.position;
       event.normal      = hit.normal;
-      event.direction   = sample.ray.direction;
+      event.direction_i = -ray.direction;
+      event.direction_o = sample.ray.direction;
       event.probability *= probability * geometry_factor;
       event.weight      *= bsdf / probability;
       subpath.push_back(event);
@@ -276,13 +283,11 @@ private:
       bsdf = sample.bsdf;
       probability = sample.psa_probability;
 
-      if (i >= 4) {
-        const auto p_russian_roulette = max(bsdf / probability);
-        if (random.uniform<real_type>() > p_russian_roulette) {
-          break;
-        }
-        probability *= p_russian_roulette;
+      const auto p_russian_roulette = max(bsdf / probability);
+      if (random.uniform<real_type>() >= p_russian_roulette) {
+        break;
       }
+      probability *= std::min(static_cast<real_type>(1), p_russian_roulette);
     }
 
     return subpath;

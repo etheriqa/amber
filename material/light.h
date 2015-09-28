@@ -24,7 +24,7 @@ private:
   flux_type m_emittance;
 
 public:
-  Light(const flux_type& e) : m_emittance(e) {}
+  explicit Light(const flux_type& e) : m_emittance(e) {}
 
   bool is_emissive() const noexcept
   {

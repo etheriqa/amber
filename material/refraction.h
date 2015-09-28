@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "constant.h"
 #include "material/material.h"
 
 namespace amber {
@@ -23,7 +24,7 @@ private:
   real_type m_refractive_index;
 
 public:
-  Refraction(real_type ri) : m_refractive_index(ri) {}
+  explicit Refraction(real_type ri) : m_refractive_index(ri) {}
 
   bool is_emissive() const noexcept
   {
@@ -89,7 +90,8 @@ public:
     }
   }
 
-  real_type fresnel(real_type alpha, real_type beta) const
+private:
+  static real_type fresnel(real_type alpha, real_type beta) noexcept
   {
     const auto s = std::sin(alpha - beta) / std::sin(alpha + beta);
     const auto t = std::tan(alpha - beta) / std::tan(alpha + beta);

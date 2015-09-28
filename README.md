@@ -18,6 +18,7 @@ Features
     - Cylinder
 - Materials
     - Lambertian
+    - Phong
     - Refraction
     - Specular
 - Depth of Field
@@ -26,6 +27,7 @@ Features
 References
 ----------
 
+- E. Lafortune and Y. Willems, Using the Modified Phong Reflectance Model for Physically Based Rendering, Report CW197, Department of Computer Science, Katholieke Universiteit Leuven, 1994.
 - T. Möller and B. Trumbore, Fast, Minimum Storage Ray/Triangle Intersection, *Journal of Graphics Tools* **2** (1), 1997.
 - E. Reinhard, M. Stark, P. Shirley and J. Ferwerda, Photographic Tone Reproduction for Digital Images, *ACM Transactions on Graphics* **21** (3), 2002.
 - E. Veach, Robust Monte Carlo Methods for Light Transport Simulation, *Ph.D. Dissertation*, Stanford University, 1997.

@@ -28,7 +28,7 @@ private:
 
 public:
   Circle(const vector3_type& center, const vector3_type& normal, real_type radius) :
-    m_center(center), m_normal(normal), m_radius(radius) {}
+    m_center(center), m_normal(normalize(normal)), m_radius(radius) {}
 
   real_type surface_area() const noexcept
   {

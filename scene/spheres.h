@@ -5,7 +5,6 @@
 #include "material/lambertian.h"
 #include "material/light.h"
 #include "material/refraction.h"
-#include "material/specular.h"
 #include "rgb.h"
 #include "shape/circle.h"
 #include "shape/cylinder.h"
@@ -29,7 +28,6 @@ Container spheres()
   using Lambertian = material::Lambertian<RGB>;
   using Light      = material::Light<RGB>;
   using Refraction = material::Refraction<RGB>;
-  using Specular   = material::Specular<RGB>;
 
   using ObjectList = container::ObjectList<RGB>;
 

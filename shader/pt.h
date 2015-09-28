@@ -127,10 +127,10 @@ private:
       ray = sample.ray;
 
       const auto p_russian_roulette = max(weight);
-      if (random.uniform<real_type>() > p_russian_roulette) {
+      if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
-      weight /= p_russian_roulette;
+      weight /= std::min(static_cast<real_type>(1), p_russian_roulette);
     }
 
     return flux;
