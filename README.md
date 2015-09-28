@@ -1,7 +1,7 @@
 amber
 =====
 
-![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/9841341af9ef103f31e59172492f518fcc87eccb/pt65536spp.png)
+![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/0cb4dfee766e84562bcd8cfdde8e4ce423bac403/pt65536spp.png)
 
 Global illumination renderer in C++.
 
