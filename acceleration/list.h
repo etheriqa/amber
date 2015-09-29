@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 #include "acceleration/acceleration.h"
 
@@ -21,6 +22,11 @@ private:
   ObjectBuffer m_objects;
 
 public:
+  static std::string to_string() noexcept
+  {
+    return std::string("List");
+  }
+
   static std::tuple<hit_type, object_type> cast(const object_buffer_type& objects, const ray_type& ray) noexcept
   {
     hit_type closest_hit;

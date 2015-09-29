@@ -22,6 +22,8 @@ void render(
 {
   std::cerr
     << shader.to_string() << std::endl
+    << "Acceleration: " << Acceleration::to_string() << std::endl
+    << "Objects: " << objects.size() << std::endl
     << camera.to_string() << std::endl
     << std::endl;
 

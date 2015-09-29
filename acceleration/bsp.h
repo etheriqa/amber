@@ -2,6 +2,7 @@
 
 #include <deque>
 #include <memory>
+#include <sstream>
 #include "acceleration/acceleration.h"
 #include "acceleration/list.h"
 
@@ -131,6 +132,13 @@ private:
   std::shared_ptr<Node> m_root;
 
 public:
+  static std::string to_string() noexcept
+  {
+    std::stringstream ss;
+    ss << "BSP(leaf_capacity=" << LeafCapacity << ", max_depth=" << MaxDepth << ")";
+    return ss.str();
+  }
+
   explicit BSP(const object_buffer_type& objects) : m_root(new Node(objects)) {}
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
