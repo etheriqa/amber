@@ -4,6 +4,9 @@
 #include "aperture/polygon.h"
 #include "camera.h"
 #include "container/list.h"
+#include "image.h"
+#include "io/ppm.h"
+#include "io/rgbe.h"
 #include "lens/pinhole.h"
 #include "lens/thin.h"
 #include "render.h"
@@ -12,8 +15,8 @@
 #include "scene/spheres.h"
 #include "shader/bdpt.h"
 #include "shader/pt.h"
-#include "tonemap/reinhard.h"
 #include "tonemap/gamma.h"
+#include "tonemap/reinhard.h"
 #include "vector.h"
 
 int main()
@@ -45,14 +48,14 @@ int main()
   const auto lens   = new amber::lens::Pinhole<RealType>();
   const auto image  = new amber::Image<Spectrum>(512 * ssaa_factor, 512 * ssaa_factor);
   const auto sensor = new amber::Sensor<Spectrum>(image);
-  const auto camera = amber::Camera<Spectrum>(lens, sensor, Vector3(0, -4, 0), Vector3(0, 0, 0), Vector3(0, 0, 1));
+  const auto camera = amber::Camera<Spectrum>(lens, sensor, Vector3(0, 0, -4), Vector3(0, 0, 0), Vector3(0, 1, 0));
 
   amber::render(shader, scene, camera);
 
   amber::tonemap::Reinhard<RealType> reinhard;
   amber::tonemap::Gamma<RealType> gamma;
-  amber::save_rgbe("output.hdr", image->down_sample(ssaa_factor));
-  amber::save_ppm("output.ppm", gamma(reinhard(image->down_sample(ssaa_factor))));
+  amber::io::export_rgbe("output.hdr", image->down_sample(ssaa_factor));
+  amber::io::export_ppm("output.ppm", gamma(reinhard(image->down_sample(ssaa_factor))));
 
   return 0;
 }

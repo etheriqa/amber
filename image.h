@@ -1,9 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <fstream>
 #include <vector>
-#include "rgb.h"
 
 namespace amber {
 
@@ -50,44 +47,5 @@ public:
     return image;
   }
 };
-
-void save_ppm(const char* filename, const Image<SRGB>& image)
-{
-  std::ofstream ofs(filename, std::ofstream::trunc);
-
-  ofs << "P3" << std::endl;
-  ofs << image.m_width << " " << image.m_height << std::endl;
-  ofs << 255 << std::endl;
-
-  for (size_t j = 0; j < image.m_height; j++) {
-    for (size_t i = 0; i < image.m_width; i++) {
-      ofs << static_cast<size_t>(image.pixel(i, j).x) << ' ' << static_cast<size_t>(image.pixel(i, j).y) << ' ' << static_cast<size_t>(image.pixel(i, j).z) << std::endl;
-    }
-  }
-}
-
-template <typename RealType>
-void save_rgbe(const char* filename, const Image<RGB<RealType>>& image)
-{
-  std::ofstream ofs(filename, std::ofstream::trunc);
-
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.m_height << " +X " << image.m_width << std::endl;
-
-  for (size_t j = 0; j < image.m_height; j++) {
-    for (size_t i = 0; i < image.m_width; i++) {
-      const auto& p = image.pixel(i, j);
-
-      int exponent;
-      const auto significand = std::frexp(max(p), &exponent) * 256 / max(p);
-
-      ofs << static_cast<unsigned char>(significand * p.x);
-      ofs << static_cast<unsigned char>(significand * p.y);
-      ofs << static_cast<unsigned char>(significand * p.z);
-      ofs << static_cast<unsigned char>(exponent + 128);
-    }
-  }
-}
 
 }

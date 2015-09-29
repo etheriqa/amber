@@ -33,15 +33,15 @@ Container spheres()
 
   ObjectList objects;
 
-  const auto a = Vector3(std::cos((0.5 + 0. * 2 / 3) * kPI), std::sin((0.5 + 0. * 2 / 3) * kPI), -1);
-  const auto b = Vector3(std::cos((0.5 + 1. * 2 / 3) * kPI), std::sin((0.5 + 1. * 2 / 3) * kPI), -1);
-  const auto c = Vector3(std::cos((0.5 + 2. * 2 / 3) * kPI), std::sin((0.5 + 2. * 2 / 3) * kPI), -1);
+  const auto a = Vector3(std::sin((0. * 2 / 3) * kPI), -1, std::cos((0. * 2 / 3) * kPI));
+  const auto b = Vector3(std::sin((1. * 2 / 3) * kPI), -1, std::cos((1. * 2 / 3) * kPI));
+  const auto c = Vector3(std::sin((2. * 2 / 3) * kPI), -1, std::cos((2. * 2 / 3) * kPI));
 
   // floor
   objects.insert(
     new Circle({
-      Vector3(0, 0, -1),
-      Vector3(0, 0, 1),
+      Vector3(0, -1, 0),
+      Vector3(0,  1, 0),
       5
     }),
     new Lambertian(RGB(.5, .5, .5))
@@ -49,27 +49,27 @@ Container spheres()
 
   // lights
   objects.insert(
-    new Cylinder(a + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25, 1),
+    new Cylinder(a + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
   objects.insert(
-    new Cylinder(b + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25, 1),
+    new Cylinder(b + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
   objects.insert(
-    new Cylinder(c + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25, 1),
+    new Cylinder(c + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
   objects.insert(
-    new Circle(a + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25),
+    new Circle(a + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(1, 0, 0))
   );
   objects.insert(
-    new Circle(b + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25),
+    new Circle(b + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(0, 1, 0))
   );
   objects.insert(
-    new Circle(c + Vector3(0, 0, 4), Vector3(0, 0, -1), 0.25),
+    new Circle(c + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(0, 0, 1))
   );
 
@@ -77,15 +77,15 @@ Container spheres()
   const auto radius = 0.25;
   const auto material = new Refraction(1.5);
   objects.insert(
-    new Sphere(a + Vector3(0, 0, radius), radius),
+    new Sphere(a + Vector3(0, radius, 0), radius),
     material
   );
   objects.insert(
-    new Sphere(b + Vector3(0, 0, radius), radius),
+    new Sphere(b + Vector3(0, radius, 0), radius),
     material
   );
   objects.insert(
-    new Sphere(c + Vector3(0, 0, radius), radius),
+    new Sphere(c + Vector3(0, radius, 0), radius),
     material
   );
 
