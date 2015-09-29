@@ -5,7 +5,6 @@
 #include "material/phong.h"
 #include "material/refraction.h"
 #include "material/specular.h"
-#include "rgb.h"
 #include "shape/convex_polygon.h"
 #include "shape/sphere.h"
 #include "vector.h"
@@ -13,30 +12,30 @@
 namespace amber {
 namespace scene {
 
-template <class Container>
-Container cornel_box()
+template <class Acceleration>
+typename Acceleration::object_buffer_type cornel_box()
 {
-  using RealType = typename Container::real_type;
+  using RealType      = typename Acceleration::object_type::shape_type::real_type;
 
-  using Vector3 = Vector3<RealType>;
+  using Vector3       = Vector3<RealType>;
 
   using ConvexPolygon = shape::ConvexPolygon<RealType>;
-  using Sphere = shape::Sphere<RealType>;
+  using Sphere        = shape::Sphere<RealType>;
 
-  using RGB = RGB<RealType>;
+  using RGB           = typename Acceleration::object_type::material_type::flux_type;
 
-  using Lambertian = material::Lambertian<RGB>;
-  using Light = material::Light<RGB>;
-  using Phong = material::Phong<RGB>;
-  using Refraction = material::Refraction<RGB>;
-  using Specular = material::Specular<RGB>;
+  using Lambertian    = material::Lambertian<RGB>;
+  using Light         = material::Light<RGB>;
+  using Phong         = material::Phong<RGB>;
+  using Refraction    = material::Refraction<RGB>;
+  using Specular      = material::Specular<RGB>;
 
-  using ObjectList = container::ObjectList<RGB>;
+  using ObjectBuffer  = typename Acceleration::object_buffer_type;
 
-  ObjectList objects;
+  ObjectBuffer objects;
 
   // light source
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3( 0.25, 0.99,  0.25),
       Vector3(-0.25, 0.99,  0.25),
@@ -46,7 +45,7 @@ Container cornel_box()
     new Light(RGB(10, 10, 10))
   );
   // left
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3(1,  1,  1),
       Vector3(1,  1, -1),
@@ -56,7 +55,7 @@ Container cornel_box()
     new Lambertian(RGB(.5, .0, .0))
   );
   // right
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3(-1,  1,  1),
       Vector3(-1, -1,  1),
@@ -66,7 +65,7 @@ Container cornel_box()
     new Lambertian(RGB(.0, .5, .0))
   );
   // back
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3( 1,  1, 1),
       Vector3( 1, -1, 1),
@@ -76,7 +75,7 @@ Container cornel_box()
     new Lambertian(RGB(.5, .5, .5))
   );
   // floor
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3( 1, -1,  1),
       Vector3( 1, -1, -1),
@@ -86,7 +85,7 @@ Container cornel_box()
     new Phong(RGB(.1, .1, .1), RGB(.5, .5, .5), 100)
   );
   // ceiling
-  objects.insert(
+  objects.emplace_back(
     new ConvexPolygon({
       Vector3( 1, 1,  1),
       Vector3(-1, 1,  1),
@@ -96,13 +95,13 @@ Container cornel_box()
     new Lambertian(RGB(.5, .5, .5))
   );
   // diffuse sphere
-  objects.insert(new Sphere(Vector3(-0.4, -0.6,  0.5), 0.4), new Lambertian(RGB(.5, .5, .5)));
+  objects.emplace_back(new Sphere(Vector3(-0.4, -0.6,  0.5), 0.4), new Lambertian(RGB(.5, .5, .5)));
   // specular sphere
-  objects.insert(new Sphere(Vector3( 0.4, -0.7, -0.1), 0.3), new Specular(RGB(.95, .95, .95)));
+  objects.emplace_back(new Sphere(Vector3( 0.4, -0.7, -0.1), 0.3), new Specular(RGB(.95, .95, .95)));
   // refraction sphere
-  objects.insert(new Sphere(Vector3(-0.1, -0.8, -0.6), 0.2), new Refraction(1.5));
+  objects.emplace_back(new Sphere(Vector3(-0.1, -0.8, -0.6), 0.2), new Refraction(1.5));
 
-  return Container(std::move(objects));
+  return objects;
 }
 
 }

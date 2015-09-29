@@ -7,14 +7,15 @@
 
 namespace amber {
 
-template <typename Container>
+template <typename Acceleration>
 class LightSet
 {
 public:
-  using container_type  = Container;
+  using acceleration_type  = Acceleration;
 
-  using object_type     = typename container_type::object_type;
-  using real_type       = typename container_type::real_type;
+  using object_buffer_type = typename acceleration_type::object_buffer_type;
+  using object_type        = typename acceleration_type::object_type;
+  using real_type          = typename acceleration_type::object_type::real_type;
 
 private:
   struct Object
@@ -31,10 +32,10 @@ private:
   std::vector<Object> m_objects;
 
 public:
-  LightSet(const container_type& container)
+  LightSet(const object_buffer_type& objects)
   {
     real_type accumulated_area = 0;
-    for (const auto& object : container) {
+    for (const auto& object : objects) {
       if (!object.is_emissive()) {
         continue;
       }

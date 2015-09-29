@@ -5,7 +5,6 @@
 #include "material/lambertian.h"
 #include "material/light.h"
 #include "material/refraction.h"
-#include "rgb.h"
 #include "shape/circle.h"
 #include "shape/cylinder.h"
 #include "shape/sphere.h"
@@ -14,31 +13,33 @@
 namespace amber {
 namespace scene {
 
-template <class Container>
-Container spheres()
+template <class Acceleration>
+typename Acceleration::object_buffer_type spheres()
 {
-  using Vector3    = Vector3<typename Container::real_type>;
+  using RealType     = typename Acceleration::object_type::shape_type::real_type;
 
-  using Circle     = shape::Circle<typename Container::real_type>;
-  using Cylinder   = shape::Cylinder<typename Container::real_type>;
-  using Sphere     = shape::Sphere<typename Container::real_type>;
+  using Vector3      = Vector3<RealType>;
 
-  using RGB        = RGB<typename Container::real_type>;
+  using Circle       = shape::Circle<RealType>;
+  using Cylinder     = shape::Cylinder<RealType>;
+  using Sphere       = shape::Sphere<RealType>;
 
-  using Lambertian = material::Lambertian<RGB>;
-  using Light      = material::Light<RGB>;
-  using Refraction = material::Refraction<RGB>;
+  using RGB          = typename Acceleration::object_type::material_type::flux_type;
 
-  using ObjectList = container::ObjectList<RGB>;
+  using Lambertian   = material::Lambertian<RGB>;
+  using Light        = material::Light<RGB>;
+  using Refraction   = material::Refraction<RGB>;
 
-  ObjectList objects;
+  using ObjectBuffer = typename Acceleration::object_type;
+
+  ObjectBuffer objects;
 
   const auto a = Vector3(std::sin((0. * 2 / 3) * kPI), -1, std::cos((0. * 2 / 3) * kPI));
   const auto b = Vector3(std::sin((1. * 2 / 3) * kPI), -1, std::cos((1. * 2 / 3) * kPI));
   const auto c = Vector3(std::sin((2. * 2 / 3) * kPI), -1, std::cos((2. * 2 / 3) * kPI));
 
   // floor
-  objects.insert(
+  objects.emplace_back(
     new Circle({
       Vector3(0, -1, 0),
       Vector3(0,  1, 0),
@@ -48,27 +49,27 @@ Container spheres()
   );
 
   // lights
-  objects.insert(
+  objects.emplace_back(
     new Cylinder(a + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
-  objects.insert(
+  objects.emplace_back(
     new Cylinder(b + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
-  objects.insert(
+  objects.emplace_back(
     new Cylinder(c + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25, 1),
     new Lambertian(RGB(.1, .1, .1))
   );
-  objects.insert(
+  objects.emplace_back(
     new Circle(a + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(1, 0, 0))
   );
-  objects.insert(
+  objects.emplace_back(
     new Circle(b + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(0, 1, 0))
   );
-  objects.insert(
+  objects.emplace_back(
     new Circle(c + Vector3(0, 4, 0), Vector3(0, -1, 0), 0.25),
     new Light(RGB(0, 0, 1))
   );
@@ -76,20 +77,20 @@ Container spheres()
   // spheres
   const auto radius = 0.25;
   const auto material = new Refraction(1.5);
-  objects.insert(
+  objects.emplace_back(
     new Sphere(a + Vector3(0, radius, 0), radius),
     material
   );
-  objects.insert(
+  objects.emplace_back(
     new Sphere(b + Vector3(0, radius, 0), radius),
     material
   );
-  objects.insert(
+  objects.emplace_back(
     new Sphere(c + Vector3(0, radius, 0), radius),
     material
   );
 
-  return Container(std::move(objects));
+  return objects;
 }
 
 }

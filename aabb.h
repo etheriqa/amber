@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <tuple>
 #include "ray.h"
 #include "vector.h"
 
@@ -34,9 +35,16 @@ struct AABB
     );
   }
 
+  explicit AABB(const vector3_type& point) : min(point), max(point) {}
+
   AABB(const vector3_type& min, const vector3_type& max) :
     min(min), max(max)
   {}
+
+  operator bool() const noexcept
+  {
+    return min.x <= max.x && min.y <= max.y && min.z <= max.z;
+  }
 
   aabb_type& operator+=(const aabb_type& a) noexcept
   {
@@ -55,7 +63,7 @@ struct AABB
     return (min + max) / static_cast<real_type>(2);
   }
 
-  bool intersect(const ray_type& ray) const noexcept
+  std::tuple<bool, real_type, real_type> intersect(const ray_type& ray) const noexcept
   {
     real_type tmin, tmax;
 
@@ -72,7 +80,7 @@ struct AABB
       tmin = std::max(tmin, std::min(t0, t1));
       tmax = std::min(tmax, std::max(t0, t1));
       if (tmin > tmax || tmax < kEPS) {
-        return false;
+        return std::make_tuple(false, 0, 0);
       }
     }
 
@@ -82,11 +90,11 @@ struct AABB
       tmin = std::max(tmin, std::min(t0, t1));
       tmax = std::min(tmax, std::max(t0, t1));
       if (tmin > tmax || tmax < kEPS) {
-        return false;
+        return std::make_tuple(false, 0, 0);
       }
     }
 
-    return true;
+    return std::make_tuple(true, tmin, tmax);
   }
 };
 

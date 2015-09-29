@@ -13,11 +13,11 @@
 
 namespace amber {
 
-template <class Scene>
+template <class Acceleration>
 void render(
-  const shader::Shader<Scene>& shader,
-  const Scene& scene,
-  const typename shader::Shader<Scene>::camera_type& camera
+  const shader::Shader<Acceleration>& shader,
+  const typename Acceleration::object_buffer_type& objects,
+  const typename shader::Shader<Acceleration>::camera_type& camera
 )
 {
   std::cerr
@@ -25,7 +25,7 @@ void render(
     << camera.to_string() << std::endl
     << std::endl;
 
-  const auto progress = shader.render(scene, camera);
+  const auto progress = shader.render(objects, camera);
   std::list<size_t> n_done_history;
 
   do {

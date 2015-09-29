@@ -1,14 +1,15 @@
 #include <iostream>
 #include <thread>
+#include "acceleration/bsp.h"
 #include "aperture/circle.h"
 #include "aperture/polygon.h"
 #include "camera.h"
-#include "container/list.h"
 #include "image.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
 #include "lens/pinhole.h"
 #include "lens/thin.h"
+#include "object.h"
 #include "render.h"
 #include "rgb.h"
 #include "scene/cornel_box.h"
@@ -34,17 +35,19 @@ int main()
   using Vector3 = amber::Vector3<RealType>;
   using Spectrum = amber::RGB<RealType>;
 
-  using Scene = amber::container::List<Spectrum>;
+  using Shape = amber::shape::Shape<RealType>;
+  using Material = amber::material::Material<amber::RGB<RealType>>;
+  using Acceleration = amber::acceleration::BSP<amber::Object<Shape, Material>>;
 
   const auto n_thread = std::thread::hardware_concurrency();
   const auto ssaa_factor = 4;
   const auto pt_spp = 1024;
   const auto bpt_spp = 128;
 
-  const auto scene = amber::scene::cornel_box<Scene>();
-  //const auto scene  = amber::scene::spheres<Scene>();
-  //const auto shader = amber::shader::PathTracing<Scene>(n_thread, pt_spp / ssaa_factor / ssaa_factor);
-  const auto shader = amber::shader::BidirectionalPathTracing<Scene>(n_thread, bpt_spp / ssaa_factor / ssaa_factor);
+  const auto scene = amber::scene::cornel_box<Acceleration>();
+  //const auto scene  = amber::scene::spheres<Acceleration>();
+  //const auto shader = amber::shader::PathTracing<Acceleration>(n_thread, pt_spp / ssaa_factor / ssaa_factor);
+  const auto shader = amber::shader::BidirectionalPathTracing<Acceleration>(n_thread, bpt_spp / ssaa_factor / ssaa_factor);
   const auto lens   = new amber::lens::Pinhole<RealType>();
   const auto image  = new amber::Image<Spectrum>(512 * ssaa_factor, 512 * ssaa_factor);
   const auto sensor = new amber::Sensor<Spectrum>(image);

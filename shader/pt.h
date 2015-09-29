@@ -11,22 +11,23 @@
 namespace amber {
 namespace shader {
 
-template <class Scene>
-class PathTracing : public Shader<Scene>
+template <class Acceleration>
+class PathTracing : public Shader<Acceleration>
 {
 public:
-  using shader_type              = Shader<Scene>;
+  using shader_type              = Shader<Acceleration>;
 
+  using acceleration_type        = typename shader_type::acceleration_type;
   using camera_type              = typename shader_type::camera_type;
   using flux_type                = typename shader_type::flux_type;
   using hit_type                 = typename shader_type::hit_type;
+  using object_buffer_type       = typename shader_type::object_buffer_type;
   using object_type              = typename shader_type::object_type;
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
-  using scene_type               = typename shader_type::scene_type;
 
 private:
   const size_t m_n_thread, m_spp;
@@ -45,7 +46,7 @@ public:
     return ss.str();
   }
 
-  progress_const_reference render(const scene_type& scene, const camera_type& camera) const
+  progress_const_reference render(const object_buffer_type& objects, const camera_type& camera) const
   {
     // TODO refactor
     std::vector<std::thread> threads;
@@ -56,9 +57,11 @@ public:
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), Random().generator());
 
+    const auto acceleration = std::make_shared<acceleration_type>(objects);
+
     for (size_t i = 0; i < m_n_thread; i++) {
       using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&PathTracing::process, this, _1, _2, _3, _4, _5), scene, camera, future, current, pixels));
+      threads.push_back(std::thread(std::bind(&PathTracing::process, this, _1, _2, _3, _4, _5), acceleration, camera, future, current, pixels));
     }
 
     promise.set_value(std::make_shared<progress_type>(
@@ -71,7 +74,7 @@ public:
 
 private:
   void process(
-    const scene_type& scene,
+    std::shared_ptr<acceleration_type> scene,
     const camera_type& camera,
     std::shared_future<progress_reference> future,
     std::shared_ptr<std::atomic<size_t>> current,
@@ -97,7 +100,7 @@ private:
   }
 
   flux_type sample_pixel(
-    const scene_type& scene,
+    const std::shared_ptr<acceleration_type>& scene,
     const camera_type& camera,
     size_t x,
     size_t y,
@@ -112,7 +115,7 @@ private:
     while (true) {
       hit_type hit;
       object_type object;
-      std::tie(hit, object) = scene.intersect(ray);
+      std::tie(hit, object) = scene->cast(ray);
 
       if (!hit) {
         break;

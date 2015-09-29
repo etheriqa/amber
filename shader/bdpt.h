@@ -13,24 +13,25 @@
 namespace amber {
 namespace shader {
 
-template <class Scene>
-class BidirectionalPathTracing : public Shader<Scene>
+template <class Acceleration>
+class BidirectionalPathTracing : public Shader<Acceleration>
 {
 public:
-  using shader_type              = Shader<Scene>;
+  using shader_type              = Shader<Acceleration>;
 
+  using acceleration_type        = typename shader_type::acceleration_type;
   using camera_type              = typename shader_type::camera_type;
   using flux_type                = typename shader_type::flux_type;
   using hit_type                 = typename shader_type::hit_type;
+  using object_buffer_type       = typename shader_type::object_buffer_type;
   using object_type              = typename shader_type::object_type;
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
-  using scene_type               = typename shader_type::scene_type;
 
-  using light_set_type           = LightSet<scene_type>;
+  using light_set_type           = LightSet<acceleration_type>;
   using vector3_type             = Vector3<real_type>;
 
 private:
@@ -67,7 +68,7 @@ public:
     return ss.str();
   }
 
-  progress_const_reference render(const scene_type& scene, const camera_type& camera) const
+  progress_const_reference render(const object_buffer_type& objects, const camera_type& camera) const
   {
     // TODO refactor
     std::vector<std::thread> threads;
@@ -78,9 +79,12 @@ public:
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), Random().generator());
 
+    const auto acceleration = std::make_shared<acceleration_type>(objects);
+    const auto lights = std::make_shared<light_set_type>(objects);
+
     for (size_t i = 0; i < m_n_thread; i++) {
       using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5), scene, camera, future, current, pixels));
+      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5, _6), acceleration, lights, camera, future, current, pixels));
     }
 
     promise.set_value(std::make_shared<progress_type>(
@@ -93,7 +97,8 @@ public:
 
 private:
   void process(
-    const scene_type& scene,
+    std::shared_ptr<acceleration_type> scene,
+    std::shared_ptr<light_set_type> lights,
     const camera_type& camera,
     std::shared_future<progress_reference> future,
     std::shared_ptr<std::atomic<size_t>> current,
@@ -102,7 +107,6 @@ private:
   {
     // TODO refactor
     auto progress = future.get();
-    const light_set_type lights(scene);
     Random random;
 
     for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
@@ -119,7 +123,14 @@ private:
     progress->end();
   }
 
-  flux_type sample_pixel(const scene_type& scene, const light_set_type& lights, const camera_type& camera, size_t x, size_t y, Random& random) const
+  flux_type sample_pixel(
+    const std::shared_ptr<acceleration_type>& scene,
+    const std::shared_ptr<light_set_type>& lights,
+    const camera_type& camera,
+    size_t x,
+    size_t y,
+    Random& random
+  ) const
   {
     while (true) {
       const auto light_subpath = sample_light_subpath(scene, lights, random);
@@ -207,12 +218,16 @@ private:
     }
   }
 
-  std::vector<Event> sample_light_subpath(const scene_type& scene, const light_set_type& lights, Random& random) const
+  std::vector<Event> sample_light_subpath(
+    const std::shared_ptr<acceleration_type>& scene,
+    const std::shared_ptr<light_set_type>& lights,
+    Random& random
+  ) const
   {
     // s = 0
-    const auto object = lights.sample(random);
+    const auto object = lights->sample(random);
     const auto sample = object.sample_initial_ray(random);
-    const auto area_probability = 1 / lights.total_area();        // FIXME
+    const auto area_probability = 1 / lights->total_area();        // FIXME
     const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
 
     Event event;
@@ -228,7 +243,13 @@ private:
     return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
   }
 
-  std::vector<Event> sample_eye_subpath(const scene_type& scene, const camera_type& camera, size_t x, size_t y, Random& random) const
+  std::vector<Event> sample_eye_subpath(
+    const std::shared_ptr<acceleration_type>& scene,
+    const camera_type& camera,
+    size_t x,
+    size_t y,
+    Random& random
+  ) const
   {
     // t = 0
     const auto importance = flux_type(1);                         // FIXME
@@ -250,7 +271,13 @@ private:
     return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
   }
 
-  std::vector<Event> extend_subpath(const scene_type& scene, Event event, flux_type bsdf, real_type probability, Random& random) const
+  std::vector<Event> extend_subpath(
+    const std::shared_ptr<acceleration_type>& scene,
+    Event event,
+    flux_type bsdf,
+    real_type probability,
+    Random& random
+  ) const
   {
     std::vector<Event> subpath;
     subpath.reserve(16);
@@ -261,7 +288,7 @@ private:
     object_type object;
 
     while (true) {
-      std::tie(hit, object) = scene.intersect(ray);
+      std::tie(hit, object) = scene->cast(ray);
       if (!hit) {
         break;
       }
@@ -293,22 +320,18 @@ private:
     return subpath;
   }
 
-  real_type geometry_factor(const scene_type& scene, const Event& l, const Event& e) const noexcept
+  real_type geometry_factor(
+    const std::shared_ptr<acceleration_type>& scene,
+    const Event& l,
+    const Event& e
+  ) const noexcept
   {
-    if (!is_visible(scene, l, e)) {
+    ray_type ray(l.position, e.position - l.position);
+    if (!scene->test_visibility(ray, e.object)) {
       return 0;
     }
 
-    const auto direction = normalize(e.position - l.position);
-
-    return std::abs(dot(direction, l.normal) * dot(direction, e.normal)) / norm2(e.position - l.position);
-  }
-
-  bool is_visible(const scene_type& scene, const Event& l, const Event& e) const noexcept
-  {
-    object_type object;
-    std::tie(std::ignore, object) = scene.intersect(ray_type(l.position, e.position - l.position));
-    return object.shape == e.object.shape && object.material == e.object.material;
+    return std::abs(dot(ray.direction, l.normal) * dot(ray.direction, e.normal)) / norm2(e.position - l.position);
   }
 };
 
