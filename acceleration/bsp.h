@@ -32,43 +32,40 @@ private:
     std::shared_ptr<Node> m_left, m_right;
     aabb_type m_aabb;
 
-    static aabb_type aabb(const object_buffer_type& objects) noexcept
-    {
-      auto aabb = aabb_type::empty();
-      for (const auto& object : objects) {
-        aabb += object.aabb();
-      }
-      return aabb;
-    }
-
     explicit Node(const object_buffer_type& objects) :
-      Node(objects, aabb(objects), kAxisX, 1)
+      Node(objects, aabb_type::universal(), kAxisX, 1)
     {}
 
     Node(const object_buffer_type& objects, const aabb_type& aabb, Axis axis, size_t depth) :
       m_aabb(aabb)
     {
+      auto objects_aabb = aabb_type::empty();
+      for (const auto& object : objects) {
+        objects_aabb += object.aabb();
+      }
+      m_aabb *= objects_aabb;
+
       if (objects.size() <= LeafCapacity || depth >= MaxDepth) {
         m_objects = objects;
         return;
       }
 
-      auto left_aabb = aabb;
-      auto right_aabb = aabb;
+      auto left_aabb = m_aabb;
+      auto right_aabb = m_aabb;
       switch (axis) {
       case kAxisX:
-        left_aabb.max.x = (aabb.min.x + aabb.max.x) / 2;
-        right_aabb.min.x = (aabb.min.x + aabb.max.x) / 2;
+        left_aabb.max.x = (m_aabb.min.x + m_aabb.max.x) / 2;
+        right_aabb.min.x = (m_aabb.min.x + m_aabb.max.x) / 2;
         axis = kAxisY;
         break;
       case kAxisY:
-        left_aabb.max.y = (aabb.min.y + aabb.max.y) / 2;
-        right_aabb.min.y = (aabb.min.y + aabb.max.y) / 2;
+        left_aabb.max.y = (m_aabb.min.y + m_aabb.max.y) / 2;
+        right_aabb.min.y = (m_aabb.min.y + m_aabb.max.y) / 2;
         axis = kAxisZ;
         break;
       case kAxisZ:
-        left_aabb.max.z = (aabb.min.z + aabb.max.z) / 2;
-        right_aabb.min.z = (aabb.min.z + aabb.max.z) / 2;
+        left_aabb.max.z = (m_aabb.min.z + m_aabb.max.z) / 2;
+        right_aabb.min.z = (m_aabb.min.z + m_aabb.max.z) / 2;
         axis = kAxisX;
         break;
       }
