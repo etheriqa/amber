@@ -13,7 +13,6 @@
 #include "render.h"
 #include "rgb.h"
 #include "scene/cornel_box.h"
-#include "scene/spheres.h"
 #include "shader/bdpt.h"
 #include "shader/pt.h"
 #include "tonemap/gamma.h"
@@ -45,7 +44,6 @@ int main()
   const auto bpt_spp = 128;
 
   const auto scene = amber::scene::cornel_box<Acceleration>();
-  //const auto scene  = amber::scene::spheres<Acceleration>();
   //const auto shader = amber::shader::PathTracing<Acceleration>(n_thread, pt_spp / ssaa_factor / ssaa_factor);
   const auto shader = amber::shader::BidirectionalPathTracing<Acceleration>(n_thread, bpt_spp / ssaa_factor / ssaa_factor);
   const auto lens   = new amber::lens::Pinhole<RealType>();
