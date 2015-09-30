@@ -37,8 +37,8 @@ public:
     m_origin(origin)
   {
     m_w = normalize(origin - eye);
-    m_u = cross(normalize(up), m_w);
-    m_v = cross(m_w, m_u);
+    m_u = normalize(cross(up, m_w));
+    m_v = normalize(cross(m_w, m_u));
   }
 
   size_t image_width() const

@@ -47,30 +47,30 @@ typename Acceleration::object_buffer_type cornel_box()
   // left
   objects.emplace_back(
     new ConvexPolygon({
-      Vector3(1,  1,  1),
-      Vector3(1,  1, -1),
-      Vector3(1, -1, -1),
-      Vector3(1, -1,  1),
+      Vector3(-1,  1,  1),
+      Vector3(-1, -1,  1),
+      Vector3(-1, -1, -1),
+      Vector3(-1,  1, -1),
     }),
     new Lambertian(RGB(.5, .0, .0))
   );
   // right
   objects.emplace_back(
     new ConvexPolygon({
-      Vector3(-1,  1,  1),
-      Vector3(-1, -1,  1),
-      Vector3(-1, -1, -1),
-      Vector3(-1,  1, -1),
+      Vector3(1,  1,  1),
+      Vector3(1,  1, -1),
+      Vector3(1, -1, -1),
+      Vector3(1, -1,  1),
     }),
     new Lambertian(RGB(.0, .5, .0))
   );
   // back
   objects.emplace_back(
     new ConvexPolygon({
-      Vector3( 1,  1, 1),
-      Vector3( 1, -1, 1),
-      Vector3(-1, -1, 1),
-      Vector3(-1,  1, 1),
+      Vector3( 1,  1, -1),
+      Vector3(-1,  1, -1),
+      Vector3(-1, -1, -1),
+      Vector3( 1, -1, -1),
     }),
     new Lambertian(RGB(.5, .5, .5))
   );
@@ -95,11 +95,11 @@ typename Acceleration::object_buffer_type cornel_box()
     new Lambertian(RGB(.5, .5, .5))
   );
   // diffuse sphere
-  objects.emplace_back(new Sphere(Vector3(-0.4, -0.6,  0.5), 0.4), new Lambertian(RGB(.5, .5, .5)));
+  objects.emplace_back(new Sphere(Vector3( 0.4, -0.6, -0.5), 0.4), new Lambertian(RGB(.5, .5, .5)));
   // specular sphere
-  objects.emplace_back(new Sphere(Vector3( 0.4, -0.7, -0.1), 0.3), new Specular(RGB(.95, .95, .95)));
+  objects.emplace_back(new Sphere(Vector3(-0.4, -0.7,  0.1), 0.3), new Specular(RGB(.95, .95, .95)));
   // refraction sphere
-  objects.emplace_back(new Sphere(Vector3(-0.1, -0.8, -0.6), 0.2), new Refraction(1.5));
+  objects.emplace_back(new Sphere(Vector3( 0.1, -0.8,  0.6), 0.2), new Refraction(1.5));
 
   return objects;
 }

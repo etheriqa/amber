@@ -49,7 +49,7 @@ int main()
   const auto lens   = new amber::lens::Pinhole<RealType>();
   const auto image  = new amber::Image<Spectrum>(512 * ssaa_factor, 512 * ssaa_factor);
   const auto sensor = new amber::Sensor<Spectrum>(image);
-  const auto camera = amber::Camera<Spectrum>(lens, sensor, Vector3(0, 0, -4), Vector3(0, 0, 0), Vector3(0, 1, 0));
+  const auto camera = amber::Camera<Spectrum>(lens, sensor, Vector3(0, 0, 4), Vector3(0, 0, 0), Vector3(0, 1, 0));
 
   amber::render(shader, scene, camera);
 
