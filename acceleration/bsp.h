@@ -4,12 +4,11 @@
 #include <memory>
 #include <sstream>
 #include "acceleration/acceleration.h"
-#include "acceleration/list.h"
 
 namespace amber {
 namespace acceleration {
 
-template <class Object, size_t LeafCapacity = 16, size_t MaxDepth = 64>
+template <class Object, size_t LeafCapacity = 16, size_t MaxDepth = 24>
 class BSP : public Acceleration<Object>
 {
 public:
@@ -46,7 +45,7 @@ private:
       }
       m_aabb *= objects_aabb;
 
-      if (objects.size() <= LeafCapacity || depth >= MaxDepth) {
+      if (objects.size() <= LeafCapacity || depth > MaxDepth) {
         m_objects = objects;
         return;
       }
@@ -89,7 +88,7 @@ private:
     std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
     {
       if (!m_left || !m_right) {
-        return List<object_type, object_buffer_type>::cast(m_objects, ray);
+        return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray);
       }
 
       bool hit_left, hit_right;

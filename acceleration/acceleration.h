@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iterator>
+#include <algorithm>
 #include <tuple>
 
 namespace amber {
@@ -20,7 +20,26 @@ struct Acceleration
   {
     return std::get<1>(cast(ray)) == object;
   }
+
+protected:
+  template <class InputIterator>
+  static std::tuple<hit_type, object_type> traverse(InputIterator first, InputIterator last, const ray_type& ray) noexcept
+  {
+    hit_type closest_hit;
+    object_type closest_object;
+
+    std::for_each(first, last, [&](const auto& object){
+      const auto hit = object.intersect(ray);
+      if (hit && (!closest_hit || hit.distance < closest_hit.distance)) {
+        closest_hit = hit;
+        closest_object = object;
+      }
+    });
+
+    return std::make_tuple(closest_hit, closest_object);
+  }
 };
+
 
 }
 }

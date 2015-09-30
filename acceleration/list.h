@@ -27,27 +27,11 @@ public:
     return std::string("List");
   }
 
-  static std::tuple<hit_type, object_type> cast(const object_buffer_type& objects, const ray_type& ray) noexcept
-  {
-    hit_type closest_hit;
-    object_type closest_object;
-
-    for (const auto& object : objects) {
-      const auto hit = object.intersect(ray);
-      if (hit && (!closest_hit || hit.distance < closest_hit.distance)) {
-        closest_hit = hit;
-        closest_object = object;
-      }
-    }
-
-    return std::make_tuple(closest_hit, closest_object);
-  }
-
   explicit List(const object_buffer_type& objects) : m_objects(objects) {}
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
   {
-    return cast(m_objects, ray);
+    return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray);
   }
 };
 
