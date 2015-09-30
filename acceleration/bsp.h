@@ -1,7 +1,6 @@
 #pragma once
 
 #include <deque>
-#include <memory>
 #include <sstream>
 #include "acceleration/acceleration.h"
 
@@ -28,16 +27,16 @@ private:
   {
     using aabb_type = typename object_type::aabb_type;
 
-    object_buffer_type m_objects;
-    std::shared_ptr<Node> m_left, m_right;
+    Node *m_left, *m_right;
     aabb_type m_aabb;
+    object_buffer_type m_objects;
 
     explicit Node(const object_buffer_type& objects) :
       Node(objects, aabb_type::universal(), kAxisX, 1)
     {}
 
     Node(const object_buffer_type& objects, const aabb_type& aabb, Axis axis, size_t depth) :
-      m_aabb(aabb)
+      m_left(nullptr), m_right(nullptr), m_aabb(aabb)
     {
       auto objects_aabb = aabb_type::empty();
       for (const auto& object : objects) {
@@ -81,13 +80,19 @@ private:
         }
       }
 
-      m_left.reset(new Node(left_objects, left_aabb, axis, depth + 1));
-      m_right.reset(new Node(right_objects, right_aabb, axis, depth + 1));
+      m_left = new Node(left_objects, left_aabb, axis, depth + 1);
+      m_right = new Node(right_objects, right_aabb, axis, depth + 1);
+    }
+
+    ~Node()
+    {
+      delete m_left;
+      delete m_right;
     }
 
     std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
     {
-      if (!m_left || !m_right) {
+      if (m_left == nullptr || m_right == nullptr) {
         return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray);
       }
 
@@ -128,7 +133,7 @@ private:
     }
   };
 
-  std::shared_ptr<Node> m_root;
+  Node *m_root;
 
 public:
   static std::string to_string() noexcept
@@ -139,6 +144,11 @@ public:
   }
 
   explicit BSP(const object_buffer_type& objects) : m_root(new Node(objects)) {}
+
+  ~BSP()
+  {
+    delete m_root;
+  }
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
   {
