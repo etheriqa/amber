@@ -1,7 +1,7 @@
 #pragma once
 
-#include <deque>
 #include <sstream>
+#include <vector>
 #include "acceleration/acceleration.h"
 
 namespace amber {
@@ -18,7 +18,7 @@ public:
   using ray_type           = typename acceleration_type::ray_type;
   using real_type          = typename acceleration_type::object_type::real_type;
 
-  using object_buffer_type = std::deque<Object>;
+  using object_buffer_type = std::vector<Object>;
 
 private:
   enum Axis { kAxisX, kAxisY, kAxisZ };
