@@ -19,8 +19,8 @@ struct Lens {
 
   virtual ~Lens() {}
 
-  virtual std::string to_string() const;
-  virtual ray_type sample_ray(const vector3_type&, Random&) const;
+  virtual std::string to_string() const = 0;
+  virtual ray_type sample_ray(const vector3_type&, Random&) const = 0;
 };
 
 }
