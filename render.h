@@ -13,7 +13,7 @@
 
 namespace amber {
 
-template <class Acceleration>
+template <typename Acceleration>
 void render(
   const shader::Shader<Acceleration>& shader,
   const typename Acceleration::object_buffer_type& objects,

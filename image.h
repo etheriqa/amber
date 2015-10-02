@@ -4,7 +4,7 @@
 
 namespace amber {
 
-template <class Pixel>
+template <typename Pixel>
 class Image
 {
 public:

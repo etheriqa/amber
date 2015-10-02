@@ -7,7 +7,7 @@
 namespace amber {
 namespace material {
 
-template <class Flux>
+template <typename Flux>
 class Lambertian : public Material<Flux>
 {
 public:

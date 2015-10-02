@@ -73,7 +73,7 @@ public:
   }
 };
 
-template <class Acceleration>
+template <typename Acceleration>
 struct Shader
 {
   using shader_type              = Shader<Acceleration>;

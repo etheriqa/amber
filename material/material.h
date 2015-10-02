@@ -7,7 +7,7 @@
 namespace amber {
 namespace material {
 
-template <class Flux>
+template <typename Flux>
 struct Material
 {
   using material_type   = Material<Flux>;

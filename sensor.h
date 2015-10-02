@@ -5,7 +5,7 @@
 
 namespace amber {
 
-template <class Flux>
+template <typename Flux>
 class Sensor
 {
 public:

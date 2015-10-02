@@ -8,7 +8,7 @@
 namespace amber {
 namespace material {
 
-template <class Flux>
+template <typename Flux>
 class Phong : public Material<Flux>
 {
 public:

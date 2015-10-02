@@ -7,7 +7,7 @@
 namespace amber {
 namespace acceleration {
 
-template <class Object, class ObjectBuffer = std::vector<Object>>
+template <typename Object, typename ObjectBuffer = std::vector<Object>>
 class List : public Acceleration<Object>
 {
 public:

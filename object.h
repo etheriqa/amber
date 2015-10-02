@@ -5,7 +5,7 @@
 
 namespace amber {
 
-template <class Shape, class Material>
+template <typename Shape, typename Material>
 class Object
 {
 public:

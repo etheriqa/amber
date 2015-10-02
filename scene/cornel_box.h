@@ -12,7 +12,7 @@
 namespace amber {
 namespace scene {
 
-template <class Acceleration>
+template <typename Acceleration>
 typename Acceleration::object_buffer_type cornel_box()
 {
   using RealType      = typename Acceleration::object_type::shape_type::real_type;

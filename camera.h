@@ -11,7 +11,7 @@
 
 namespace amber {
 
-template <class Flux>
+template <typename Flux>
 class Camera
 {
 public:

@@ -6,7 +6,7 @@
 namespace amber {
 namespace acceleration {
 
-template <class Object>
+template <typename Object>
 struct Acceleration
 {
   using object_type   = Object;
@@ -22,7 +22,7 @@ struct Acceleration
   }
 
 protected:
-  template <class InputIterator>
+  template <typename InputIterator>
   static std::tuple<hit_type, object_type> traverse(InputIterator first, InputIterator last, const ray_type& ray) noexcept
   {
     hit_type closest_hit;

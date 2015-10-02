@@ -11,7 +11,7 @@
 namespace amber {
 namespace shader {
 
-template <class Acceleration>
+template <typename Acceleration>
 class PathTracing : public Shader<Acceleration>
 {
 public:

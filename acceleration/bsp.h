@@ -7,7 +7,7 @@
 namespace amber {
 namespace acceleration {
 
-template <class Object, size_t LeafCapacity = 16, size_t MaxDepth = 24>
+template <typename Object, size_t LeafCapacity = 16, size_t MaxDepth = 24>
 class BSP : public Acceleration<Object>
 {
 public:
