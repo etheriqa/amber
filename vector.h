@@ -28,6 +28,34 @@ struct Vector3
     x(x), y(y), z(z)
   {}
 
+  real_type& operator[](size_t pos) noexcept
+  {
+    switch (pos) {
+    case 0:
+      return x;
+    case 1:
+      return y;
+    case 2:
+      return z;
+    default:
+      throw std::runtime_error("invalid position");
+    }
+  }
+
+  const real_type& operator[](size_t pos) const noexcept
+  {
+    switch (pos) {
+    case 0:
+      return x;
+    case 1:
+      return y;
+    case 2:
+      return z;
+    default:
+      throw std::runtime_error("invalid position");
+    }
+  }
+
   vector3_type& operator+=(const vector3_type& a) noexcept
   {
     *this = *this + a;

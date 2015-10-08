@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include "material/material.h"
 #include "shape/shape.h"
 
@@ -23,6 +24,23 @@ public:
 
   using shape_reference         = shape_type*;
   using material_reference      = material_type*;
+
+  struct Hash
+  {
+    size_t operator()(const Object& o) const noexcept
+    {
+      return std::hash<size_t>()(reinterpret_cast<size_t>(o.m_shape)) +
+        std::hash<size_t>()(reinterpret_cast<size_t>(o.m_material));
+    }
+  };
+
+  struct EqualTo
+  {
+    bool operator()(const Object& a, const Object& b) const noexcept
+    {
+      return a == b;
+    }
+  };
 
 private:
   shape_reference m_shape;

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <ostream>
 #include <tuple>
 #include "ray.h"
 #include "vector.h"
@@ -35,6 +36,8 @@ struct AABB
     );
   }
 
+  explicit AABB() : AABB(empty()) {}
+
   explicit AABB(const vector3_type& point) : min(point), max(point) {}
 
   AABB(const vector3_type& min, const vector3_type& max) :
@@ -58,9 +61,12 @@ struct AABB
     return *this;
   }
 
-  vector3_type center() const noexcept
+  real_type surface_area() const noexcept
   {
-    return (min + max) / static_cast<real_type>(2);
+    const auto x = max.x - min.x;
+    const auto y = max.y - min.y;
+    const auto z = max.z - min.z;
+    return 2 * (x * y + y * z + z * x);
   }
 
   std::tuple<bool, real_type, real_type> intersect(const ray_type& ray) const noexcept
@@ -97,6 +103,13 @@ struct AABB
     return std::make_tuple(true, tmin, tmax);
   }
 };
+
+template <typename RealType>
+std::ostream& operator<<(std::ostream& os, const AABB<RealType>& aabb)
+{
+  os << "([" << aabb.min.x << ", " << aabb.max.x << "], [" << aabb.min.y << ", " << aabb.max.y << "], [" << aabb.min.z << ", " << aabb.max.z << "])";
+  return os;
+}
 
 template <typename RealType>
 AABB<RealType> operator+(const AABB<RealType>& a, const AABB<RealType>& b) noexcept

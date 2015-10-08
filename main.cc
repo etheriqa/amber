@@ -1,6 +1,6 @@
 #include <iostream>
 #include <thread>
-#include "acceleration/bsp.h"
+#include "acceleration/kdtree.h"
 #include "aperture/circle.h"
 #include "aperture/polygon.h"
 #include "camera.h"
@@ -36,7 +36,7 @@ int main()
 
   using Shape = amber::shape::Shape<RealType>;
   using Material = amber::material::Material<amber::RGB<RealType>>;
-  using Acceleration = amber::acceleration::BSP<amber::Object<Shape, Material>>;
+  using Acceleration = amber::acceleration::KDTree<amber::Object<Shape, Material>>;
 
   const auto n_thread = std::thread::hardware_concurrency();
   const auto ssaa_factor = 4;
