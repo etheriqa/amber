@@ -2,23 +2,23 @@
 
 #include "algebra.h"
 #include "constant.h"
-#include "shape/shape.h"
+#include "primitive/primitive.h"
 #include "vector.h"
 
 namespace amber {
-namespace shape {
+namespace primitive {
 
 template <typename RealType>
-class Sphere : public Shape<RealType>
+class Sphere : public Primitive<RealType>
 {
 public:
-  using shape_type              = Shape<RealType>;
+  using primitive_type          = Primitive<RealType>;
 
-  using aabb_type               = typename shape_type::aabb_type;
-  using hit_type                = typename shape_type::hit_type;
-  using initial_ray_sample_type = typename shape_type::initial_ray_sample_type;
-  using ray_type                = typename shape_type::ray_type;
-  using real_type               = typename shape_type::real_type;
+  using aabb_type               = typename primitive_type::aabb_type;
+  using hit_type                = typename primitive_type::hit_type;
+  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
+  using ray_type                = typename primitive_type::ray_type;
+  using real_type               = typename primitive_type::real_type;
 
   using vector3_type            = Vector3<real_type>;
 

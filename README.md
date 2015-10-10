@@ -13,7 +13,7 @@ Features
     - Bidirectional path tracing
 - Geometric primitives
     - Triangle
-    - Circle
+    - Disk
     - Sphere
     - Cylinder
 - Materials
@@ -32,4 +32,4 @@ References
 - T. Möller and B. Trumbore, Fast, Minimum Storage Ray/Triangle Intersection, *Journal of Graphics Tools* **2** (1), 1997.
 - E. Reinhard, M. Stark, P. Shirley and J. Ferwerda, Photographic Tone Reproduction for Digital Images, *ACM Transactions on Graphics* **21** (3), 2002.
 - E. Veach, *Robust Monte Carlo Methods for Light Transport Simulation*, Ph.D. Dissertation, Stanford University, 1997.
-- I. Wald and V. Havran, On building fast kd-Trees for Ray Tracing, and on doing that in O(N log N), Proceedings of *the 2006 IEEE Symposium on Interactive Ray Tracing*, 2006
+- I. Wald and V. Havran, On building fast kd-Trees for Ray Tracing, and on doing that in O(N log N), Proceedings of *the 2006 IEEE Symposium on Interactive Ray Tracing*, 2006.

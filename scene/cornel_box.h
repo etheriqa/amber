@@ -5,8 +5,8 @@
 #include "material/phong.h"
 #include "material/refraction.h"
 #include "material/specular.h"
-#include "shape/convex_polygon.h"
-#include "shape/sphere.h"
+#include "primitive/convex_polygon.h"
+#include "primitive/sphere.h"
 #include "vector.h"
 
 namespace amber {
@@ -15,12 +15,12 @@ namespace scene {
 template <typename Acceleration>
 typename Acceleration::object_buffer_type cornel_box()
 {
-  using RealType      = typename Acceleration::object_type::shape_type::real_type;
+  using RealType      = typename Acceleration::object_type::primitive_type::real_type;
 
   using Vector3       = Vector3<RealType>;
 
-  using ConvexPolygon = shape::ConvexPolygon<RealType>;
-  using Sphere        = shape::Sphere<RealType>;
+  using ConvexPolygon = primitive::ConvexPolygon<RealType>;
+  using Sphere        = primitive::Sphere<RealType>;
 
   using RGB           = typename Acceleration::object_type::material_type::flux_type;
 

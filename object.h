@@ -2,34 +2,34 @@
 
 #include <functional>
 #include "material/material.h"
-#include "shape/shape.h"
+#include "primitive/primitive.h"
 
 namespace amber {
 
-template <typename Shape, typename Material>
+template <typename Primitive, typename Material>
 class Object
 {
 public:
-  using shape_type              = Shape;
+  using primitive_type          = Primitive;
   using material_type           = Material;
 
-  using aabb_type               = typename shape_type::aabb_type;
-  using hit_type                = typename shape_type::hit_type;
-  using initial_ray_sample_type = typename shape_type::initial_ray_sample_type;
-  using ray_type                = typename shape_type::ray_type;
-  using real_type               = typename shape_type::real_type;
+  using aabb_type               = typename primitive_type::aabb_type;
+  using hit_type                = typename primitive_type::hit_type;
+  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
+  using ray_type                = typename primitive_type::ray_type;
+  using real_type               = typename primitive_type::real_type;
   using flux_type               = typename material_type::flux_type;
   using scattering_sample_type  = typename material_type::ScatteringSample;
   using vector3_type            = typename material_type::vector3_type;
 
-  using shape_reference         = shape_type*;
+  using primitive_reference     = primitive_type*;
   using material_reference      = material_type*;
 
   struct Hash
   {
     size_t operator()(const Object& o) const noexcept
     {
-      return std::hash<size_t>()(reinterpret_cast<size_t>(o.m_shape)) +
+      return std::hash<size_t>()(reinterpret_cast<size_t>(o.m_primitive)) +
         std::hash<size_t>()(reinterpret_cast<size_t>(o.m_material));
     }
   };
@@ -43,19 +43,19 @@ public:
   };
 
 private:
-  shape_reference m_shape;
+  primitive_reference m_primitive;
   material_reference m_material;
 
 public:
-  explicit Object() : m_shape(nullptr), m_material(nullptr) {}
+  explicit Object() : m_primitive(nullptr), m_material(nullptr) {}
 
-  Object(const shape_reference& shape, const material_reference& material) :
-    m_shape(shape), m_material(material)
+  Object(const primitive_reference& primitive, const material_reference& material) :
+    m_primitive(primitive), m_material(material)
   {}
 
   bool operator==(const Object& o) const noexcept
   {
-    return m_shape == o.m_shape && m_material == o.m_material;
+    return m_primitive == o.m_primitive && m_material == o.m_material;
   }
 
   bool operator!=(const Object& o) const noexcept
@@ -65,22 +65,22 @@ public:
 
   real_type surface_area() const noexcept
   {
-    return m_shape->surface_area();
+    return m_primitive->surface_area();
   }
 
   aabb_type aabb() const noexcept
   {
-    return m_shape->aabb();
+    return m_primitive->aabb();
   }
 
   hit_type intersect(const ray_type& ray) const noexcept
   {
-    return m_shape->intersect(ray);
+    return m_primitive->intersect(ray);
   }
 
   initial_ray_sample_type sample_initial_ray(Random& random) const
   {
-    return m_shape->sample_initial_ray(random);
+    return m_primitive->sample_initial_ray(random);
   }
 
   bool is_emissive() const noexcept

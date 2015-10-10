@@ -34,9 +34,9 @@ int main()
   using Vector3 = amber::Vector3<RealType>;
   using Spectrum = amber::RGB<RealType>;
 
-  using Shape = amber::shape::Shape<RealType>;
+  using Primitive = amber::primitive::Primitive<RealType>;
   using Material = amber::material::Material<amber::RGB<RealType>>;
-  using Acceleration = amber::acceleration::KDTree<amber::Object<Shape, Material>>;
+  using Acceleration = amber::acceleration::KDTree<amber::Object<Primitive, Material>>;
 
   const auto n_thread = std::thread::hardware_concurrency();
   const auto ssaa_factor = 4;
