@@ -13,7 +13,7 @@ private:
   std::mt19937_64 m_engine;
 
 public:
-  Random() : m_engine(std::default_random_engine()()) {}
+  Random() : m_engine(std::random_device()()) {}
 
   auto& generator()
   {
