@@ -52,7 +52,7 @@ public:
 
   aabb_type aabb() const noexcept
   {
-    auto aabb = aabb_type::empty();
+    aabb_type aabb;
     for (const auto& triangle : m_triangles) {
       aabb += triangle.aabb();
     }

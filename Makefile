@@ -6,7 +6,7 @@ DEPS = $(SRCS:.cc=.d)
 OBJS = $(SRCS:.cc=.o)
 
 CPPFLAGS = -MMD -MP -I$(SRC_DIR)
-CXXFLAGS = -Wall -std=c++1y -O3
+CXXFLAGS = -Wall -std=c++1y -O3 -mavx
 
 .PHONY: run render clean
 

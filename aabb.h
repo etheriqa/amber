@@ -4,6 +4,7 @@
 #include <limits>
 #include <ostream>
 #include <tuple>
+#include <immintrin.h>
 #include "constant.h"
 #include "ray.h"
 #include "vector.h"
@@ -72,39 +73,7 @@ struct AABB
 
   std::tuple<bool, real_type, real_type> intersect(const ray_type& ray, real_type t_max) const noexcept
   {
-    real_type t_min = static_cast<real_type>(kEPS);
-
-    {
-      const auto t0 = (min.x - ray.origin.x) / ray.direction.x;
-      const auto t1 = (max.x - ray.origin.x) / ray.direction.x;
-      t_min = std::max(t_min, std::min(t0, t1));
-      t_max = std::min(t_max, std::max(t0, t1));
-      if (t_min > t_max) {
-        return std::make_tuple(false, 0, 0);
-      }
-    }
-
-    {
-      const auto t0 = (min.y - ray.origin.y) / ray.direction.y;
-      const auto t1 = (max.y - ray.origin.y) / ray.direction.y;
-      t_min = std::max(t_min, std::min(t0, t1));
-      t_max = std::min(t_max, std::max(t0, t1));
-      if (t_min > t_max) {
-        return std::make_tuple(false, 0, 0);
-      }
-    }
-
-    {
-      const auto t0 = (min.z - ray.origin.z) / ray.direction.z;
-      const auto t1 = (max.z - ray.origin.z) / ray.direction.z;
-      t_min = std::max(t_min, std::min(t0, t1));
-      t_max = std::min(t_max, std::max(t0, t1));
-      if (t_min > t_max) {
-        return std::make_tuple(false, 0, 0);
-      }
-    }
-
-    return std::make_tuple(true, t_min, t_max);
+    return ray_aabb_intersection(ray, *this, t_max);
   }
 };
 
@@ -147,6 +116,76 @@ AABB<RealType> operator*(const AABB<RealType>& a, const AABB<RealType>& b) noexc
       std::min(a.max.z, b.max.z)
     )
   );
+}
+
+template <typename RealType>
+std::tuple<bool, RealType, RealType> ray_aabb_intersection(const Ray<RealType>& ray, const AABB<RealType>& aabb, RealType t_max) noexcept
+{
+  auto t_min = static_cast<RealType>(kEPS);
+
+  {
+    const auto t0 = (aabb.min.x - ray.origin.x) / ray.direction.x;
+    const auto t1 = (aabb.max.x - ray.origin.x) / ray.direction.x;
+    t_min = std::max(t_min, std::min(t0, t1));
+    t_max = std::min(t_max, std::max(t0, t1));
+    if (t_min > t_max) {
+      return std::make_tuple(false, 0, 0);
+    }
+  }
+
+  {
+    const auto t0 = (aabb.min.y - ray.origin.y) / ray.direction.y;
+    const auto t1 = (aabb.max.y - ray.origin.y) / ray.direction.y;
+    t_min = std::max(t_min, std::min(t0, t1));
+    t_max = std::min(t_max, std::max(t0, t1));
+    if (t_min > t_max) {
+      return std::make_tuple(false, 0, 0);
+    }
+  }
+
+  {
+    const auto t0 = (aabb.min.z - ray.origin.z) / ray.direction.z;
+    const auto t1 = (aabb.max.z - ray.origin.z) / ray.direction.z;
+    t_min = std::max(t_min, std::min(t0, t1));
+    t_max = std::min(t_max, std::max(t0, t1));
+    if (t_min > t_max) {
+      return std::make_tuple(false, 0, 0);
+    }
+  }
+
+  return std::make_tuple(true, t_min, t_max);
+}
+
+template <>
+std::tuple<bool, double, double> ray_aabb_intersection(const Ray<double>& ray, const AABB<double>& aabb, double t_max) noexcept
+{
+  auto t_min = static_cast<double>(kEPS);
+
+  const auto ray_origin = _mm256_setr_pd(ray.origin.x, ray.origin.y, ray.origin.z, 0);
+  const auto inverse_ray_direction = _mm256_div_pd(
+    _mm256_setr_pd(1, 1, 1, 1),
+    _mm256_setr_pd(ray.direction.x, ray.direction.y, ray.direction.z, 1)
+  );
+  const auto aabb_min = _mm256_setr_pd(aabb.min.x, aabb.min.y, aabb.min.z, 0);
+  const auto aabb_max = _mm256_setr_pd(aabb.max.x, aabb.max.y, aabb.max.z, 0);
+
+  const auto t0 = _mm256_mul_pd(
+    _mm256_sub_pd(aabb_min, ray_origin),
+    inverse_ray_direction
+  );
+  const auto t1 = _mm256_mul_pd(
+    _mm256_sub_pd(aabb_max, ray_origin),
+    inverse_ray_direction
+  );
+
+  double t_mins[4], t_maxs[4];
+  _mm256_store_pd(t_mins, _mm256_min_pd(t0, t1));
+  _mm256_store_pd(t_maxs, _mm256_max_pd(t0, t1));
+
+  t_min = std::max({t_min, t_mins[0], t_mins[1], t_mins[2]});
+  t_max = std::min({t_max, t_maxs[0], t_maxs[1], t_maxs[2]});
+
+  return std::make_tuple(t_min <= t_max, t_min, t_max);
 }
 
 }

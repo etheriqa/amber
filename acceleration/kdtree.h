@@ -254,7 +254,7 @@ private:
 
     static aabb_type aabb(const object_buffer_type& objects) noexcept
     {
-      auto aabb = aabb_type::empty();
+      aabb_type aabb;
       for (const auto& object : objects) {
         aabb += object.aabb();
       }
