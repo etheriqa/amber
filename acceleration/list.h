@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <string>
 #include <vector>
 #include "acceleration/acceleration.h"
@@ -19,6 +20,8 @@ public:
   using ray_type           = typename acceleration_type::ray_type;
 
 private:
+  using real_type = typename object_type::real_type;
+
   ObjectBuffer m_objects;
 
 public:
@@ -31,7 +34,7 @@ public:
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
   {
-    return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray);
+    return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray, std::numeric_limits<real_type>::max());
   }
 };
 

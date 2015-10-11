@@ -4,6 +4,7 @@
 #include <limits>
 #include <ostream>
 #include <tuple>
+#include "constant.h"
 #include "ray.h"
 #include "vector.h"
 
@@ -69,23 +70,26 @@ struct AABB
     return 2 * (x * y + y * z + z * x);
   }
 
-  std::tuple<bool, real_type, real_type> intersect(const ray_type& ray) const noexcept
+  std::tuple<bool, real_type, real_type> intersect(const ray_type& ray, real_type t_max) const noexcept
   {
-    real_type tmin, tmax;
+    real_type t_min = static_cast<real_type>(kEPS);
 
     {
       const auto t0 = (min.x - ray.origin.x) / ray.direction.x;
       const auto t1 = (max.x - ray.origin.x) / ray.direction.x;
-      tmin = std::min(t0, t1);
-      tmax = std::max(t0, t1);
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
+        return std::make_tuple(false, 0, 0);
+      }
     }
 
     {
       const auto t0 = (min.y - ray.origin.y) / ray.direction.y;
       const auto t1 = (max.y - ray.origin.y) / ray.direction.y;
-      tmin = std::max(tmin, std::min(t0, t1));
-      tmax = std::min(tmax, std::max(t0, t1));
-      if (tmin > tmax || tmax < kEPS) {
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
         return std::make_tuple(false, 0, 0);
       }
     }
@@ -93,14 +97,14 @@ struct AABB
     {
       const auto t0 = (min.z - ray.origin.z) / ray.direction.z;
       const auto t1 = (max.z - ray.origin.z) / ray.direction.z;
-      tmin = std::max(tmin, std::min(t0, t1));
-      tmax = std::min(tmax, std::max(t0, t1));
-      if (tmin > tmax || tmax < kEPS) {
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
         return std::make_tuple(false, 0, 0);
       }
     }
 
-    return std::make_tuple(true, tmin, tmax);
+    return std::make_tuple(true, t_min, t_max);
   }
 };
 
