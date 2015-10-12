@@ -74,7 +74,7 @@ private:
       Node(objects.size(), build_event_list(objects), aabb(objects))
     {}
 
-    Node(size_t n, event_list_type&& events, const aabb_type& voxel) :
+    Node(size_t n, event_list_type events, const aabb_type& voxel) :
       m_left(nullptr),
       m_right(nullptr),
       m_objects(nullptr),

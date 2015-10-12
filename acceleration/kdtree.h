@@ -113,7 +113,7 @@ private:
       Node(objects.size(), aabb(objects), std::move(build_event_list(objects)), 0)
     {}
 
-    Node(size_t n, const aabb_type& voxel, event_list_type&& events, size_t depth) :
+    Node(size_t n, const aabb_type& voxel, event_list_type events, size_t depth) :
       m_left(nullptr),
       m_right(nullptr),
       m_objects(nullptr),
