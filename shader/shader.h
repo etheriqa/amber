@@ -18,12 +18,14 @@ class ShadingProgress
   std::vector<std::thread> m_threads;
 
 public:
-  ShadingProgress(size_t n_task, std::vector<std::thread> threads) :
+  ShadingProgress(size_t n_task, std::vector<std::thread>&& threads) :
     m_n_task(n_task),
     m_n_done(0),
     m_begin_time(std::chrono::system_clock::now()),
     m_threads(std::move(threads))
   {}
+
+  ShadingProgress(const ShadingProgress&) = delete;
 
   ~ShadingProgress()
   {
@@ -31,6 +33,8 @@ public:
       thread.join();
     }
   }
+
+  ShadingProgress& operator=(const ShadingProgress&) = delete;
 
   size_t n_task() const
   {

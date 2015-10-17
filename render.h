@@ -28,16 +28,16 @@ void render(
     << std::endl;
 
   const auto progress = shader->render(objects, camera);
-  std::list<size_t> n_done_history;
+  std::list<size_t> n_done_history({0});
 
   do {
+    using namespace std::literals;
+    std::this_thread::sleep_for(1s);
+
     n_done_history.push_back(progress->n_done());
     while (n_done_history.size() > 10) {
       n_done_history.pop_front();
     }
-
-    using namespace std::literals;
-    std::this_thread::sleep_for(1s);
 
     const auto elapsed = std::chrono::system_clock::now() - progress->begin_time();
     const auto estimated = elapsed + 1s * n_done_history.size() * (progress->n_task() - progress->n_done()) / (progress->n_done() - n_done_history.front());

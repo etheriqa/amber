@@ -22,12 +22,14 @@
 #include "scene/cornel_box.h"
 #include "shader/bidirectional_path_tracing.h"
 #include "shader/path_tracing.h"
+#include "shader/photon_mapping.h"
 
 namespace {
 
 enum class Algorithm {
   pt,
   bdpt,
+  pm,
 };
 
 }
@@ -76,6 +78,7 @@ public:
     std::cerr << "Algorithms:" << std::endl;
     std::cerr << "    pt          path tracing (spp=1024)" << std::endl;
     std::cerr << "    bdpt        bidirectional path tracing (spp=128)" << std::endl;
+    std::cerr << "    pm          photon mapping (spp=1000000)" << std::endl;
   }
 
   int run() {
@@ -106,6 +109,7 @@ public:
       case 'a':
         if (std::string(optarg) == "pt") { algorithm = Algorithm::pt; }
         if (std::string(optarg) == "bdpt") { algorithm = Algorithm::bdpt; }
+        if (std::string(optarg) == "pm") { algorithm = Algorithm::pm; }
         break;
       case 's':
         spp = std::stoi(std::string(optarg));
@@ -139,6 +143,12 @@ public:
       shader = new amber::shader::BidirectionalPathTracing<acceleration_type>(
         n_thread,
         (spp > 0 ? spp : 128) / ssaa_factor / ssaa_factor
+      );
+      break;
+    case Algorithm::pm:
+      shader = new amber::shader::PhotonMapping<acceleration_type>(
+        n_thread,
+        spp > 0 ? spp : 1e6
       );
       break;
     }

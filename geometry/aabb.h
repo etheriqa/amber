@@ -23,16 +23,14 @@ struct AABB
 
   vector3_type min, max;
 
-  static constexpr aabb_type empty() noexcept
-  {
+  static constexpr aabb_type empty() noexcept {
     return aabb_type(
       vector3_type(std::numeric_limits<real_type>::max()),
       vector3_type(std::numeric_limits<real_type>::lowest())
     );
   }
 
-  static constexpr aabb_type universal() noexcept
-  {
+  static constexpr aabb_type universal() noexcept {
     return aabb_type(
       vector3_type(std::numeric_limits<real_type>::lowest()),
       vector3_type(std::numeric_limits<real_type>::max())
@@ -43,51 +41,45 @@ struct AABB
 
   explicit AABB(const vector3_type& point) : min(point), max(point) {}
 
-  AABB(const vector3_type& min, const vector3_type& max) :
-    min(min), max(max)
-  {}
+  AABB(const vector3_type& min, const vector3_type& max) : min(min), max(max) {}
 
-  operator bool() const noexcept
-  {
+  operator bool() const noexcept {
     return min.x <= max.x && min.y <= max.y && min.z <= max.z;
   }
 
-  aabb_type& operator+=(const aabb_type& a) noexcept
-  {
+  aabb_type& operator+=(const aabb_type& a) noexcept {
     *this = *this + a;
     return *this;
   }
 
-  aabb_type& operator*=(const aabb_type& a) noexcept
-  {
+  aabb_type& operator*=(const aabb_type& a) noexcept {
     *this = *this * a;
     return *this;
   }
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     const auto x = max.x - min.x;
     const auto y = max.y - min.y;
     const auto z = max.z - min.z;
     return 2 * (x * y + y * z + z * x);
   }
 
-  std::tuple<bool, real_type, real_type> intersect(const ray_type& ray, real_type t_max) const noexcept
-  {
+  std::tuple<bool, real_type, real_type>
+  intersect(const ray_type& ray, real_type t_max) const noexcept {
     return ray_aabb_intersection(ray, *this, t_max);
   }
 };
 
 template <typename RealType>
-std::ostream& operator<<(std::ostream& os, const AABB<RealType>& aabb)
-{
+std::ostream&
+operator<<(std::ostream& os, const AABB<RealType>& aabb) {
   os << "([" << aabb.min.x << ", " << aabb.max.x << "], [" << aabb.min.y << ", " << aabb.max.y << "], [" << aabb.min.z << ", " << aabb.max.z << "])";
   return os;
 }
 
 template <typename RealType>
-AABB<RealType> operator+(const AABB<RealType>& a, const AABB<RealType>& b) noexcept
-{
+AABB<RealType>
+operator+(const AABB<RealType>& a, const AABB<RealType>& b) noexcept {
   return AABB<RealType>(
     Vector3<RealType>(
       std::min(a.min.x, b.min.x),
@@ -103,8 +95,8 @@ AABB<RealType> operator+(const AABB<RealType>& a, const AABB<RealType>& b) noexc
 }
 
 template <typename RealType>
-AABB<RealType> operator*(const AABB<RealType>& a, const AABB<RealType>& b) noexcept
-{
+AABB<RealType>
+operator*(const AABB<RealType>& a, const AABB<RealType>& b) noexcept {
   return AABB<RealType>(
     Vector3<RealType>(
       std::max(a.min.x, b.min.x),
@@ -120,8 +112,10 @@ AABB<RealType> operator*(const AABB<RealType>& a, const AABB<RealType>& b) noexc
 }
 
 template <typename RealType>
-std::tuple<bool, RealType, RealType> ray_aabb_intersection(const Ray<RealType>& ray, const AABB<RealType>& aabb, RealType t_max) noexcept
-{
+std::tuple<bool, RealType, RealType>
+ray_aabb_intersection(const Ray<RealType>& ray,
+                      const AABB<RealType>& aabb,
+                      RealType t_max) noexcept {
   auto t_min = static_cast<RealType>(kEPS);
 
   {
@@ -158,8 +152,10 @@ std::tuple<bool, RealType, RealType> ray_aabb_intersection(const Ray<RealType>& 
 }
 
 template <>
-std::tuple<bool, double, double> ray_aabb_intersection(const Ray<double>& ray, const AABB<double>& aabb, double t_max) noexcept
-{
+std::tuple<bool, double, double>
+ray_aabb_intersection(const Ray<double>& ray,
+                      const AABB<double>& aabb,
+                      double t_max) noexcept {
   auto t_min = static_cast<double>(kEPS);
 
   const auto ray_origin = _mm256_setr_pd(ray.origin.x, ray.origin.y, ray.origin.z, 0);
