@@ -11,8 +11,10 @@ Features
 --------
 
 - Rendering algorithms
-    - Path tracing
-    - Bidirectional path tracing
+    - [x] Path tracing
+    - [x] Bidirectional path tracing
+    - [x] Photon mapping
+    - [ ] Metropolis light transport
 - Geometric primitives
     - Triangle
     - Disk
