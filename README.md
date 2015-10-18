@@ -1,6 +1,8 @@
 amber
 =====
 
+[![Build Status](https://travis-ci.org/etheriqa/amber.svg?branch=master)](https://travis-ci.org/etheriqa/amber)
+
 **amber** is a global illumination renderer.
 
 ![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/0cb4dfee766e84562bcd8cfdde8e4ce423bac403/pt65536spp.png)

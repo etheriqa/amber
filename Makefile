@@ -7,11 +7,12 @@ OBJS = $(SRCS:.cc=.o)
 
 CPPFLAGS = -MMD -MP -I$(SRC_DIR)
 CXXFLAGS = -Wall -std=c++1y -O3 -mavx
+LDLIBS = -lpthread
 
 .PHONY: run render clean
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $^ -o $@
+	$(CXX) $(LDLIBS) $^ -o $@
 
 run: $(TARGET)
 	./$(TARGET)
