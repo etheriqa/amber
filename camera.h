@@ -4,10 +4,7 @@
 #include <sstream>
 #include <string>
 #include "lens/lens.h"
-#include "random.h"
-#include "ray.h"
 #include "sensor.h"
-#include "vector.h"
 
 namespace amber {
 
@@ -19,11 +16,11 @@ public:
 
   using real_type               = typename radiant_type::real_type;
 
-  using initial_ray_sample_type = InitialRaySample<real_type>;
+  using initial_ray_sample_type = geometry::InitialRaySample<real_type>;
   using lens_reference          = lens::Lens<real_type>*;
-  using ray_type                = Ray<real_type>;
+  using ray_type                = geometry::Ray<real_type>;
   using sensor_reference        = Sensor<radiant_type>*;
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type            = geometry::Vector3<real_type>;
 
 private:
   lens_reference m_lens;

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <vector>
 #include "random.h"
-#include "ray.h"
 
 namespace amber {
 

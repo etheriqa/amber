@@ -2,8 +2,6 @@
 
 #include "material/surface_type.h"
 #include "random.h"
-#include "ray.h"
-#include "vector.h"
 
 namespace amber {
 namespace material {
@@ -16,7 +14,7 @@ struct Material
 
   using real_type     = typename radiant_type::real_type;
 
-  using vector3_type  = Vector3<real_type>;
+  using vector3_type  = geometry::Vector3<real_type>;
 
   struct ScatteringSample
   {

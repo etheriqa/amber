@@ -1,13 +1,12 @@
 #pragma once
 
+#include "geometry/primitive/convex_polygon.h"
+#include "geometry/primitive/sphere.h"
 #include "material/lambertian.h"
 #include "material/light.h"
 #include "material/phong.h"
 #include "material/refraction.h"
 #include "material/specular.h"
-#include "primitive/convex_polygon.h"
-#include "primitive/sphere.h"
-#include "vector.h"
 
 namespace amber {
 namespace scene {
@@ -17,10 +16,10 @@ typename Acceleration::object_buffer_type cornel_box()
 {
   using RealType      = typename Acceleration::object_type::primitive_type::real_type;
 
-  using Vector3       = Vector3<RealType>;
+  using Vector3       = geometry::Vector3<RealType>;
 
-  using ConvexPolygon = primitive::ConvexPolygon<RealType>;
-  using Sphere        = primitive::Sphere<RealType>;
+  using ConvexPolygon = geometry::primitive::ConvexPolygon<RealType>;
+  using Sphere        = geometry::primitive::Sphere<RealType>;
 
   using RGB           = typename Acceleration::object_type::radiant_type;
 

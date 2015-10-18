@@ -4,6 +4,7 @@
 #include "aperture/circle.h"
 #include "aperture/polygon.h"
 #include "camera.h"
+#include "geometry/vector.h"
 #include "image.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
@@ -17,7 +18,6 @@
 #include "scene/cornel_box.h"
 #include "shader/bdpt.h"
 #include "shader/pt.h"
-#include "vector.h"
 
 int main()
 {
@@ -31,10 +31,10 @@ int main()
 
   using RealType = double;
 
-  using Vector3 = amber::Vector3<RealType>;
+  using Vector3 = amber::geometry::Vector3<RealType>;
   using Radiant = amber::radiometry::RGB<RealType>;
 
-  using Primitive = amber::primitive::Primitive<RealType>;
+  using Primitive = amber::geometry::primitive::Primitive<RealType>;
   using Material = amber::material::Material<Radiant>;
   using Acceleration = amber::acceleration::KDTree<amber::Object<Primitive, Material>>;
 

@@ -3,9 +3,10 @@
 #include <cmath>
 #include <limits>
 #include <ostream>
-#include "vector.h"
+#include "geometry/vector.h"
 
 namespace amber {
+namespace geometry {
 
 template <typename RealType>
 struct Hit
@@ -47,4 +48,5 @@ std::ostream& operator<<(std::ostream& os, const Hit<RealType>& h)
   return os;
 }
 
+}
 }

@@ -1,8 +1,7 @@
 #pragma once
 
 #include <functional>
-#include "material/material.h"
-#include "primitive/primitive.h"
+#include "material/surface_type.h"
 
 namespace amber {
 

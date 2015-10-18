@@ -1,11 +1,12 @@
 #pragma once
 
-#include "aabb.h"
-#include "hit.h"
+#include "geometry/aabb.h"
+#include "geometry/hit.h"
+#include "geometry/ray.h"
 #include "random.h"
-#include "ray.h"
 
 namespace amber {
+namespace geometry {
 namespace primitive {
 
 template <typename RealType>
@@ -27,5 +28,6 @@ struct Primitive
   virtual initial_ray_sample_type sample_initial_ray(Random&) const = 0;
 };
 
+}
 }
 }

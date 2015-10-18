@@ -14,11 +14,11 @@ class ThinLens : public Lens<RealType>
 {
 public:
   using real_type          = RealType;
-  using base_type          = Lens<real_type>;
+  using lens_type          = Lens<real_type>;
 
   using aperture_reference = aperture::Aperture<real_type>*;
-  using ray_type           = Ray<real_type>;
-  using vector3_type       = Vector3<real_type>;
+  using ray_type           = geometry::Ray<real_type>;
+  using vector3_type       = geometry::Vector3<real_type>;
 
 private:
   aperture_reference m_aperture;
@@ -28,7 +28,7 @@ private:
                      m_magnifier;
 
 public:
-  explicit ThinLens(aperture_reference a, real_type td, real_type fl = base_type::kFocalLength) :
+  explicit ThinLens(aperture_reference a, real_type td, real_type fl = lens_type::kFocalLength) :
     m_aperture(a),
     m_focal_length(fl),
     m_target_distance(td),

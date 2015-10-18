@@ -6,6 +6,7 @@
 #include <tuple>
 
 namespace amber {
+namespace geometry {
 
 template <typename RealType>
 struct Vector3
@@ -238,4 +239,5 @@ std::tuple<Vector3<RealType>, Vector3<RealType>> orthonormal_basis(const Vector3
   return std::make_tuple(u, v);
 }
 
+}
 }

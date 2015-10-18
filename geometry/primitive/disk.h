@@ -2,10 +2,10 @@
 
 #include <cmath>
 #include "constant.h"
-#include "primitive/primitive.h"
-#include "vector.h"
+#include "geometry/primitive/primitive.h"
 
 namespace amber {
+namespace geometry {
 namespace primitive {
 
 template <typename RealType>
@@ -89,5 +89,6 @@ public:
   }
 };
 
+}
 }
 }
