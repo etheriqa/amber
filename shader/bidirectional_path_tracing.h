@@ -226,19 +226,19 @@ private:
   ) const
   {
     // s = 0
-    const auto object = lights->sample(random);
-    const auto sample = object.sample_initial_ray(random);
-    const auto area_probability = 1 / lights->total_area();        // FIXME
-    const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
+    const auto light = lights->sample(random);
+    const auto sample = light.sample_initial_ray(random);
+    const auto area_probability = l1norm(light.emittance() / lights->total_power());
+    const auto psa_probability = static_cast<real_type>(1 / kPI);
 
     Event event;
-    event.object      = object;
+    event.object      = light;
     event.position    = sample.ray.origin;
     event.normal      = sample.normal;
     event.direction_i = vector3_type();
     event.direction_o = sample.ray.direction;
     event.probability = area_probability;
-    event.weight      = object.emittance() / area_probability;
+    event.weight      = light.emittance() / area_probability;
 
     // s > 0
     return extend_subpath(scene, event, radiant_type(psa_probability), psa_probability, random);

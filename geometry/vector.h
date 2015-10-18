@@ -198,6 +198,12 @@ RealType min(const Vector3<RealType>& a) noexcept
 }
 
 template <typename RealType>
+RealType l1norm(const Vector3<RealType>& a) noexcept
+{
+  return std::abs(a.x) + std::abs(a.y) + std::abs(a.z);
+}
+
+template <typename RealType>
 RealType dot(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
 {
   return a.x * b.x + a.y * b.y + a.z * b.z;
