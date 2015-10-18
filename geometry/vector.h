@@ -204,21 +204,21 @@ RealType dot(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
 }
 
 template <typename RealType>
-RealType norm2(const Vector3<RealType>& a) noexcept
+RealType squared_length(const Vector3<RealType>& a) noexcept
 {
   return dot(a, a);
 }
 
 template <typename RealType>
-RealType norm(const Vector3<RealType>& a) noexcept
+RealType length(const Vector3<RealType>& a) noexcept
 {
-  return std::sqrt(norm2(a));
+  return std::sqrt(squared_length(a));
 }
 
 template <typename RealType>
 Vector3<RealType> normalize(const Vector3<RealType>& a) noexcept
 {
-  return a / norm(a);
+  return a / length(a);
 }
 
 template <typename RealType>

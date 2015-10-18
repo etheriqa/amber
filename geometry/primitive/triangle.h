@@ -35,7 +35,7 @@ public:
 
   real_type surface_area() const noexcept
   {
-    return norm(cross(m_v1 - m_v0, m_v2 - m_v0)) / 2;
+    return length(cross(m_v1 - m_v0, m_v2 - m_v0)) / 2;
   }
 
   aabb_type aabb() const noexcept

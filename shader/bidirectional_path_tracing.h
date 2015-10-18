@@ -332,7 +332,7 @@ private:
       return 0;
     }
 
-    return std::abs(dot(ray.direction, l.normal) * dot(ray.direction, e.normal)) / norm2(e.position - l.position);
+    return std::abs(dot(ray.direction, l.normal) * dot(ray.direction, e.normal)) / squared_length(e.position - l.position);
   }
 };
 

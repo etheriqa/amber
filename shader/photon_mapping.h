@@ -54,7 +54,7 @@ private:
     vector3_type point;
     explicit PhotonCompare(const vector3_type& point) : point(point) {}
     bool operator()(const Photon& a, const Photon& b) const {
-      return norm2(a.position - point) < norm2(a.position - point);
+      return squared_length(a.position - point) < squared_length(a.position - point);
     }
   };
 
@@ -135,7 +135,7 @@ private:
           if (left_photons.size() == n) {
             squared_radius =
               std::min(squared_radius,
-                       norm2(left_photons.back().position - point));
+                       squared_length(left_photons.back().position - point));
           }
         }
         if (right != nullptr && squared_plane_distance < squared_radius) {
@@ -149,7 +149,7 @@ private:
           if (right_photons.size() == n) {
             squared_radius =
               std::min(squared_radius,
-                       norm2(right_photons.back().position - point));
+                       squared_length(right_photons.back().position - point));
           }
         }
         if (left != nullptr && squared_plane_distance < squared_radius) {
@@ -168,13 +168,13 @@ private:
                          photons.begin() + left_photons.size(),
                          photons.begin() + left_photons.size() + right_photons.size(),
                          [&](const auto& a, const auto& b){
-        return norm2(a.position - point) < norm2(b.position - point);
+        return squared_length(a.position - point) < squared_length(b.position - point);
       });
       std::inplace_merge(photons.begin(),
                          photons.begin() + left_photons.size() + right_photons.size(),
                          photons.end(),
                          [&](const auto& a, const auto& b){
-        return norm2(a.position - point) < norm2(b.position - point);
+        return squared_length(a.position - point) < squared_length(b.position - point);
       });
       photons.resize(std::min(photons.size(), n));
       return photons;
@@ -328,7 +328,7 @@ private:
         return radiant_type();
       }
       const auto area = static_cast<real_type>(kPI) *
-        norm2(photons.back().position - hit.position);
+        squared_length(photons.back().position - hit.position);
       radiant_type power;
       for (const auto& photon : photons) {
         power += photon.power_i *
