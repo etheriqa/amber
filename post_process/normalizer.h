@@ -8,7 +8,7 @@
 #include "radiometry/rgb.h"
 
 namespace amber {
-namespace tonemap {
+namespace post_process {
 
 template <typename RealType>
 class Normalizer
