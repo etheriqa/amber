@@ -10,13 +10,13 @@
 #include "lens/pinhole.h"
 #include "lens/thin.h"
 #include "object.h"
+#include "post_process/gamma.h"
+#include "post_process/reinhard.h"
 #include "radiometry/rgb.h"
 #include "render.h"
 #include "scene/cornel_box.h"
 #include "shader/bdpt.h"
 #include "shader/pt.h"
-#include "tonemap/gamma.h"
-#include "tonemap/reinhard.h"
 #include "vector.h"
 
 int main()
@@ -53,8 +53,8 @@ int main()
 
   amber::render(shader, scene, camera);
 
-  amber::tonemap::Reinhard<RealType> reinhard;
-  amber::tonemap::Gamma<RealType> gamma;
+  amber::post_process::Reinhard<RealType> reinhard;
+  amber::post_process::Gamma<RealType> gamma;
   amber::io::export_rgbe("output.hdr", image->down_sample(ssaa_factor));
   amber::io::export_ppm("output.ppm", gamma(reinhard(image->down_sample(ssaa_factor))));
 

@@ -5,10 +5,10 @@
 #include "constant.h"
 #include "image.h"
 #include "radiometry/rgb.h"
-#include "tonemap/normalizer.h"
+#include "post_process/normalizer.h"
 
 namespace amber {
-namespace tonemap {
+namespace post_process {
 
 template <typename RealType>
 class Reinhard
