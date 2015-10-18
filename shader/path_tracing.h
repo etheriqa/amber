@@ -107,34 +107,33 @@ private:
     Random& random
   ) const
   {
-    radiant_type power;
-    radiant_type weight(1);
-    const auto sample = camera.sample_initial_ray(x, y, random);
-    auto ray = sample.ray;
+    radiant_type power, importance(1);
+    auto ray = camera.sample_initial_ray(x, y, random).ray;
+    hit_type hit;
+    object_type object;
 
     while (true) {
-      hit_type hit;
-      object_type object;
       std::tie(hit, object) = scene->cast(ray);
-
       if (!hit) {
         break;
       }
 
       if (object.is_emissive() && dot(hit.normal, ray.direction) < 0) {
-        power += weight * object.emittance();
+        power += importance * object.emittance();
         break;
       }
 
       const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
-      weight *= sample.bsdf / sample.psa_probability;
       ray = ray_type(hit.position, sample.direction_o);
+      const auto reflectance = sample.bsdf / sample.psa_probability;
 
-      const auto p_russian_roulette = max(weight);
+      const auto p_russian_roulette = max(reflectance);
       if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
-      weight /= std::min(static_cast<real_type>(1), p_russian_roulette);
+
+      importance *= reflectance;
+      importance /= std::min(static_cast<real_type>(1), p_russian_roulette);
     }
 
     return power;
