@@ -1,5 +1,6 @@
 #pragma once
 
+#include "material/surface_type.h"
 #include "random.h"
 #include "ray.h"
 #include "vector.h"
@@ -27,7 +28,7 @@ struct Material
   virtual ~Material() {}
 
   virtual bool is_emissive() const noexcept = 0;
-  virtual bool is_specular() const noexcept = 0;
+  virtual SurfaceType surface_type() const noexcept = 0;
   virtual flux_type emittance() const noexcept = 0;
   virtual flux_type bsdf(const vector3_type&, const vector3_type&, const vector3_type&) const noexcept = 0;
   virtual ScatteringSample sample_scattering(const vector3_type&, const vector3_type&, Random&) const = 0;

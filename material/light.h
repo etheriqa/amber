@@ -29,9 +29,9 @@ public:
     return true;
   }
 
-  bool is_specular() const noexcept
+  SurfaceType surface_type() const noexcept
   {
-    return false;
+    return SurfaceType::diffuse;
   }
 
   flux_type emittance() const noexcept

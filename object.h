@@ -88,9 +88,9 @@ public:
     return m_material->is_emissive();
   }
 
-  bool is_specular() const noexcept
+  material::SurfaceType surface_type() const noexcept
   {
-    return m_material->is_specular();
+    return m_material->surface_type();
   }
 
   flux_type emittance() const noexcept
