@@ -2,4 +2,15 @@ language: cpp
 compiler:
   - gcc
   - clang
+addons:
+  apt:
+    sources:
+      - llvm-toolchain-precise-3.7
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-5
+      - clang-3.7
+before_script:
+  - if [ "$CXX" = "g++" ]; then export CXX=/usr/bin/g++-5; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX=/usr/bin/clang++-3.7; fi
 script: make
