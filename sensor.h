@@ -5,15 +5,15 @@
 
 namespace amber {
 
-template <typename Flux>
+template <typename Radiant>
 class Sensor
 {
 public:
-  using flux_type       = Flux;
+  using radiant_type    = Radiant;
 
-  using real_type       = typename flux_type::real_type;
+  using real_type       = typename radiant_type::real_type;
 
-  using image_reference = Image<flux_type>*;
+  using image_reference = Image<radiant_type>*;
   using vector3_type    = Vector3<real_type>;
 
   static constexpr real_type kFilmSize = 0.036;
@@ -54,9 +54,9 @@ public:
     );
   }
 
-  void expose(size_t x, size_t y, const flux_type& flux) const
+  void expose(size_t x, size_t y, const radiant_type& power) const
   {
-    m_image->expose(x, y, flux);
+    m_image->expose(x, y, power);
   }
 };
 

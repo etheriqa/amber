@@ -4,7 +4,7 @@
 #include <cmath>
 #include "constant.h"
 #include "image.h"
-#include "rgb.h"
+#include "radiometry/rgb.h"
 #include "tonemap/normalizer.h"
 
 namespace amber {
@@ -16,7 +16,7 @@ class Reinhard
 public:
   using real_type      = RealType;
 
-  using hdr_type       = RGB<real_type>;
+  using hdr_type       = radiometry::RGB<real_type>;
 
   using hdr_image_type = Image<hdr_type>;
 
@@ -57,7 +57,7 @@ public:
       for (size_t i = 0; i < width; i++) {
         auto& p = image.pixel(i, j);
         p *= m_key / log_average_luminance;
-        p /= RGB<RealType>(1) + p;
+        p /= hdr_type(1) + p;
       }
     }
 

@@ -21,13 +21,13 @@ public:
 
   using acceleration_type        = typename shader_type::acceleration_type;
   using camera_type              = typename shader_type::camera_type;
-  using flux_type                = typename shader_type::flux_type;
   using hit_type                 = typename shader_type::hit_type;
   using object_buffer_type       = typename shader_type::object_buffer_type;
   using object_type              = typename shader_type::object_type;
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
+  using radiant_type             = typename shader_type::radiant_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
@@ -43,13 +43,13 @@ private:
     vector3_type direction_i;
     vector3_type direction_o;
     real_type probability;
-    flux_type weight;
+    radiant_type weight;
   };
 
   struct Contribution
   {
     real_type probability;
-    flux_type power;
+    radiant_type power;
   };
 
   const size_t m_n_thread, m_spp;
@@ -112,7 +112,7 @@ private:
     for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
       auto x = pixels->at(i) % camera.image_width();
       auto y = pixels->at(i) / camera.image_height();
-      flux_type power;
+      radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
         power += sample_pixel(scene, lights, camera, x, y, random);
         progress->done(1);
@@ -123,7 +123,7 @@ private:
     progress->end();
   }
 
-  flux_type sample_pixel(
+  radiant_type sample_pixel(
     const std::shared_ptr<acceleration_type>& scene,
     const std::shared_ptr<light_set_type>& lights,
     const camera_type& camera,
@@ -170,7 +170,7 @@ private:
             }
             contribution.power =
               l.weight *
-              flux_type(1 / static_cast<real_type>(kPI)) *
+              radiant_type(1 / static_cast<real_type>(kPI)) *
               geometry_factor(scene, l, e) *
               e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
               e.weight;
@@ -202,7 +202,7 @@ private:
         }
       }
 
-      flux_type power;
+      radiant_type power;
       for (size_t i = 0; i < max_path_length; i++) {
         for (const auto& c0 : contributions[i]) {
           real_type weight = 0;
@@ -243,7 +243,7 @@ private:
     event.weight      = object.emittance() / area_probability;
 
     // s > 0
-    return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
+    return extend_subpath(scene, event, radiant_type(psa_probability), psa_probability, random);
   }
 
   std::vector<Event> sample_eye_subpath(
@@ -255,7 +255,7 @@ private:
   ) const
   {
     // t = 0
-    const auto importance = flux_type(1);                         // FIXME
+    const auto importance = radiant_type(1);                         // FIXME
     const auto sample = camera.sample_initial_ray(x, y, random);
     const auto area_probability = static_cast<real_type>(1);      // FIXME
     const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
@@ -271,13 +271,13 @@ private:
     event.weight      = importance / area_probability;
 
     // t > 0
-    return extend_subpath(scene, event, flux_type(psa_probability), psa_probability, random);
+    return extend_subpath(scene, event, radiant_type(psa_probability), psa_probability, random);
   }
 
   std::vector<Event> extend_subpath(
     const std::shared_ptr<acceleration_type>& scene,
     Event event,
-    flux_type bsdf,
+    radiant_type bsdf,
     real_type probability,
     Random& random
   ) const

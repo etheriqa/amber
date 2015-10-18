@@ -5,7 +5,7 @@
 #include <functional>
 #include "constant.h"
 #include "image.h"
-#include "rgb.h"
+#include "radiometry/rgb.h"
 
 namespace amber {
 namespace tonemap {
@@ -16,7 +16,7 @@ class Normalizer
 public:
   using real_type      = RealType;
 
-  using hdr_type       = RGB<real_type>;
+  using hdr_type       = radiometry::RGB<real_type>;
 
   using hdr_image_type = Image<hdr_type>;
 

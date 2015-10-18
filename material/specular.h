@@ -7,22 +7,22 @@
 namespace amber {
 namespace material {
 
-template <typename Flux>
-class Specular : public Material<Flux>
+template <typename Radiant>
+class Specular : public Material<Radiant>
 {
 public:
-  using material_type          = Material<Flux>;
+  using material_type          = Material<Radiant>;
 
-  using flux_type              = typename material_type::flux_type;
+  using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 
 private:
-  flux_type m_ks;
+  radiant_type m_ks;
 
 public:
-  explicit Specular(const flux_type& ks) : m_ks(ks) {}
+  explicit Specular(const radiant_type& ks) : m_ks(ks) {}
 
   bool is_emissive() const noexcept
   {
@@ -34,14 +34,14 @@ public:
     return SurfaceType::specular;
   }
 
-  flux_type emittance() const noexcept
+  radiant_type emittance() const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
-  flux_type bsdf(const vector3_type&, const vector3_type&, const vector3_type&) const noexcept
+  radiant_type bsdf(const vector3_type&, const vector3_type&, const vector3_type&) const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
   scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const

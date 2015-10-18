@@ -18,7 +18,7 @@ public:
   using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
   using ray_type                = typename primitive_type::ray_type;
   using real_type               = typename primitive_type::real_type;
-  using flux_type               = typename material_type::flux_type;
+  using radiant_type            = typename material_type::radiant_type;
   using scattering_sample_type  = typename material_type::ScatteringSample;
   using vector3_type            = typename material_type::vector3_type;
 
@@ -93,12 +93,12 @@ public:
     return m_material->surface_type();
   }
 
-  flux_type emittance() const noexcept
+  radiant_type emittance() const noexcept
   {
     return m_material->emittance();
   }
 
-  flux_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
+  radiant_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
   {
     return m_material->bsdf(direction_i, direction_o, normal);
   }

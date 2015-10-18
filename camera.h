@@ -11,18 +11,18 @@
 
 namespace amber {
 
-template <typename Flux>
+template <typename Radiant>
 class Camera
 {
 public:
-  using flux_type               = Flux;
+  using radiant_type            = Radiant;
 
-  using real_type               = typename flux_type::real_type;
+  using real_type               = typename radiant_type::real_type;
 
   using initial_ray_sample_type = InitialRaySample<real_type>;
   using lens_reference          = lens::Lens<real_type>*;
   using ray_type                = Ray<real_type>;
-  using sensor_reference        = Sensor<flux_type>*;
+  using sensor_reference        = Sensor<radiant_type>*;
   using vector3_type            = Vector3<real_type>;
 
 private:
@@ -78,9 +78,9 @@ public:
     );
   }
 
-  void expose(size_t x, size_t y, const flux_type& flux) const
+  void expose(size_t x, size_t y, const radiant_type& power) const
   {
-    m_sensor->expose(x, y, flux);
+    m_sensor->expose(x, y, power);
   }
 };
 

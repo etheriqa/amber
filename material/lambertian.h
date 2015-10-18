@@ -7,22 +7,22 @@
 namespace amber {
 namespace material {
 
-template <typename Flux>
-class Lambertian : public Material<Flux>
+template <typename Radiant>
+class Lambertian : public Material<Radiant>
 {
 public:
-  using material_type          = Material<Flux>;
+  using material_type          = Material<Radiant>;
 
-  using flux_type              = typename material_type::flux_type;
+  using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 
 private:
-  flux_type m_kd;
+  radiant_type m_kd;
 
 public:
-  explicit Lambertian(const flux_type& kd) : m_kd(kd) {}
+  explicit Lambertian(const radiant_type& kd) : m_kd(kd) {}
 
   bool is_emissive() const noexcept
   {
@@ -34,15 +34,15 @@ public:
     return SurfaceType::diffuse;
   }
 
-  flux_type emittance() const noexcept
+  radiant_type emittance() const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
-  flux_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
+  radiant_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
   {
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
-      return flux_type();
+      return radiant_type();
     } else {
       return m_kd / static_cast<real_type>(kPI);
     }

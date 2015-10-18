@@ -1,7 +1,7 @@
 #pragma once
 
 #include "image.h"
-#include "rgb.h"
+#include "radiometry/rgb.h"
 
 namespace amber {
 namespace tonemap {
@@ -12,8 +12,8 @@ class Gamma
 public:
   using real_type      = RealType;
 
-  using hdr_type       = RGB<real_type>;
-  using ldr_type       = SRGB;
+  using hdr_type       = radiometry::RGB<real_type>;
+  using ldr_type       = radiometry::SRGB;
 
   using hdr_image_type = Image<hdr_type>;
   using ldr_image_type = Image<ldr_type>;

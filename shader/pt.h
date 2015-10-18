@@ -19,13 +19,13 @@ public:
 
   using acceleration_type        = typename shader_type::acceleration_type;
   using camera_type              = typename shader_type::camera_type;
-  using flux_type                = typename shader_type::flux_type;
   using hit_type                 = typename shader_type::hit_type;
   using object_buffer_type       = typename shader_type::object_buffer_type;
   using object_type              = typename shader_type::object_type;
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
+  using radiant_type             = typename shader_type::radiant_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
@@ -88,18 +88,18 @@ private:
     for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
       auto x = pixels->at(i) % camera.image_width();
       auto y = pixels->at(i) / camera.image_height();
-      flux_type flux;
+      radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
-        flux += sample_pixel(scene, camera, x, y, random);
+        power += sample_pixel(scene, camera, x, y, random);
         progress->done(1);
       }
-      camera.expose(x, y, flux / static_cast<real_type>(m_spp));
+      camera.expose(x, y, power / static_cast<real_type>(m_spp));
     }
 
     progress->end();
   }
 
-  flux_type sample_pixel(
+  radiant_type sample_pixel(
     const std::shared_ptr<acceleration_type>& scene,
     const camera_type& camera,
     size_t x,
@@ -107,8 +107,8 @@ private:
     Random& random
   ) const
   {
-    flux_type flux;
-    flux_type weight(1);
+    radiant_type power;
+    radiant_type weight(1);
     const auto sample = camera.sample_initial_ray(x, y, random);
     auto ray = sample.ray;
 
@@ -122,7 +122,7 @@ private:
       }
 
       if (object.is_emissive() && dot(hit.normal, ray.direction) < 0) {
-        flux += weight * object.emittance();
+        power += weight * object.emittance();
         break;
       }
 
@@ -137,7 +137,7 @@ private:
       weight /= std::min(static_cast<real_type>(1), p_russian_roulette);
     }
 
-    return flux;
+    return power;
   }
 };
 
