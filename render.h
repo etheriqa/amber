@@ -15,19 +15,19 @@ namespace amber {
 
 template <typename Acceleration>
 void render(
-  const shader::Shader<Acceleration>& shader,
+  shader::Shader<Acceleration>* shader,
   const typename Acceleration::object_buffer_type& objects,
   const typename shader::Shader<Acceleration>::camera_type& camera
 )
 {
   std::cerr
-    << shader.to_string() << std::endl
+    << shader->to_string() << std::endl
     << "Acceleration: " << Acceleration::to_string() << std::endl
     << "Objects: " << objects.size() << std::endl
     << camera.to_string() << std::endl
     << std::endl;
 
-  const auto progress = shader.render(objects, camera);
+  const auto progress = shader->render(objects, camera);
   std::list<size_t> n_done_history;
 
   do {

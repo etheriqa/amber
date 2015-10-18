@@ -1,4 +1,4 @@
-TARGET = amber
+TARGET = ./amber
 
 SRC_DIR = $(PWD)
 SRCS = $(shell find $(SRC_DIR) -name '*.cc')
@@ -9,17 +9,21 @@ CPPFLAGS = -MMD -MP -I$(SRC_DIR)
 CXXFLAGS = -Wall -std=c++1y -O3 -mavx
 LDLIBS = -lpthread
 
-.PHONY: run render clean
+.PHONY: pt bdpt clean
 
 $(TARGET): $(OBJS)
 	$(CXX) $(LDLIBS) $^ -o $@
 
-run: $(TARGET)
-	./$(TARGET)
+pt: $(TARGET)
+	$(TARGET) --algorithm pt
+	convert output.ppm pt.png
+	open pt.png
 
-render: run
-	convert output.ppm output.png
-	open output.png
+bdpt: $(TARGET)
+	$(TARGET) --algorithm bdpt
+	convert output.ppm bdpt.png
+	open bdpt.png
+
 
 clean:
 	$(RM) $(TARGET) $(shell find $(SRC_DIR) -name '*.o') $(shell find $(SRC_DIR) -name '*.d')
