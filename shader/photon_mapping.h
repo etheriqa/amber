@@ -132,7 +132,7 @@ private:
         if (left != nullptr) {
           left_photons =
             left->searchNearestNeighbourPhotons(point, squared_radius, n);
-          if (!left_photons.empty()) {
+          if (left_photons.size() == n) {
             squared_radius =
               std::min(squared_radius,
                        norm2(left_photons.back().position - point));
@@ -146,7 +146,7 @@ private:
         if (right != nullptr) {
           right_photons =
             right->searchNearestNeighbourPhotons(point, squared_radius, n);
-          if (!right_photons.empty()) {
+          if (right_photons.size() == n) {
             squared_radius =
               std::min(squared_radius,
                        norm2(right_photons.back().position - point));
@@ -163,20 +163,18 @@ private:
                 std::back_inserter(photons));
       std::move(right_photons.begin(), right_photons.end(),
                 std::back_inserter(photons));
-      if (norm2(photon.position - point) < squared_radius) {
-        photons.push_back(photon);
-      }
+      photons.push_back(photon);
       std::inplace_merge(photons.begin(),
                          photons.begin() + left_photons.size(),
                          photons.begin() + left_photons.size() + right_photons.size(),
                          [&](const auto& a, const auto& b){
-        return norm2(a.position - point) < norm2(a.position - point);
+        return norm2(a.position - point) < norm2(b.position - point);
       });
       std::inplace_merge(photons.begin(),
                          photons.begin() + left_photons.size() + right_photons.size(),
                          photons.end(),
                          [&](const auto& a, const auto& b){
-        return norm2(a.position - point) < norm2(a.position - point);
+        return norm2(a.position - point) < norm2(b.position - point);
       });
       photons.resize(std::min(photons.size(), n));
       return photons;
@@ -221,7 +219,8 @@ public:
       }
     }
     std::cerr << "done." << std::endl;
-    std::cerr << "      " << caustic_photons.size() + global_photons.size() << " photons are sampled." << std::endl;
+    std::cerr << "      " << caustic_photons.size() << " caustic photons are sampled." << std::endl;
+    std::cerr << "      " << global_photons.size() << " global photons are sampled." << std::endl;
 
     std::cerr << "(2/3) Building photon maps ... ";
     const PhotonMapNode caustic_photon_map(caustic_photons.begin(),
@@ -291,14 +290,14 @@ private:
       }
 
       const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
-      const auto weight = sample.bsdf / sample.psa_probability;
-      const auto p_russian_roulette = max(weight);
+      power *= sample.bsdf / sample.psa_probability;
+      const auto p_russian_roulette = max(power);
       if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
 
       ray = ray_type(hit.position, sample.direction_o);
-      power *= weight / std::min(static_cast<real_type>(1), p_russian_roulette);
+      power /= std::min(static_cast<real_type>(1), p_russian_roulette);
     }
 
     return std::make_tuple(type, photons);
@@ -328,8 +327,8 @@ private:
       if (photons.empty()) {
         return radiant_type();
       }
-      const auto area = norm2(photons.back().position - hit.position) *
-        static_cast<real_type>(kPI);
+      const auto area = static_cast<real_type>(kPI) *
+        norm2(photons.back().position - hit.position);
       radiant_type power;
       for (const auto& photon : photons) {
         power += photon.power_i *
