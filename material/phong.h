@@ -8,25 +8,25 @@
 namespace amber {
 namespace material {
 
-template <typename Flux>
-class Phong : public Material<Flux>
+template <typename Radiant>
+class Phong : public Material<Radiant>
 {
 public:
-  using material_type          = Material<Flux>;
+  using material_type          = Material<Radiant>;
 
-  using flux_type              = typename material_type::flux_type;
+  using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 
 private:
-  flux_type m_kd; // diffuse reflectivity
-  flux_type m_ks; // specular reflectivity
+  radiant_type m_kd; // diffuse reflectivity
+  radiant_type m_ks; // specular reflectivity
   real_type m_n;  // specular exponent
   real_type m_p_diffuse;
 
 public:
-  Phong(const flux_type& kd, const flux_type& ks, real_type n) :
+  Phong(const radiant_type& kd, const radiant_type& ks, real_type n) :
     m_kd(kd), m_ks(ks), m_n(n)
   {
     const auto diffuse_weight = m_kd.x + m_kd.y + m_kd.z;
@@ -44,15 +44,15 @@ public:
     return SurfaceType::diffuse;
   }
 
-  flux_type emittance() const noexcept
+  radiant_type emittance() const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
-  flux_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
+  radiant_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
   {
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
-      return flux_type();
+      return radiant_type();
     } else {
       const auto cos_alpha = dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
       return m_kd / static_cast<real_type>(kPI)

@@ -22,7 +22,7 @@ typename Acceleration::object_buffer_type cornel_box()
   using ConvexPolygon = primitive::ConvexPolygon<RealType>;
   using Sphere        = primitive::Sphere<RealType>;
 
-  using RGB           = typename Acceleration::object_type::material_type::flux_type;
+  using RGB           = typename Acceleration::object_type::radiant_type;
 
   using Lambertian    = material::Lambertian<RGB>;
   using Light         = material::Light<RGB>;

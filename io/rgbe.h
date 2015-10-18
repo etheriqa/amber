@@ -3,13 +3,13 @@
 #include <cmath>
 #include <fstream>
 #include "image.h"
-#include "rgb.h"
+#include "radiometry/rgb.h"
 
 namespace amber {
 namespace io {
 
 template <typename RealType>
-void export_rgbe(const char* filename, const Image<RGB<RealType>>& image)
+void export_rgbe(const char* filename, const Image<radiometry::RGB<RealType>>& image)
 {
   std::ofstream ofs(filename, std::ofstream::trunc);
 

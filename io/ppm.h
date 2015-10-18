@@ -2,12 +2,12 @@
 
 #include <fstream>
 #include "image.h"
-#include "rgb.h"
+#include "radiometry/rgb.h"
 
 namespace amber {
 namespace io {
 
-void export_ppm(const char* filename, const Image<SRGB>& image)
+void export_ppm(const char* filename, const Image<radiometry::SRGB>& image)
 {
   std::ofstream ofs(filename, std::ofstream::trunc);
 

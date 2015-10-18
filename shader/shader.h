@@ -82,12 +82,12 @@ struct Shader
   using object_buffer_type       = typename acceleration_type::object_buffer_type;
   using object_type              = typename acceleration_type::object_type;
 
-  using flux_type                = typename object_type::flux_type;
   using hit_type                 = typename object_type::hit_type;
+  using radiant_type             = typename object_type::radiant_type;
   using ray_type                 = typename object_type::ray_type;
   using real_type                = typename object_type::real_type;
 
-  using camera_type              = Camera<flux_type>;
+  using camera_type              = Camera<radiant_type>;
   using progress_const_reference = std::shared_ptr<const ShadingProgress>;
   using progress_reference       = std::shared_ptr<ShadingProgress>;
   using progress_type            = ShadingProgress;

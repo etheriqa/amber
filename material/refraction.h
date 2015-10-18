@@ -7,13 +7,13 @@
 namespace amber {
 namespace material {
 
-template <typename Flux>
-class Refraction : public Material<Flux>
+template <typename Radiant>
+class Refraction : public Material<Radiant>
 {
 public:
-  using material_type          = Material<Flux>;
+  using material_type          = Material<Radiant>;
 
-  using flux_type              = typename material_type::flux_type;
+  using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
@@ -34,14 +34,14 @@ public:
     return SurfaceType::specular;
   }
 
-  flux_type emittance() const noexcept
+  radiant_type emittance() const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
-  flux_type bsdf(const vector3_type&, const vector3_type&, const vector3_type&) const noexcept
+  radiant_type bsdf(const vector3_type&, const vector3_type&, const vector3_type&) const noexcept
   {
-    return flux_type();
+    return radiant_type();
   }
 
   scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
@@ -56,7 +56,7 @@ public:
       // Full reflection
       scattering_sample_type sample;
       sample.direction_o = reflection_direction_o;
-      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS));
+      sample.bsdf = radiant_type(static_cast<real_type>(1 / kEPS));
       sample.psa_probability = static_cast<real_type>(1 / kEPS);
       return sample;
     }
@@ -69,14 +69,14 @@ public:
       // Partial reflection
       scattering_sample_type sample;
       sample.direction_o = reflection_direction_o;
-      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS)) * p_reflection;
+      sample.bsdf = radiant_type(static_cast<real_type>(1 / kEPS)) * p_reflection;
       sample.psa_probability = static_cast<real_type>(1 / kEPS) * p_reflection;
       return sample;
     } else {
       // Refraction
       scattering_sample_type sample;
       sample.direction_o = (cos_i - cos_o / ri) * normal - direction_i;
-      sample.bsdf = flux_type(static_cast<real_type>(1 / kEPS)) * (1 - p_reflection);
+      sample.bsdf = radiant_type(static_cast<real_type>(1 / kEPS)) * (1 - p_reflection);
       sample.psa_probability = static_cast<real_type>(1 / kEPS) * (1 - p_reflection);
       return sample;
     }
