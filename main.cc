@@ -16,8 +16,8 @@
 #include "radiometry/rgb.h"
 #include "render.h"
 #include "scene/cornel_box.h"
-#include "shader/bdpt.h"
-#include "shader/pt.h"
+#include "shader/bidirectional_path_tracing.h"
+#include "shader/path_tracing.h"
 
 int main()
 {
