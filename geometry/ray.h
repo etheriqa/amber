@@ -1,9 +1,10 @@
 #pragma once
 
 #include <ostream>
-#include "vector.h"
+#include "geometry/vector.h"
 
 namespace amber {
+namespace geometry {
 
 template <typename RealType>
 struct Ray
@@ -44,4 +45,5 @@ std::ostream& operator<<(std::ostream& os, const Ray<RealType>& r)
   return os;
 }
 
+}
 }

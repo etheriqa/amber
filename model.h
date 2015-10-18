@@ -2,8 +2,7 @@
 
 #include <iterator>
 #include <vector>
-#include "primitive/triangle.h"
-#include "vector.h"
+#include "geometry/primitive/triangle.h"
 
 namespace amber {
 
@@ -13,8 +12,8 @@ class Model
 public:
   using real_type     = RealType;
 
-  using triangle_type = primitive::Triangle<real_type>;
-  using vector3_type  = Vector3<real_type>;
+  using triangle_type = geometry::primitive::Triangle<real_type>;
+  using vector3_type  = geometry::Vector3<real_type>;
 
   class InputIterator : std::iterator<std::input_iterator_tag, triangle_type*>
   {

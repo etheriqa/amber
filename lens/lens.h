@@ -2,8 +2,7 @@
 
 #include <string>
 #include "random.h"
-#include "ray.h"
-#include "vector.h"
+#include "geometry/ray.h"
 
 namespace amber {
 namespace lens {
@@ -12,8 +11,8 @@ template <typename RealType>
 struct Lens {
   using real_type    = RealType;
 
-  using ray_type     = Ray<real_type>;
-  using vector3_type = Vector3<real_type>;
+  using ray_type     = geometry::Ray<real_type>;
+  using vector3_type = geometry::Vector3<real_type>;
 
   static constexpr real_type kFocalLength = 0.050;
 

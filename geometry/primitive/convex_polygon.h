@@ -1,13 +1,12 @@
 #pragma once
 
 #include <initializer_list>
-#include <stdexcept>
 #include <vector>
-#include "primitive/primitive.h"
-#include "primitive/triangle.h"
-#include "vector.h"
+#include "geometry/primitive/primitive.h"
+#include "geometry/primitive/triangle.h"
 
 namespace amber {
+namespace geometry {
 namespace primitive {
 
 template <typename RealType>
@@ -88,5 +87,6 @@ public:
   }
 };
 
+}
 }
 }

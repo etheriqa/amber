@@ -6,9 +6,7 @@
 #include <sstream>
 #include <vector>
 #include "light_set.h"
-#include "random.h"
 #include "shader/shader.h"
-#include "vector.h"
 
 namespace amber {
 namespace shader {
@@ -32,7 +30,7 @@ public:
   using real_type                = typename shader_type::real_type;
 
   using light_set_type           = LightSet<acceleration_type>;
-  using vector3_type             = Vector3<real_type>;
+  using vector3_type             = geometry::Vector3<real_type>;
 
 private:
   struct Event

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "geometry/vector.h"
 #include "image.h"
-#include "vector.h"
 
 namespace amber {
 
@@ -14,7 +14,7 @@ public:
   using real_type       = typename radiant_type::real_type;
 
   using image_reference = Image<radiant_type>*;
-  using vector3_type    = Vector3<real_type>;
+  using vector3_type    = geometry::Vector3<real_type>;
 
   static constexpr real_type kFilmSize = 0.036;
 

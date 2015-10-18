@@ -11,16 +11,16 @@ class Pinhole : public Lens<RealType>
 {
 public:
   using real_type    = RealType;
-  using base_type    = Lens<real_type>;
+  using lens_type    = Lens<real_type>;
 
-  using ray_type     = Ray<real_type>;
-  using vector3_type = Vector3<real_type>;
+  using ray_type     = typename lens_type::ray_type;
+  using vector3_type = typename lens_type::vector3_type;
 
 private:
   real_type m_sensor_distance;
 
 public:
-  explicit Pinhole(real_type sd = base_type::kFocalLength) :
+  explicit Pinhole(real_type sd = lens_type::kFocalLength) :
     m_sensor_distance(sd)
   {}
 

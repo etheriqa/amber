@@ -6,10 +6,11 @@
 #include <tuple>
 #include <immintrin.h>
 #include "constant.h"
-#include "ray.h"
-#include "vector.h"
+#include "geometry/ray.h"
+#include "geometry/vector.h"
 
 namespace amber {
+namespace geometry {
 
 template <typename RealType>
 struct AABB
@@ -188,4 +189,5 @@ std::tuple<bool, double, double> ray_aabb_intersection(const Ray<double>& ray, c
   return std::make_tuple(t_min <= t_max, t_min, t_max);
 }
 
+}
 }
