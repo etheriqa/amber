@@ -162,7 +162,7 @@ private:
             // one light subpath vertex
             const auto l = light_subpath[s - 1];
             const auto e = eye_subpath[t - 1];
-            if (e.object.is_specular()) {
+            if (e.object.surface_type() == material::SurfaceType::specular) {
               continue;
             }
             if (dot(e.position - l.position, l.normal) <= 0) {
@@ -184,7 +184,10 @@ private:
           } else {
             const auto& l = light_subpath[s - 1];
             const auto& e = eye_subpath[t - 1];
-            if (l.object.is_specular() || e.object.is_specular()) {
+            if (l.object.surface_type() == material::SurfaceType::specular) {
+              continue;
+            }
+            if (e.object.surface_type() == material::SurfaceType::specular) {
               continue;
             }
             contribution.power =
