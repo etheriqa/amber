@@ -32,6 +32,14 @@ enum class Algorithm {
   pm,
 };
 
+const size_t kSSAA             = 2;
+const size_t kWidth            = 512;
+const size_t kHeight           = 512;
+const size_t kPTSPP            = 1024;
+const size_t kBDPTSPP          = 128;
+const size_t kPMNPhoton        = 1000000;
+const size_t kPMNNearestPhoton = 16;
+
 }
 
 namespace amber {
@@ -76,9 +84,9 @@ public:
     std::cerr << "    --spp <n>                       samples per pixel" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Algorithms:" << std::endl;
-    std::cerr << "    pt          path tracing (spp=1024)" << std::endl;
-    std::cerr << "    bdpt        bidirectional path tracing (spp=128)" << std::endl;
-    std::cerr << "    pm          photon mapping (spp=1000000)" << std::endl;
+    std::cerr << "    pt          path tracing (spp=" << kPTSPP << ")" << std::endl;
+    std::cerr << "    bdpt        bidirectional path tracing (spp=" << kBDPTSPP << ")" << std::endl;
+    std::cerr << "    pm          photon mapping (spp=" << kPMNPhoton << ")" << std::endl;
   }
 
   int run() {
@@ -127,33 +135,30 @@ public:
     }
 
     const auto n_thread = std::thread::hardware_concurrency();
-    const auto ssaa_factor = 4;
-    const auto width = 512 * ssaa_factor;
-    const auto height = 512 * ssaa_factor;
     const auto scene = amber::scene::cornel_box<acceleration_type>();
     amber::shader::Shader<acceleration_type> *shader;
     switch (algorithm) {
     case Algorithm::pt:
       shader = new amber::shader::PathTracing<acceleration_type>(
         n_thread,
-        (spp > 0 ? spp : 1024) / ssaa_factor / ssaa_factor
+        (spp > 0 ? spp : kPTSPP) / kSSAA / kSSAA
       );
       break;
     case Algorithm::bdpt:
       shader = new amber::shader::BidirectionalPathTracing<acceleration_type>(
         n_thread,
-        (spp > 0 ? spp : 128) / ssaa_factor / ssaa_factor
+        (spp > 0 ? spp : kBDPTSPP) / kSSAA / kSSAA
       );
       break;
     case Algorithm::pm:
       shader = new amber::shader::PhotonMapping<acceleration_type>(
-        n_thread,
-        spp > 0 ? spp : 1e6
+        spp > 0 ? spp : kPMNPhoton,
+        kPMNNearestPhoton
       );
       break;
     }
     const auto lens   = new amber::lens::Pinhole<real_type>();
-    const auto image  = new amber::Image<radiant_type>(width, height);
+    const auto image  = new amber::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
     const auto sensor = new amber::Sensor<radiant_type>(image);
     const auto camera = amber::Camera<radiant_type>(
       lens, sensor,
@@ -163,8 +168,8 @@ public:
 
     amber::post_process::Reinhard<real_type> reinhard;
     amber::post_process::Gamma<real_type> gamma;
-    amber::io::export_rgbe("output.hdr", image->down_sample(ssaa_factor));
-    amber::io::export_ppm("output.ppm", gamma(reinhard(image->down_sample(ssaa_factor))));
+    amber::io::export_rgbe("output.hdr", image->down_sample(kSSAA));
+    amber::io::export_ppm("output.ppm", gamma(reinhard(image->down_sample(kSSAA))));
 
     return 0;
   }

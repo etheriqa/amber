@@ -39,11 +39,6 @@ private:
     z,
   };
 
-  enum struct PhotonType {
-    caustic,
-    global,
-  };
-
   struct Photon {
     vector3_type position;
     vector3_type direction_i;
@@ -54,7 +49,7 @@ private:
     vector3_type point;
     explicit PhotonCompare(const vector3_type& point) : point(point) {}
     bool operator()(const Photon& a, const Photon& b) const {
-      return squared_length(a.position - point) < squared_length(a.position - point);
+      return squared_length(a.position - point) < squared_length(b.position - point);
     }
   };
 
@@ -167,30 +162,26 @@ private:
       std::inplace_merge(photons.begin(),
                          photons.begin() + left_photons.size(),
                          photons.begin() + left_photons.size() + right_photons.size(),
-                         [&](const auto& a, const auto& b){
-        return squared_length(a.position - point) < squared_length(b.position - point);
-      });
+                         PhotonCompare(point));
       std::inplace_merge(photons.begin(),
                          photons.begin() + left_photons.size() + right_photons.size(),
                          photons.end(),
-                         [&](const auto& a, const auto& b){
-        return squared_length(a.position - point) < squared_length(b.position - point);
-      });
+                         PhotonCompare(point));
       photons.resize(std::min(photons.size(), n));
       return photons;
     }
   };
 
-  size_t n_thread, n_photon;
+  size_t n_photon_, n_nearest_photon_;
 
 public:
-  PhotonMapping(size_t n_thread, size_t n_photon) :
-    n_thread(n_thread), n_photon(n_photon) {}
+  PhotonMapping(size_t n_photon, size_t n_nearest_photon) :
+    n_photon_(n_photon), n_nearest_photon_(n_nearest_photon) {}
 
   std::string to_string() const {
     std::stringstream ss;
     ss << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl;
-    ss << "PhotonMapping(n_photon=" << n_photon << ")";
+    ss << "PhotonMapping(n_photon=" << n_photon_ << ", n_nearest_photon=" << n_nearest_photon_ << ")";
     return ss.str();
   }
 
@@ -201,32 +192,19 @@ public:
     const light_set_type lights(objects);
 
     std::cerr << "(1/3) Photon tracing ... ";
-    std::vector<Photon> caustic_photons, global_photons;
-    for (size_t i = 0; i < n_photon; i++) {
-      PhotonType type;
-      std::vector<Photon> photons;
-      std::tie(type, photons) = photonTracing(acceleration, lights, random);
-      for (auto& photon : photons) {
-        photon.power_i /= n_photon;
-      }
-      switch (type) {
-      case PhotonType::caustic:
-        std::move(photons.begin(), photons.end(), std::back_inserter(caustic_photons));
-        break;
-      case PhotonType::global:
-        std::move(photons.begin(), photons.end(), std::back_inserter(global_photons));
-        break;
-      }
+    std::vector<Photon> photons;
+    for (size_t i = 0; i < n_photon_; i++) {
+      const auto samples = photonTracing(acceleration, lights, random);
+      std::move(samples.begin(), samples.end(), std::back_inserter(photons));
+    }
+    for (auto& photon : photons) {
+      photon.power_i /= n_photon_;
     }
     std::cerr << "done." << std::endl;
-    std::cerr << "      " << caustic_photons.size() << " caustic photons are sampled." << std::endl;
-    std::cerr << "      " << global_photons.size() << " global photons are sampled." << std::endl;
+    std::cerr << "      " << photons.size() << " photons are sampled." << std::endl;
 
     std::cerr << "(2/3) Building photon maps ... ";
-    const PhotonMapNode caustic_photon_map(caustic_photons.begin(),
-                                           caustic_photons.end());
-    const PhotonMapNode global_photon_map(global_photons.begin(),
-                                          global_photons.end());
+    const PhotonMapNode photon_map(photons.begin(), photons.end());
     std::cerr << "done." << std::endl;
 
     std::cerr << "(3/3) Rendering ... " << std::endl;
@@ -234,8 +212,7 @@ public:
       std::cerr << "\ry = " << y;
       for (size_t x = 0; x < camera.image_width(); x++) {
         radiant_type power;
-        power += rendering(acceleration, camera, caustic_photon_map, x, y, random);
-        power += rendering(acceleration, camera, global_photon_map, x, y, random);
+        power += rendering(acceleration, camera, photon_map, x, y, random);
         camera.expose(x, y, power);
       }
     }
@@ -251,19 +228,18 @@ public:
   }
 
 private:
-  std::tuple<PhotonType, std::vector<Photon>>
+  std::vector<Photon>
   photonTracing(const acceleration_type& acceleration,
                 const light_set_type& lights,
                 Random& random) const {
     const auto light = lights.sample(random);
     const auto sample = light.sample_initial_ray(random);
-    auto power = light.emittance();
 
+    auto power = lights.total_power();
     auto ray = sample.ray;
     hit_type hit;
     object_type object;
 
-    auto type = PhotonType::global;
     std::vector<Photon> photons;
 
     for (;;) {
@@ -271,36 +247,33 @@ private:
       if (!hit) {
         break;
       }
-      switch (object.surface_type()) {
-      case material::SurfaceType::specular:
-        if (photons.empty()) {
-          type = PhotonType::caustic;
-        }
-        break;
-      case material::SurfaceType::diffuse:
+
+      if (object.surface_type() == material::SurfaceType::diffuse) {
         Photon photon;
         photon.position = hit.position;
         photon.direction_i = -ray.direction;
         photon.power_i = power;
         photons.push_back(photon);
-        break;
-      }
-      if (type == PhotonType::caustic && !photons.empty()) {
-        break;
       }
 
-      const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
-      power *= sample.bsdf / sample.psa_probability;
-      const auto p_russian_roulette = max(power);
+      const auto sample =
+        object.sample_scattering(-ray.direction, hit.normal, random);
+      ray = ray_type(hit.position, sample.direction_o);
+      const auto reflectance = sample.bsdf / sample.psa_probability;
+      power *= reflectance;
+
+      if (object.surface_type() == material::SurfaceType::specular) {
+        continue;
+      }
+
+      const auto p_russian_roulette = max(reflectance);
       if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
-
-      ray = ray_type(hit.position, sample.direction_o);
-      power /= std::min(static_cast<real_type>(1), p_russian_roulette);
+      power /= std::min<real_type>(1, p_russian_roulette);
     }
 
-    return std::make_tuple(type, photons);
+    return photons;
   }
 
   radiant_type
@@ -309,6 +282,7 @@ private:
             const PhotonMapNode& photon_map,
             size_t x, size_t y,
             Random& random) const {
+    radiant_type power, weight(1);
     auto ray = camera.sample_initial_ray(x, y, random).ray;
     hit_type hit;
     object_type object;
@@ -316,26 +290,58 @@ private:
     for (;;) {
       std::tie(hit, object) = acceleration.cast(ray);
       if (!hit) {
-        return radiant_type();
+        break;
       }
-      // TODO
-      if (object.surface_type() == material::SurfaceType::specular) {
-        return radiant_type();
+
+      if (object.is_emissive() && dot(hit.normal, ray.direction) < 0) {
+        power += object.emittance();
       }
-      const auto photons =
-        photon_map.searchNearestNeighbourPhotons(hit.position, 1, 10);
-      if (photons.empty()) {
-        return radiant_type();
+
+      if (object.surface_type() == material::SurfaceType::diffuse) {
+        const auto photons = photon_map.searchNearestNeighbourPhotons(
+          hit.position, 1, n_nearest_photon_);
+        power += weight * gaussianFilter(photons, hit, object, -ray.direction);
+        break;
       }
-      const auto area = static_cast<real_type>(kPI) *
-        squared_length(photons.back().position - hit.position);
-      radiant_type power;
-      for (const auto& photon : photons) {
-        power += photon.power_i *
-          object.bsdf(photon.direction_i, -ray.direction, hit.normal);
+
+      const auto sample =
+        object.sample_scattering(-ray.direction, hit.normal, random);
+      ray = ray_type(hit.position, sample.direction_o);
+      const auto reflectance = sample.bsdf / sample.psa_probability;
+      weight *= reflectance;
+
+#if 0
+      const auto p_russian_roulette = max(reflectance);
+      if (random.uniform<real_type>() >= p_russian_roulette) {
+        break;
       }
-      return power / area;
+      weight /= std::min<real_type>(1, p_russian_roulette);
+#endif
     }
+
+    return power;
+  }
+
+  radiant_type
+  gaussianFilter(const std::vector<Photon>& photons,
+                 const hit_type& hit,
+                 const object_type& object,
+                 const vector3_type& direction_o) const {
+    const real_type alpha = 0.918;
+    const real_type beta = 1.953;
+    const auto squared_max_distance =
+      squared_length(photons.back().position - hit.position);
+    radiant_type power;
+    for (const auto& photon : photons) {
+      const auto squared_distance =
+        squared_length(photon.position - hit.position);
+      const auto weight = 1 -
+        (1 - std::exp(-beta * squared_distance / 2 / squared_max_distance)) /
+        (1 - std::exp(-beta));
+      const auto bsdf = object.bsdf(photon.direction_i, direction_o, hit.normal);
+      power += bsdf * photon.power_i * weight;
+    }
+    return power * alpha / static_cast<real_type>(kPI) / squared_max_distance;
   }
 };
 
