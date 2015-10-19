@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <future>
+#include <iterator>
 #include <sstream>
 #include <vector>
 #include "geometry/aabb.h"
@@ -41,32 +42,38 @@ private:
 
   struct Photon {
     vector3_type position;
-    vector3_type direction_i;
-    radiant_type power_i;
+    vector3_type direction;
+    radiant_type power;
+    Axis axis;
   };
 
-  struct PhotonCompare {
+  struct PhotonComparator {
     vector3_type point;
-    explicit PhotonCompare(const vector3_type& point) : point(point) {}
+    explicit PhotonComparator(const vector3_type& point) : point(point) {}
     bool operator()(const Photon& a, const Photon& b) const {
       return squared_length(a.position - point) < squared_length(b.position - point);
     }
   };
 
-  struct PhotonMapNode {
-    Axis axis;
-    Photon photon;
-    PhotonMapNode *left = nullptr, *right = nullptr;
+  struct PhotonMap {
+    std::vector<Photon> photons_;
 
     template <typename RandomAccessIterator>
-    PhotonMapNode(RandomAccessIterator first, RandomAccessIterator last) {
-      aabb_type voxel;
+    static void buildPhotonMap(RandomAccessIterator first,
+                               RandomAccessIterator last,
+                               std::vector<Photon>& photons,
+                               size_t pos) {
+      if (pos >= photons.size()) {
+        return;
+      }
+      aabb_type aabb;
       std::for_each(first, last, [&](const auto& photon){
-        voxel += aabb_type(photon.position);
+        aabb += aabb_type(photon.position);
       });
-      const auto x = voxel.max.x - voxel.min.x;
-      const auto y = voxel.max.y - voxel.min.y;
-      const auto z = voxel.max.z - voxel.min.z;
+      const auto x = aabb.max.x - aabb.min.x;
+      const auto y = aabb.max.y - aabb.min.y;
+      const auto z = aabb.max.z - aabb.min.z;
+      Axis axis;
       if (x > y && x > z) {
         axis = Axis::x;
       } else if (y > z) {
@@ -74,42 +81,48 @@ private:
       } else {
         axis = Axis::z;
       }
-      // TODO use std::partial_sort
+      const auto middle = first + std::distance(first, last) / 2;
       std::sort(first, last, [&](const auto& a, const auto& b){
-        switch (axis) {
-        case Axis::x:
-          return a.position.x < b.position.x;
-        case Axis::y:
-          return a.position.y < b.position.y;
-        case Axis::z:
-          return a.position.z < b.position.z;
-        }
+          switch (axis) {
+          case Axis::x:
+            return a.position.x < b.position.x;
+          case Axis::y:
+            return a.position.y < b.position.y;
+          case Axis::z:
+            return a.position.z < b.position.z;
+          }
       });
-      const auto median = first + std::distance(first, last) / 2;
-      photon = *median;
-      if (std::distance(first, median) > 0) {
-        left = new PhotonMapNode(first, median);
-      }
-      if (std::distance(median + 1, last) > 0) {
-        right = new PhotonMapNode(median + 1, last);
-      }
+      photons[pos] = *middle;
+      photons[pos].axis = axis;
+      buildPhotonMap(first, middle, photons, pos * 2 + 1);
+      buildPhotonMap(middle + 1, last, photons, pos * 2 + 2);
     }
 
-    PhotonMapNode(const PhotonMapNode&) = delete;
-
-    ~PhotonMapNode() {
-      delete left;
-      delete right;
+    PhotonMap(std::vector<Photon> photons) : photons_(photons.size()) {
+      buildPhotonMap(photons.begin(), photons.end(), photons_, 0);
     }
 
-    PhotonMapNode& operator=(const PhotonMapNode&) = delete;
+    std::vector<Photon> kNearestNeighbours(const vector3_type& point,
+                                           real_type radius,
+                                           size_t k) const {
+      std::vector<Photon> heap;
+      heap.reserve(k + 1);
+      kNearestNeighbours(heap, 0, point, radius * radius, k);
+      std::sort_heap(heap.begin(), heap.end(), PhotonComparator(point));
+      return heap;
+    }
 
-    std::vector<Photon>
-    searchNearestNeighbourPhotons(const vector3_type& point,
-                                  real_type squared_radius,
-                                  size_t n) const {
+    void kNearestNeighbours(std::vector<Photon>& heap,
+                            size_t pos,
+                            const vector3_type& point,
+                            real_type squared_radius,
+                            size_t k) const {
+      if (pos >= photons_.size()) {
+        return;
+      }
+      const auto& photon = photons_[pos];
       real_type plane_distance;
-      switch (axis) {
+      switch (photon.axis) {
       case Axis::x:
         plane_distance = point.x - photon.position.x;
         break;
@@ -120,55 +133,29 @@ private:
         plane_distance = point.z - photon.position.z;
         break;
       }
-      const auto squared_plane_distance = plane_distance * plane_distance;
-
-      std::vector<Photon> left_photons, right_photons;
+      size_t near, far;
       if (plane_distance < 0) {
-        if (left != nullptr) {
-          left_photons =
-            left->searchNearestNeighbourPhotons(point, squared_radius, n);
-          if (left_photons.size() == n) {
-            squared_radius =
-              std::min(squared_radius,
-                       squared_length(left_photons.back().position - point));
-          }
-        }
-        if (right != nullptr && squared_plane_distance < squared_radius) {
-          right_photons =
-            right->searchNearestNeighbourPhotons(point, squared_radius, n);
-        }
+        near = pos * 2 + 1;
+        far = pos * 2 + 2;
       } else {
-        if (right != nullptr) {
-          right_photons =
-            right->searchNearestNeighbourPhotons(point, squared_radius, n);
-          if (right_photons.size() == n) {
-            squared_radius =
-              std::min(squared_radius,
-                       squared_length(right_photons.back().position - point));
-          }
-        }
-        if (left != nullptr && squared_plane_distance < squared_radius) {
-          left_photons =
-            left->searchNearestNeighbourPhotons(point, squared_radius, n);
-        }
+        near = pos * 2 + 2;
+        far = pos * 2 + 1;
       }
-
-      std::vector<Photon> photons;
-      std::move(left_photons.begin(), left_photons.end(),
-                std::back_inserter(photons));
-      std::move(right_photons.begin(), right_photons.end(),
-                std::back_inserter(photons));
-      photons.push_back(photon);
-      std::inplace_merge(photons.begin(),
-                         photons.begin() + left_photons.size(),
-                         photons.begin() + left_photons.size() + right_photons.size(),
-                         PhotonCompare(point));
-      std::inplace_merge(photons.begin(),
-                         photons.begin() + left_photons.size() + right_photons.size(),
-                         photons.end(),
-                         PhotonCompare(point));
-      photons.resize(std::min(photons.size(), n));
-      return photons;
+      kNearestNeighbours(heap, near, point, squared_radius, k);
+      if (heap.size() >= k) {
+        squared_radius = squared_length(heap.front().position - point);
+      }
+      if (plane_distance * plane_distance < squared_radius) {
+        kNearestNeighbours(heap, far, point, squared_radius, k);
+      }
+      if (squared_length(photon.position - point) < squared_radius) {
+        heap.push_back(photon);
+        std::push_heap(heap.begin(), heap.end(), PhotonComparator(point));
+      }
+      while (heap.size() > k) {
+        std::pop_heap(heap.begin(), heap.end(), PhotonComparator(point));
+        heap.pop_back();
+      }
     }
   };
 
@@ -198,19 +185,19 @@ public:
       std::move(samples.begin(), samples.end(), std::back_inserter(photons));
     }
     for (auto& photon : photons) {
-      photon.power_i /= n_photon_;
+      photon.power /= n_photon_;
     }
     std::cerr << "done." << std::endl;
     std::cerr << "      " << photons.size() << " photons are sampled." << std::endl;
 
     std::cerr << "(2/3) Building photon maps ... ";
-    const PhotonMapNode photon_map(photons.begin(), photons.end());
+    const PhotonMap photon_map(std::move(photons));
     std::cerr << "done." << std::endl;
 
     std::cerr << "(3/3) Rendering ... " << std::endl;
     for (size_t y = 0; y < camera.image_height(); y++) {
-      std::cerr << "\ry = " << y;
       for (size_t x = 0; x < camera.image_width(); x++) {
+        std::cerr << "\ry = " << y << std::flush;
         radiant_type power;
         power += rendering(acceleration, camera, photon_map, x, y, random);
         camera.expose(x, y, power);
@@ -251,8 +238,8 @@ private:
       if (object.surface_type() == material::SurfaceType::diffuse) {
         Photon photon;
         photon.position = hit.position;
-        photon.direction_i = -ray.direction;
-        photon.power_i = power;
+        photon.direction = -ray.direction;
+        photon.power = power;
         photons.push_back(photon);
       }
 
@@ -279,7 +266,7 @@ private:
   radiant_type
   rendering(const acceleration_type& acceleration,
             const camera_type& camera,
-            const PhotonMapNode& photon_map,
+            const PhotonMap& photon_map,
             size_t x, size_t y,
             Random& random) const {
     radiant_type power, weight(1);
@@ -298,8 +285,8 @@ private:
       }
 
       if (object.surface_type() == material::SurfaceType::diffuse) {
-        const auto photons = photon_map.searchNearestNeighbourPhotons(
-          hit.position, 1, n_nearest_photon_);
+        const auto photons =
+          photon_map.kNearestNeighbours(hit.position, 1, n_nearest_photon_);
         power += weight * gaussianFilter(photons, hit, object, -ray.direction);
         break;
       }
@@ -309,14 +296,6 @@ private:
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;
-
-#if 0
-      const auto p_russian_roulette = max(reflectance);
-      if (random.uniform<real_type>() >= p_russian_roulette) {
-        break;
-      }
-      weight /= std::min<real_type>(1, p_russian_roulette);
-#endif
     }
 
     return power;
@@ -338,8 +317,8 @@ private:
       const auto weight = 1 -
         (1 - std::exp(-beta * squared_distance / 2 / squared_max_distance)) /
         (1 - std::exp(-beta));
-      const auto bsdf = object.bsdf(photon.direction_i, direction_o, hit.normal);
-      power += bsdf * photon.power_i * weight;
+      const auto bsdf = object.bsdf(photon.direction, direction_o, hit.normal);
+      power += bsdf * photon.power * weight;
     }
     return power * alpha / static_cast<real_type>(kPI) / squared_max_distance;
   }
