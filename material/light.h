@@ -44,9 +44,9 @@ public:
     return radiant_type();
   }
 
-  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
+  scattering_sample_type sample_scattering(const radiant_type&, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    return Lambertian<radiant_type, real_type>(radiant_type()).sample_scattering(direction_i, normal, random);
+    return Lambertian<radiant_type, real_type>(radiant_type()).sample_scattering(radiant_type(), direction_i, normal, random);
   }
 };
 

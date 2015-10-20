@@ -249,7 +249,7 @@ private:
       }
 
       const auto sample =
-        object.sample_scattering(-ray.direction, hit.normal, random);
+        object.sample_scattering(power, -ray.direction, hit.normal, random);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
@@ -297,7 +297,7 @@ private:
       }
 
       const auto sample =
-        object.sample_scattering(-ray.direction, hit.normal, random);
+        object.sample_scattering(weight, -ray.direction, hit.normal, random);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;

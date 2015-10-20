@@ -44,7 +44,7 @@ public:
     return radiant_type();
   }
 
-  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
+  scattering_sample_type sample_scattering(const radiant_type&, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
     const auto signed_cos_i = dot(direction_i, normal);
     const auto reflection_direction_o = 2 * signed_cos_i * normal - direction_i;

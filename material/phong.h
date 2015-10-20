@@ -55,7 +55,7 @@ public:
     }
   }
 
-  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
+  scattering_sample_type sample_scattering(const radiant_type&, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
     const auto direction_o = m_p_diffuse > random.uniform<real_type>()
       ? sample_diffuse_direction(direction_i, normal, random)

@@ -294,7 +294,7 @@ private:
         break;
       }
 
-      const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
+      const auto sample = object.sample_scattering(event.weight * bsdf / probability, -ray.direction, hit.normal, random);
 
       const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
 
