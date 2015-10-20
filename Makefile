@@ -24,6 +24,10 @@ bdpt: $(TARGET)
 	convert output.ppm bdpt.png
 	open bdpt.png
 
+pm: $(TARGET)
+	$(TARGET) --algorithm pm
+	convert output.ppm pm.png
+	open pm.png
 
 clean:
 	$(RM) $(TARGET) $(shell find $(SRC_DIR) -name '*.o') $(shell find $(SRC_DIR) -name '*.d')

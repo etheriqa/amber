@@ -106,6 +106,11 @@ public:
   {
     return m_material->sample_scattering(direction_i, normal, random);
   }
+
+  radiant_type power() const noexcept
+  {
+    return surface_area() * emittance() * static_cast<real_type>(kPI);
+  }
 };
 
 }

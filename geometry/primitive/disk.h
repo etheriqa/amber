@@ -58,7 +58,7 @@ public:
        return hit_type();
      }
 
-     if (norm2(ray.origin + t * ray.direction - m_center) > m_radius * m_radius) {
+     if (squared_length(ray.origin + t * ray.direction - m_center) > m_radius * m_radius) {
        return hit_type();
      }
 
