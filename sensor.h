@@ -5,13 +5,12 @@
 
 namespace amber {
 
-template <typename Radiant>
+template <typename Radiant, typename RealType>
 class Sensor
 {
 public:
   using radiant_type    = Radiant;
-
-  using real_type       = typename radiant_type::real_type;
+  using real_type       = RealType;
 
   using image_reference = Image<radiant_type>*;
   using vector3_type    = geometry::Vector3<real_type>;

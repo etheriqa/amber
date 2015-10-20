@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include "image.h"
-#include "radiometry/rgb.h"
+#include "radiometry/srgb.h"
 
 namespace amber {
 namespace io {
@@ -17,7 +17,7 @@ void export_ppm(const char* filename, const Image<radiometry::SRGB>& image)
 
   for (size_t j = 0; j < image.m_height; j++) {
     for (size_t i = 0; i < image.m_width; i++) {
-      ofs << static_cast<size_t>(image.pixel(i, j).x) << ' ' << static_cast<size_t>(image.pixel(i, j).y) << ' ' << static_cast<size_t>(image.pixel(i, j).z) << std::endl;
+      ofs << static_cast<size_t>(image.pixel(i, j).r()) << ' ' << static_cast<size_t>(image.pixel(i, j).g()) << ' ' << static_cast<size_t>(image.pixel(i, j).b()) << std::endl;
     }
   }
 }

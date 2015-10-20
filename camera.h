@@ -8,18 +8,17 @@
 
 namespace amber {
 
-template <typename Radiant>
+template <typename Radiant, typename RealType>
 class Camera
 {
 public:
   using radiant_type            = Radiant;
-
-  using real_type               = typename radiant_type::real_type;
+  using real_type               = RealType;
 
   using initial_ray_sample_type = geometry::InitialRaySample<real_type>;
   using lens_reference          = lens::Lens<real_type>*;
   using ray_type                = geometry::Ray<real_type>;
-  using sensor_reference        = Sensor<radiant_type>*;
+  using sensor_reference        = Sensor<radiant_type, real_type>*;
   using vector3_type            = geometry::Vector3<real_type>;
 
 private:

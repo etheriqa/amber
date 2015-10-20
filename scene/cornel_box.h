@@ -23,11 +23,11 @@ typename Acceleration::object_buffer_type cornel_box()
 
   using RGB           = typename Acceleration::object_type::radiant_type;
 
-  using Lambertian    = material::Lambertian<RGB>;
-  using Light         = material::Light<RGB>;
-  using Phong         = material::Phong<RGB>;
-  using Refraction    = material::Refraction<RGB>;
-  using Specular      = material::Specular<RGB>;
+  using Lambertian    = material::Lambertian<RGB, RealType>;
+  using Light         = material::Light<RGB, RealType>;
+  using Phong         = material::Phong<RGB, RealType>;
+  using Refraction    = material::Refraction<RGB, RealType>;
+  using Specular      = material::Specular<RGB, RealType>;
 
   using ObjectBuffer  = typename Acceleration::object_buffer_type;
 

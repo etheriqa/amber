@@ -102,14 +102,14 @@ public:
     return m_material->bsdf(direction_i, direction_o, normal);
   }
 
-  scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
+  scattering_sample_type sample_scattering(const radiant_type& radiant, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    return m_material->sample_scattering(direction_i, normal, random);
+    return m_material->sample_scattering(radiant, direction_i, normal, random);
   }
 
   radiant_type power() const noexcept
   {
-    return surface_area() * emittance() * static_cast<real_type>(kPI);
+    return emittance() * surface_area() * kPI;
   }
 };
 

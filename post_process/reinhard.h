@@ -67,7 +67,7 @@ public:
 private:
   static real_type luminance(const hdr_type& pixel)
   {
-    return 0.27 * pixel.x + 0.67 * pixel.y + 0.06 * pixel.z;
+    return 0.27 * pixel.r() + 0.67 * pixel.g() + 0.06 * pixel.b();
   }
 };
 

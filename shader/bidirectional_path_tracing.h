@@ -211,7 +211,7 @@ private:
         }
       }
 
-      if (!std::isfinite(max(power))) { // FIXME biased
+      if (!std::isfinite(power.max())) { // FIXME biased
         continue;
       }
 
@@ -228,7 +228,7 @@ private:
     // s = 0
     const auto light = lights->sample(random);
     const auto sample = light.sample_initial_ray(random);
-    const auto area_probability = l1norm(light.emittance() / lights->total_power());
+    const auto area_probability = light.emittance().sum() / lights->total_power().sum();
     const auto psa_probability = static_cast<real_type>(1 / kPI);
 
     Event event;
@@ -294,7 +294,7 @@ private:
         break;
       }
 
-      const auto sample = object.sample_scattering(-ray.direction, hit.normal, random);
+      const auto sample = object.sample_scattering(event.weight * bsdf / probability, -ray.direction, hit.normal, random);
 
       const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
 
@@ -311,7 +311,7 @@ private:
       bsdf = sample.bsdf;
       probability = sample.psa_probability;
 
-      const auto p_russian_roulette = max(bsdf / probability);
+      const auto p_russian_roulette = (bsdf / probability).max();
       if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
