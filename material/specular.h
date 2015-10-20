@@ -7,11 +7,11 @@
 namespace amber {
 namespace material {
 
-template <typename Radiant>
-class Specular : public Material<Radiant>
+template <typename Radiant, typename RealType>
+class Specular : public Material<Radiant, RealType>
 {
 public:
-  using material_type          = Material<Radiant>;
+  using material_type          = Material<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;

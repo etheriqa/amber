@@ -54,7 +54,7 @@ private:
   using radiant_type      = amber::radiometry::RGB<real_type>;
 
   using primitive_type    = amber::geometry::primitive::Primitive<real_type>;
-  using material_type     = amber::material::Material<radiant_type>;
+  using material_type     = amber::material::Material<radiant_type, real_type>;
   using object_type       = amber::Object<primitive_type, material_type>;
 
   using acceleration_type = amber::acceleration::KDTree<object_type>;
@@ -159,8 +159,8 @@ public:
     }
     const auto lens   = new amber::lens::Pinhole<real_type>();
     const auto image  = new amber::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor = new amber::Sensor<radiant_type>(image);
-    const auto camera = amber::Camera<radiant_type>(
+    const auto sensor = new amber::Sensor<radiant_type, real_type>(image);
+    const auto camera = amber::Camera<radiant_type, real_type>(
       lens, sensor,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 

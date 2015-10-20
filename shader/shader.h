@@ -91,7 +91,7 @@ struct Shader
   using ray_type                 = typename object_type::ray_type;
   using real_type                = typename object_type::real_type;
 
-  using camera_type              = Camera<radiant_type>;
+  using camera_type              = Camera<radiant_type, real_type>;
   using progress_const_reference = std::shared_ptr<const ShadingProgress>;
   using progress_reference       = std::shared_ptr<ShadingProgress>;
   using progress_type            = ShadingProgress;

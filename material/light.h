@@ -7,11 +7,11 @@
 namespace amber {
 namespace material {
 
-template <typename Radiant>
-class Light : public Material<Radiant>
+template <typename Radiant, typename RealType>
+class Light : public Material<Radiant, RealType>
 {
 public:
-  using material_type          = Material<Radiant>;
+  using material_type          = Material<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
@@ -46,7 +46,7 @@ public:
 
   scattering_sample_type sample_scattering(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    return Lambertian<radiant_type>(radiant_type()).sample_scattering(direction_i, normal, random);
+    return Lambertian<radiant_type, real_type>(radiant_type()).sample_scattering(direction_i, normal, random);
   }
 };
 

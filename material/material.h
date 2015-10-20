@@ -6,13 +6,12 @@
 namespace amber {
 namespace material {
 
-template <typename Radiant>
+template <typename Radiant, typename RealType>
 struct Material
 {
-  using material_type = Material<Radiant>;
+  using material_type = Material<Radiant, RealType>;
   using radiant_type  = Radiant;
-
-  using real_type     = typename radiant_type::real_type;
+  using real_type     = RealType;
 
   using vector3_type  = geometry::Vector3<real_type>;
 

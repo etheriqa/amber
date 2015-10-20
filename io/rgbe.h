@@ -22,11 +22,11 @@ void export_rgbe(const char* filename, const Image<radiometry::RGB<RealType>>& i
       const auto& p = image.pixel(i, j);
 
       int exponent;
-      const auto significand = std::frexp(max(p), &exponent) * 256 / max(p);
+      const auto significand = std::frexp(p.max(), &exponent) * 256 / p.max();
 
-      ofs << static_cast<unsigned char>(significand * p.x);
-      ofs << static_cast<unsigned char>(significand * p.y);
-      ofs << static_cast<unsigned char>(significand * p.z);
+      ofs << static_cast<unsigned char>(significand * p.r());
+      ofs << static_cast<unsigned char>(significand * p.g());
+      ofs << static_cast<unsigned char>(significand * p.b());
       ofs << static_cast<unsigned char>(exponent + 128);
     }
   }

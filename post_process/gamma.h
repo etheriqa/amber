@@ -2,6 +2,7 @@
 
 #include "image.h"
 #include "radiometry/rgb.h"
+#include "radiometry/srgb.h"
 
 namespace amber {
 namespace post_process {
@@ -34,9 +35,9 @@ public:
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
         ldr.pixel(i, j) = ldr_type(
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).x, 1 / m_gamma)),
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).y, 1 / m_gamma)),
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).z, 1 / m_gamma))
+          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).r(), 1 / m_gamma)),
+          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).g(), 1 / m_gamma)),
+          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).b(), 1 / m_gamma))
         );
       }
     }

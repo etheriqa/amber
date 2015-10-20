@@ -8,11 +8,11 @@
 namespace amber {
 namespace material {
 
-template <typename Radiant>
-class Phong : public Material<Radiant>
+template <typename Radiant, typename RealType>
+class Phong : public Material<Radiant, RealType>
 {
 public:
-  using material_type          = Material<Radiant>;
+  using material_type          = Material<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
@@ -27,12 +27,7 @@ private:
 
 public:
   Phong(const radiant_type& kd, const radiant_type& ks, real_type n) :
-    m_kd(kd), m_ks(ks), m_n(n)
-  {
-    const auto diffuse_weight = m_kd.x + m_kd.y + m_kd.z;
-    const auto specular_weight = m_ks.x + m_ks.y + m_ks.z;
-    m_p_diffuse = diffuse_weight / (diffuse_weight + specular_weight);
-  }
+    m_kd(kd), m_ks(ks), m_n(n), m_p_diffuse(kd.sum() / (kd.sum() + ks.sum())) {}
 
   bool is_emissive() const noexcept
   {

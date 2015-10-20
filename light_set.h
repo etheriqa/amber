@@ -35,7 +35,7 @@ public:
         continue;
       }
       total_power_ += object.power();
-      nodes_.emplace_back(l1norm(total_power_), object);
+      nodes_.emplace_back(total_power_.sum(), object);
     }
   }
 

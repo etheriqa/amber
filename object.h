@@ -109,7 +109,7 @@ public:
 
   radiant_type power() const noexcept
   {
-    return surface_area() * emittance() * static_cast<real_type>(kPI);
+    return emittance() * surface_area() * kPI;
   }
 };
 

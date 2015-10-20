@@ -258,7 +258,7 @@ private:
         continue;
       }
 
-      const auto p_russian_roulette = max(reflectance);
+      const auto p_russian_roulette = reflectance.max();
       if (random.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
