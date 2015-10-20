@@ -37,7 +37,7 @@ const size_t kWidth            = 512;
 const size_t kHeight           = 512;
 const size_t kPTSPP            = 1024;
 const size_t kBDPTSPP          = 128;
-const size_t kPMNPhoton        = 1000000;
+const size_t kPMNPhoton        = 4194304;
 const size_t kPMNNearestPhoton = 16;
 
 }
