@@ -58,12 +58,15 @@ private:
   struct PhotonMap {
     std::vector<Photon> photons_;
 
+    PhotonMap(std::vector<Photon> photons) : photons_(photons.size()) {
+      buildPhotonMap(photons.begin(), photons.end(), 0);
+    }
+
     template <typename RandomAccessIterator>
-    static void buildPhotonMap(RandomAccessIterator first,
-                               RandomAccessIterator last,
-                               std::vector<Photon>& photons,
-                               size_t pos) {
-      if (pos >= photons.size()) {
+    void buildPhotonMap(RandomAccessIterator first,
+                        RandomAccessIterator last,
+                        size_t pos) {
+      if (pos >= photons_.size()) {
         return;
       }
       aabb_type aabb;
@@ -81,7 +84,6 @@ private:
       } else {
         axis = Axis::z;
       }
-      const auto middle = first + std::distance(first, last) / 2;
       std::sort(first, last, [&](const auto& a, const auto& b){
           switch (axis) {
           case Axis::x:
@@ -92,14 +94,17 @@ private:
             return a.position.z < b.position.z;
           }
       });
-      photons[pos] = *middle;
-      photons[pos].axis = axis;
-      buildPhotonMap(first, middle, photons, pos * 2 + 1);
-      buildPhotonMap(middle + 1, last, photons, pos * 2 + 2);
-    }
-
-    PhotonMap(std::vector<Photon> photons) : photons_(photons.size()) {
-      buildPhotonMap(photons.begin(), photons.end(), photons_, 0);
+      const auto size = std::distance(first, last);
+      size_t left_size = 0, right_size = 0;
+      while (left_size + right_size + 1 < size) {
+        left_size = std::min(size - 1 - right_size, (left_size << 1) + 1);
+        right_size = std::min(size - 1 - left_size, (right_size << 1) + 1);
+      }
+      const auto middle = first + left_size;
+      photons_[pos] = *middle;
+      photons_[pos].axis = axis;
+      buildPhotonMap(first, middle, pos * 2 + 1);
+      buildPhotonMap(middle + 1, last, pos * 2 + 2);
     }
 
     std::vector<Photon> kNearestNeighbours(const vector3_type& point,
