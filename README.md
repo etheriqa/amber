@@ -24,6 +24,7 @@ Features
     - Lambertian
     - Phong
     - Refraction
+    - Spectral refraction
     - Specular
 - Depth of Field
 - Reinhard tonemapping
