@@ -173,7 +173,7 @@ public:
   std::string to_string() const {
     std::stringstream ss;
     ss << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl;
-    ss << "PhotonMapping(n_photon=" << n_photon_ << ", n_nearest_photon=" << n_nearest_photon_ << ")";
+    ss << "Shader: PhotonMapping(n_photon=" << n_photon_ << ", n_nearest_photon=" << n_nearest_photon_ << ")";
     return ss.str();
   }
 
