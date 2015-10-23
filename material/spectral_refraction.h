@@ -9,6 +9,7 @@ template <typename Radiant, typename RealType>
 class SpectralRefraction : public Material<Radiant, RealType> {
 private:
   using material_type          = Material<Radiant, RealType>;
+  using refraction_type        = Refraction<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
   using real_type              = typename material_type::real_type;
@@ -23,28 +24,40 @@ public:
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
-  scattering_sample_type sampleScattering(const radiant_type& radiant,
-                                          const vector3_type& direction_i,
-                                          const vector3_type& normal,
-                                          Random& random) const {
-    const auto u = random.uniform<real_type>(radiant.sum());
-    radiant_type filter;
-    real_type ri;
-    if (u < radiant.r()) {
-      filter = radiant_type(1, 0, 0);
-      ri = refractive_indexes_.r();
-    } else if (u < radiant.r() + radiant.g()) {
-      filter = radiant_type(0, 1, 0);
-      ri = refractive_indexes_.g();
-    } else {
-      filter = radiant_type(0, 0, 1);
-      ri = refractive_indexes_.b();
+  std::vector<scattering_sample_type>
+  scatteringCandidates(const radiant_type& radiant,
+                       const vector3_type& direction_i,
+                       const vector3_type& normal) const {
+    const auto r = refraction_type(refractive_indexes_.r());
+    const auto g = refraction_type(refractive_indexes_.g());
+    const auto b = refraction_type(refractive_indexes_.b());
+
+    std::vector<scattering_sample_type> candidates;
+    for (auto s : r.scatteringCandidates(radiant_type(), direction_i, normal)) {
+      const auto filter = radiant_type(1, 0, 0);
+      s.bsdf *= filter;
+      s.psa_probability *= (radiant * filter).sum() / radiant.sum();
+      if (s.psa_probability > 0) {
+        candidates.push_back(s);
+      }
     }
-    auto sample = Refraction<radiant_type, real_type>(ri)
-      .sampleScattering(radiant_type(), direction_i, normal, random);
-    sample.bsdf *= filter;
-    sample.psa_probability *= (radiant * filter).sum() / radiant.sum();
-    return sample;
+    for (auto s : g.scatteringCandidates(radiant_type(), direction_i, normal)) {
+      const auto filter = radiant_type(0, 1, 0);
+      s.bsdf *= filter;
+      s.psa_probability *= (radiant * filter).sum() / radiant.sum();
+      if (s.psa_probability > 0) {
+        candidates.push_back(s);
+      }
+    }
+    for (auto s : b.scatteringCandidates(radiant_type(), direction_i, normal)) {
+      const auto filter = radiant_type(0, 0, 1);
+      s.bsdf *= filter;
+      s.psa_probability *= (radiant * filter).sum() / radiant.sum();
+      if (s.psa_probability > 0) {
+        candidates.push_back(s);
+      }
+    }
+    return candidates;
   }
 };
 

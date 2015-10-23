@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numeric>
 #include <vector>
 #include "material/surface_type.h"
 #include "random.h"
@@ -35,7 +36,24 @@ public:
   sampleScattering(const radiant_type& radiant,
                    const vector3_type& direction_i,
                    const vector3_type& normal,
-                   Random& random) const = 0;
+                   Random& random) const {
+    const auto candidates = scatteringCandidates(radiant, direction_i, normal);
+    if (candidates.size() == 1) {
+      return candidates.front();
+    }
+
+    const auto r = random.uniform(std::accumulate(
+      candidates.begin(), candidates.end(), static_cast<real_type>(0),
+      [](const auto& acc, const auto& s){ return acc + s.psa_probability; }));
+    real_type p = 0;
+    for (const auto& s : candidates) {
+      p += s.psa_probability;
+      if (r < p) {
+        return s;
+      }
+    }
+    return candidates.back();
+  }
 
   virtual std::vector<ScatteringSample>
   scatteringCandidates(const radiant_type& radiant,

@@ -24,17 +24,17 @@ public:
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
-  scattering_sample_type sampleScattering(const radiant_type&,
-                                          const vector3_type& direction_i,
-                                          const vector3_type& normal,
-                                          Random& random) const {
+  std::vector<scattering_sample_type>
+  scatteringCandidates(const radiant_type&,
+                       const vector3_type& direction_i,
+                       const vector3_type& normal) const {
     const auto direction_o =
       2 * dot(direction_i, normal) * normal - direction_i;
     scattering_sample_type sample;
     sample.direction_o = direction_o;
     sample.bsdf = ks_ / kEPS;
     sample.psa_probability = 1 / kEPS;
-    return sample;
+    return std::vector<scattering_sample_type>({sample});
   }
 };
 

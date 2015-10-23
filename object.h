@@ -107,6 +107,13 @@ public:
     return m_material->sampleScattering(radiant, direction_i, normal, random);
   }
 
+  std::vector<scattering_sample_type>
+  scatteringCandidates(const radiant_type& radiant,
+                       const vector3_type& direction_i,
+                       const vector3_type& normal) const {
+    return m_material->scatteringCandidates(radiant, direction_i, normal);
+  }
+
   radiant_type power() const noexcept
   {
     return emittance() * surface_area() * kPI;

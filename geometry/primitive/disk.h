@@ -74,7 +74,7 @@ public:
     const auto radius = std::sqrt(random.uniform(m_radius * m_radius));
 
     vector3_type u, v;
-    std::tie(u, v) = orthonormal_basis(m_normal);
+    std::tie(u, v) = orthonormalBasis(m_normal);
 
     real_type x, y;
     std::tie(x, y) = random.circle<real_type>();
