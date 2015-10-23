@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <ostream>
 #include <tuple>
@@ -8,239 +9,161 @@
 namespace amber {
 namespace geometry {
 
-template <typename RealType>
-struct Vector3
-{
-  using real_type    = RealType;
+template <typename T>
+class Vector3 {
+public:
+  using value_type = T;
 
-  using vector3_type = Vector3<real_type>;
+private:
+  std::array<T, 3> values_;
 
-  real_type x, y, z;
+public:
+  Vector3() noexcept {}
+  explicit Vector3(const T& value) noexcept { values_.fill(value); }
+  Vector3(const T& x, const T& y, const T& z) noexcept : values_({{x, y, z}}) {}
 
-  explicit Vector3() :
-    x(real_type()), y(real_type()), z(real_type())
-  {}
+  T& x() noexcept { return values_[0]; }
+  const T& x() const noexcept { return values_[0]; }
+  T& y() noexcept { return values_[1]; }
+  const T& y() const noexcept { return values_[1]; }
+  T& z() noexcept { return values_[2]; }
+  const T& z() const noexcept { return values_[2]; }
 
-  explicit Vector3(real_type k) :
-    x(k), y(k), z(k)
-  {}
+  T& operator[](size_t pos) { return values_[pos]; }
+  const T& operator[](size_t pos) const { return values_[pos]; }
 
-  Vector3(real_type x, real_type y, real_type z) :
-    x(x), y(y), z(z)
-  {}
+  T min() const noexcept { return std::min({x(), y(), z()}); }
+  T max() const noexcept { return std::max({x(), y(), z()}); }
+  T sum() const noexcept { return x() + y() + z(); }
+  T avg() const noexcept { return sum() / 3; }
+  T squaredLength() const noexcept { return dot(*this, *this); }
+  T length() const noexcept { return std::sqrt(squaredLength()); }
 
-  real_type& operator[](size_t pos) noexcept
-  {
-    switch (pos) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    default:
-      throw std::runtime_error("invalid position");
-    }
+  template <typename U>
+  Vector3<T>& operator+=(const U& u) noexcept {
+    return *this = *this + u;
   }
 
-  const real_type& operator[](size_t pos) const noexcept
-  {
-    switch (pos) {
-    case 0:
-      return x;
-    case 1:
-      return y;
-    case 2:
-      return z;
-    default:
-      throw std::runtime_error("invalid position");
-    }
+  template <typename U>
+  Vector3<T>& operator-=(const U& u) noexcept {
+    return *this = *this - u;
   }
 
-  vector3_type& operator+=(const vector3_type& a) noexcept
-  {
-    *this = *this + a;
-    return *this;
+  template <typename U>
+  Vector3<T>& operator*=(const U& u) noexcept {
+    return *this = *this * u;
   }
 
-  vector3_type& operator-=(const vector3_type& a) noexcept
-  {
-    *this = *this - a;
-    return *this;
-  }
-
-  vector3_type& operator*=(const vector3_type& a) noexcept
-  {
-    *this = *this * a;
-    return *this;
-  }
-
-  vector3_type& operator*=(real_type a) noexcept
-  {
-    *this = *this * a;
-    return *this;
-  }
-
-  vector3_type& operator/=(const vector3_type& a) noexcept
-  {
-    *this = *this / a;
-    return *this;
-  }
-
-  vector3_type& operator/=(real_type a) noexcept
-  {
-    *this = *this / a;
-    return *this;
+  template <typename U>
+  Vector3<T>& operator/=(const U& u) noexcept {
+    return *this = *this / u;
   }
 };
 
-template <typename RealType>
-std::ostream& operator<<(std::ostream& os, const Vector3<RealType>& a)
-{
-  os << "(" << a.x << " " << a.y << " " << a.z << ")";
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Vector3<T>& v) {
+  os << "(" << v.x() << " " << v.y() << " " << v.z() << ")";
   return os;
 }
 
-template <typename RealType>
-Vector3<RealType>& operator+(const Vector3<RealType>& a) noexcept
-{
-  return a;
+template <typename T>
+const Vector3<T>& operator+(const Vector3<T>& v) noexcept {
+  return v;
 }
 
-template <typename RealType>
-Vector3<RealType> operator-(const Vector3<RealType>& a) noexcept
-{
-  return Vector3<RealType>(-a.x, -a.y, -a.z);
+template <typename T>
+Vector3<T> operator-(const Vector3<T>& v) noexcept {
+  return Vector3<T>(-v.x(), -v.y(), -v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator+(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a.x + b.x, a.y + b.y, a.z + b.z);
+template <typename T>
+Vector3<T> operator+(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+  return Vector3<T>(u.x() + v.x(), u.y() + v.y(), u.z() + v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator+(const Vector3<RealType>& a, RealType b) noexcept
-{
-  return Vector3<RealType>(a.x + b, a.y + b, a.z + b);
+template <typename T, typename U>
+Vector3<T> operator+(const Vector3<T>& v, const U& s) noexcept {
+  return Vector3<T>(v.x() + s, v.y() + s, v.z() + s);
 }
 
-template <typename RealType>
-Vector3<RealType> operator+(RealType a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a + b.x, a + b.y, a + b.z);
+template <typename T, typename U>
+Vector3<T> operator+(const U& s, const Vector3<T>& v) noexcept {
+  return Vector3<T>(s + v.x(), s + v.y(), s + v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator-(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a.x - b.x, a.y - b.y, a.z - b.z);
+template <typename T>
+Vector3<T> operator-(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+  return Vector3<T>(u.x() - v.x(), u.y() - v.y(), u.z() - v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator-(const Vector3<RealType>& a, RealType b) noexcept
-{
-  return Vector3<RealType>(a.x - b, a.y - b, a.z - b);
+template <typename T, typename U>
+Vector3<T> operator-(const Vector3<T>& v, const U& s) noexcept {
+  return Vector3<T>(v.x() - s, v.y() - s, v.z() - s);
 }
 
-template <typename RealType>
-Vector3<RealType> operator-(RealType a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a - b.x, a - b.y, a - b.z);
+template <typename T, typename U>
+Vector3<T> operator-(const U& s, const Vector3<T>& v) noexcept {
+  return Vector3<T>(s - v.x(), s - v.y(), s - v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator*(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a.x * b.x, a.y * b.y, a.z * b.z);
+template <typename T>
+Vector3<T> operator*(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+  return Vector3<T>(u.x() * v.x(), u.y() * v.y(), u.z() * v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator*(const Vector3<RealType>& a, RealType k) noexcept
-{
-  return Vector3<RealType>(a.x * k, a.y * k, a.z * k);
+template <typename T, typename U>
+Vector3<T> operator*(const Vector3<T>& v, const U& s) noexcept {
+  return Vector3<T>(v.x() * s, v.y() * s, v.z() * s);
 }
 
-template <typename RealType>
-Vector3<RealType> operator*(RealType k, const Vector3<RealType>& a) noexcept
-{
-  return Vector3<RealType>(k * a.x, k * a.y, k * a.z);
+template <typename T, typename U>
+Vector3<T> operator*(const U& s, const Vector3<T>& v) noexcept {
+  return Vector3<T>(s * v.x(), s * v.y(), s * v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator/(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(a.x / b.x, a.y / b.y, a.z / b.z);
+template <typename T>
+Vector3<T> operator/(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+  return Vector3<T>(u.x() / v.x(), u.y() / v.y(), u.z() / v.z());
 }
 
-template <typename RealType>
-Vector3<RealType> operator/(const Vector3<RealType>& a, RealType k) noexcept
-{
-  return Vector3<RealType>(a.x / k, a.y / k, a.z / k);
+template <typename T, typename U>
+Vector3<T> operator/(const Vector3<T>& v, const U& s) noexcept {
+  return Vector3<T>(v.x() / s, v.y() / s, v.z() / s);
 }
 
-template <typename RealType>
-Vector3<RealType> operator/(RealType k, const Vector3<RealType>& a) noexcept
-{
-  return Vector3<RealType>(k / a.x, k / a.y, k / a.z);
+template <typename T, typename U>
+Vector3<T> operator/(const U& s, const Vector3<T>& v) noexcept {
+  return Vector3<T>(s / v.x(), s / v.y(), s / v.z());
 }
 
-template <typename RealType>
-RealType max(const Vector3<RealType>& a) noexcept
-{
-  return std::max({a.x, a.y, a.z});
+template <typename T>
+T dot(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+  return u.x() * v.x() + u.y() * v.y() + u.z() * v.z();
 }
 
-template <typename RealType>
-RealType min(const Vector3<RealType>& a) noexcept
-{
-  return std::min({a.x, a.y, a.z});
+template <typename T>
+Vector3<T> normalize(const Vector3<T>& v) noexcept {
+  return v / v.length();
 }
 
-template <typename RealType>
-RealType l1norm(const Vector3<RealType>& a) noexcept
+template <typename T>
+Vector3<T> cross(const Vector3<T>& u, const Vector3<T>& v) noexcept
 {
-  return std::abs(a.x) + std::abs(a.y) + std::abs(a.z);
-}
-
-template <typename RealType>
-RealType dot(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-template <typename RealType>
-RealType squared_length(const Vector3<RealType>& a) noexcept
-{
-  return dot(a, a);
-}
-
-template <typename RealType>
-RealType length(const Vector3<RealType>& a) noexcept
-{
-  return std::sqrt(squared_length(a));
-}
-
-template <typename RealType>
-Vector3<RealType> normalize(const Vector3<RealType>& a) noexcept
-{
-  return a / length(a);
-}
-
-template <typename RealType>
-Vector3<RealType> cross(const Vector3<RealType>& a, const Vector3<RealType>& b) noexcept
-{
-  return Vector3<RealType>(
-    a.y * b.z - a.z * b.y,
-    a.z * b.x - a.x * b.z,
-    a.x * b.y - a.y * b.x
+  return Vector3<T>(
+    u.y() * v.z() - u.z() * v.y(),
+    u.z() * v.x() - u.x() * v.z(),
+    u.x() * v.y() - u.y() * v.x()
   );
 }
 
-template <typename RealType>
-std::tuple<Vector3<RealType>, Vector3<RealType>> orthonormal_basis(const Vector3<RealType>& w) noexcept
+template <typename T>
+std::tuple<Vector3<T>, Vector3<T>>
+orthonormalBasis(const Vector3<T>& w) noexcept
 {
-  const auto u = normalize(cross(w, std::abs(w.x) < std::abs(w.y) ? Vector3<RealType>(1, 0, 0) : Vector3<RealType>(0, 1, 0)));
+  const auto u = normalize(cross(w,
+                                 std::abs(w.x()) < std::abs(w.y())
+                                 ? Vector3<T>(1, 0, 0)
+                                 : Vector3<T>(0, 1, 0)));
   const auto v = normalize(cross(w, u));
   return std::make_tuple(u, v);
 }

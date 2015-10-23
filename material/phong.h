@@ -93,7 +93,7 @@ private:
 
       vector3_type w = 2 * dot(direction_i, normal) * normal - direction_i;
       vector3_type u, v;
-      std::tie(u, v) = orthonormal_basis(w);
+      std::tie(u, v) = orthonormalBasis(w);
       const auto direction_o = u * x + v * y + w * z;
 
       if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {

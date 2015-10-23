@@ -50,9 +50,9 @@ public:
     const auto u = ray.direction - dot(ray.direction, m_normal) * m_normal;
     const auto v = OC - dot(OC, m_normal) * m_normal;
 
-    const auto a = squared_length(u);
+    const auto a = u.squaredLength();
     const auto b = -2 * dot(u, v);
-    const auto c = squared_length(v) - m_radius * m_radius;
+    const auto c = v.squaredLength() - m_radius * m_radius;
 
     bool hit;
     real_type alpha, beta;

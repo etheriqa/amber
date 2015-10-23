@@ -35,21 +35,21 @@ public:
 
   real_type surface_area() const noexcept
   {
-    return length(cross(m_v1 - m_v0, m_v2 - m_v0)) / 2;
+    return (cross(m_v1 - m_v0, m_v2 - m_v0)).length() / 2;
   }
 
   aabb_type aabb() const noexcept
   {
     return aabb_type(
       vector3_type(
-        std::min({m_v0.x, m_v1.x, m_v2.x}),
-        std::min({m_v0.y, m_v1.y, m_v2.y}),
-        std::min({m_v0.z, m_v1.z, m_v2.z})
+        std::min({m_v0.x(), m_v1.x(), m_v2.x()}),
+        std::min({m_v0.y(), m_v1.y(), m_v2.y()}),
+        std::min({m_v0.z(), m_v1.z(), m_v2.z()})
       ),
       vector3_type(
-        std::max({m_v0.x, m_v1.x, m_v2.x}),
-        std::max({m_v0.y, m_v1.y, m_v2.y}),
-        std::max({m_v0.z, m_v1.z, m_v2.z})
+        std::max({m_v0.x(), m_v1.x(), m_v2.x()}),
+        std::max({m_v0.y(), m_v1.y(), m_v2.y()}),
+        std::max({m_v0.z(), m_v1.z(), m_v2.z()})
       )
     );
   }

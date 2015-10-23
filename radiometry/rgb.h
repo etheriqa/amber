@@ -26,18 +26,10 @@ public:
   T& b() noexcept { return values_[2]; }
   const T& b() const noexcept { return values_[2]; }
 
-  T min() const noexcept {
-    return std::min({r(), g(), b()});
-  }
-  T max() const noexcept {
-    return std::max({r(), g(), b()});
-  }
-  T sum() const noexcept {
-    return r() + g() + b();
-  }
-  T avg() const noexcept {
-    return sum() / 3;
-  }
+  T min() const noexcept { return std::min({r(), g(), b()}); }
+  T max() const noexcept { return std::max({r(), g(), b()}); }
+  T sum() const noexcept { return r() + g() + b(); }
+  T avg() const noexcept { return sum() / 3; }
 
   template <typename U>
   RGB<T>& operator+=(const U& u) noexcept {

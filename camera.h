@@ -67,8 +67,8 @@ public:
 
     return initial_ray_sample_type(
       ray_type(
-        m_origin + ray.origin.x * m_u + ray.origin.y * m_v + ray.origin.z * m_w,
-        ray.direction.x * m_u + ray.direction.y * m_v + ray.direction.z * m_w
+        m_origin + ray.origin.x() * m_u + ray.origin.y() * m_v + ray.origin.z() * m_w,
+        ray.direction.x() * m_u + ray.direction.y() * m_v + ray.direction.z() * m_w
       ),
       m_w
     );
