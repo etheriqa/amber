@@ -16,11 +16,11 @@ private:
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 
-  radiant_type refractive_indexes_;
+  radiant_type refractive_indices_;
 
 public:
-  explicit SpectralRefraction(const radiant_type& refractive_indexes) noexcept
-    : refractive_indexes_(refractive_indexes) {}
+  explicit SpectralRefraction(const radiant_type& refractive_indices) noexcept
+    : refractive_indices_(refractive_indices) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
@@ -28,9 +28,9 @@ public:
   scatteringCandidates(const radiant_type& radiant,
                        const vector3_type& direction_i,
                        const vector3_type& normal) const {
-    const auto r = refraction_type(refractive_indexes_.r());
-    const auto g = refraction_type(refractive_indexes_.g());
-    const auto b = refraction_type(refractive_indexes_.b());
+    const auto r = refraction_type(refractive_indices_.r());
+    const auto g = refraction_type(refractive_indices_.g());
+    const auto b = refraction_type(refractive_indices_.b());
 
     std::vector<scattering_sample_type> candidates;
     for (auto s : r.scatteringCandidates(radiant_type(), direction_i, normal)) {
