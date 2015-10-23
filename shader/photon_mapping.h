@@ -51,7 +51,9 @@ private:
     vector3_type point;
     explicit PhotonComparator(const vector3_type& point) : point(point) {}
     bool operator()(const Photon& a, const Photon& b) const {
-      return squared_length(a.position - point) < squared_length(b.position - point);
+      return
+        (a.position - point).squaredLength()
+        < (b.position - point).squaredLength();
     }
   };
 
@@ -73,9 +75,9 @@ private:
       std::for_each(first, last, [&](const auto& photon){
         aabb += aabb_type(photon.position);
       });
-      const auto x = aabb.max.x - aabb.min.x;
-      const auto y = aabb.max.y - aabb.min.y;
-      const auto z = aabb.max.z - aabb.min.z;
+      const auto x = aabb.max.x() - aabb.min.x();
+      const auto y = aabb.max.y() - aabb.min.y();
+      const auto z = aabb.max.z() - aabb.min.z();
       Axis axis;
       if (x > y && x > z) {
         axis = Axis::x;
@@ -87,11 +89,11 @@ private:
       std::sort(first, last, [&](const auto& a, const auto& b){
           switch (axis) {
           case Axis::x:
-            return a.position.x < b.position.x;
+            return a.position.x() < b.position.x();
           case Axis::y:
-            return a.position.y < b.position.y;
+            return a.position.y() < b.position.y();
           case Axis::z:
-            return a.position.z < b.position.z;
+            return a.position.z() < b.position.z();
           }
       });
       const auto size = std::distance(first, last);
@@ -129,13 +131,13 @@ private:
       real_type plane_distance;
       switch (photon.axis) {
       case Axis::x:
-        plane_distance = point.x - photon.position.x;
+        plane_distance = point.x() - photon.position.x();
         break;
       case Axis::y:
-        plane_distance = point.y - photon.position.y;
+        plane_distance = point.y() - photon.position.y();
         break;
       case Axis::z:
-        plane_distance = point.z - photon.position.z;
+        plane_distance = point.z() - photon.position.z();
         break;
       }
       size_t near, far;
@@ -148,12 +150,12 @@ private:
       }
       kNearestNeighbours(heap, near, point, squared_radius, k);
       if (heap.size() >= k) {
-        squared_radius = squared_length(heap.front().position - point);
+        squared_radius = (heap.front().position - point).squaredLength();
       }
       if (plane_distance * plane_distance < squared_radius) {
         kNearestNeighbours(heap, far, point, squared_radius, k);
       }
-      if (squared_length(photon.position - point) < squared_radius) {
+      if ((photon.position - point).squaredLength() < squared_radius) {
         heap.push_back(photon);
         std::push_heap(heap.begin(), heap.end(), PhotonComparator(point));
       }
@@ -314,11 +316,11 @@ private:
     const real_type alpha = 0.918;
     const real_type beta = 1.953;
     const auto squared_max_distance =
-      squared_length(photons.back().position - hit.position);
+      (photons.back().position - hit.position).squaredLength();
     radiant_type power;
     for (const auto& photon : photons) {
       const auto squared_distance =
-        squared_length(photon.position - hit.position);
+        (photon.position - hit.position).squaredLength();
       const auto weight = 1 -
         (1 - std::exp(-beta * squared_distance / 2 / squared_max_distance)) /
         (1 - std::exp(-beta));

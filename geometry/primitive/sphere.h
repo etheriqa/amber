@@ -42,9 +42,9 @@ public:
 
   hit_type intersect(const ray_type& ray) const noexcept
   {
-    const auto a = squared_length(ray.direction);
+    const real_type a = 1;
     const auto b = -2 * dot(m_center - ray.origin, ray.direction);
-    const auto c = squared_length(m_center - ray.origin) - m_radius * m_radius;
+    const auto c = (m_center - ray.origin).squaredLength() - m_radius * m_radius;
 
     bool hit;
     real_type alpha, beta;

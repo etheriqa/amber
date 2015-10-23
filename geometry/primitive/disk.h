@@ -38,9 +38,9 @@ public:
   aabb_type aabb() const noexcept
   {
     const auto factor = vector3_type(
-      std::sqrt(1 - m_normal.x * m_normal.x),
-      std::sqrt(1 - m_normal.y * m_normal.y),
-      std::sqrt(1 - m_normal.z * m_normal.z)
+      std::sqrt(1 - m_normal.x() * m_normal.x()),
+      std::sqrt(1 - m_normal.y() * m_normal.y()),
+      std::sqrt(1 - m_normal.z() * m_normal.z())
     );
 
     return aabb_type(m_center - m_radius * factor, m_center + m_radius * factor);
@@ -58,7 +58,7 @@ public:
        return hit_type();
      }
 
-     if (squared_length(ray.origin + t * ray.direction - m_center) > m_radius * m_radius) {
+     if ((ray.origin + t * ray.direction - m_center).squaredLength() > m_radius * m_radius) {
        return hit_type();
      }
 

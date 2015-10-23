@@ -82,7 +82,7 @@ public:
   std::tuple<geometry::Vector3<RealType>, RealType>
   hemisphere_sa(const geometry::Vector3<RealType>& w) {
     geometry::Vector3<RealType> u, v;
-    std::tie(u, v) = orthonormal_basis(w);
+    std::tie(u, v) = orthonormalBasis(w);
     return hemisphere_sa(u, v, w);
   }
 
@@ -108,7 +108,7 @@ public:
   std::tuple<geometry::Vector3<RealType>, RealType>
   hemisphere_psa(const geometry::Vector3<RealType>& w) {
     geometry::Vector3<RealType> u, v;
-    std::tie(u, v) = orthonormal_basis(w);
+    std::tie(u, v) = orthonormalBasis(w);
     return hemisphere_psa(u, v, w);
   }
 };
