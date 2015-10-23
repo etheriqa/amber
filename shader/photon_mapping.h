@@ -6,7 +6,7 @@
 #include <sstream>
 #include <vector>
 #include "geometry/aabb.h"
-#include "light_set.h"
+#include "object/light_set.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -30,7 +30,7 @@ public:
   using real_type                = typename shader_type::real_type;
 
   using aabb_type                = geometry::AABB<real_type>;
-  using light_set_type           = LightSet<acceleration_type>;
+  using light_set_type           = object::LightSet<acceleration_type>;
   using vector3_type             = geometry::Vector3<real_type>;
 
 private:

@@ -5,6 +5,7 @@
 #include "random.h"
 
 namespace amber {
+namespace object {
 
 template <typename Acceleration>
 class LightSet {
@@ -29,7 +30,7 @@ private:
   radiant_type total_power_;
 
 public:
-  LightSet(const object_buffer_type& objects) {
+  LightSet(const object_buffer_type& objects) noexcept {
     for (const auto& object : objects) {
       if (!object.isEmissive()) {
         continue;
@@ -39,7 +40,7 @@ public:
     }
   }
 
-  const radiant_type& total_power() const { return total_power_; }
+  const radiant_type& total_power() const noexcept { return total_power_; }
 
   object_type sample(Random& random) const {
     const auto it = std::upper_bound(
@@ -53,4 +54,5 @@ public:
   }
 };
 
+}
 }
