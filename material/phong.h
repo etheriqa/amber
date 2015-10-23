@@ -9,9 +9,8 @@ namespace amber {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Phong : public Material<Radiant, RealType>
-{
-public:
+class Phong : public Material<Radiant, RealType> {
+private:
   using material_type          = Material<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
@@ -19,52 +18,43 @@ public:
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 
-private:
-  radiant_type m_kd; // diffuse reflectivity
-  radiant_type m_ks; // specular reflectivity
-  real_type m_n;  // specular exponent
-  real_type m_p_diffuse;
+  radiant_type kd_; // diffuse reflectivity
+  radiant_type ks_; // specular reflectivity
+  real_type n_;     // specular exponent
+  real_type p_diffuse_;
 
 public:
-  Phong(const radiant_type& kd, const radiant_type& ks, real_type n) :
-    m_kd(kd), m_ks(ks), m_n(n), m_p_diffuse(kd.sum() / (kd.sum() + ks.sum())) {}
+  Phong(const radiant_type& kd, const radiant_type& ks, real_type n) noexcept
+    : kd_(kd), ks_(ks), n_(n), p_diffuse_(kd.sum() / (kd.sum() + ks.sum())) {}
 
-  bool is_emissive() const noexcept
-  {
-    return false;
-  }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::diffuse; }
 
-  SurfaceType surface_type() const noexcept
-  {
-    return SurfaceType::diffuse;
-  }
-
-  radiant_type emittance() const noexcept
-  {
-    return radiant_type();
-  }
-
-  radiant_type bsdf(const vector3_type& direction_i, const vector3_type& direction_o, const vector3_type& normal) const noexcept
-  {
+  radiant_type bsdf(const vector3_type& direction_i,
+                    const vector3_type& direction_o,
+                    const vector3_type& normal) const noexcept {
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
       return radiant_type();
-    } else {
-      const auto cos_alpha = dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
-      return m_kd / static_cast<real_type>(kPI)
-        + m_ks * (m_n + 2) / static_cast<real_type>(2 * kPI) * std::pow(std::max<real_type>(0, cos_alpha), m_n);
     }
+    const auto cos_alpha =
+      dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
+    return kd_ / kPI
+      + ks_ * (n_ + 2) / (2 * kPI)
+      * std::pow(std::max<real_type>(0, cos_alpha), n_);
   }
 
-  scattering_sample_type sample_scattering(const radiant_type&, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
-  {
-    const auto direction_o = m_p_diffuse > random.uniform<real_type>()
-      ? sample_diffuse_direction(direction_i, normal, random)
-      : sample_specular_direction(direction_i, normal, random);
-    const auto cos_alpha = dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
-
-    const auto psa_probability = m_p_diffuse / static_cast<real_type>(kPI)
-      + (1 - m_p_diffuse) * (m_n + 1) / static_cast<real_type>(2 * kPI) * std::pow(std::max<real_type>(0, cos_alpha), m_n);
-
+  scattering_sample_type sampleScattering(const radiant_type&,
+                                          const vector3_type& direction_i,
+                                          const vector3_type& normal,
+                                          Random& random) const {
+    const auto direction_o = p_diffuse_ > random.uniform<real_type>()
+      ? sampleDirectionFromDiffuseComponent(direction_i, normal, random)
+      : sampleDirectionFromSpecularComponent(direction_i, normal, random);
+    const auto cos_alpha =
+      dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
+    const auto psa_probability =
+      p_diffuse_ / kPI
+      + (1 - p_diffuse_) * (n_ + 1) / (2 * kPI)
+      * std::pow(std::max<real_type>(0, cos_alpha), n_);
     scattering_sample_type sample;
     sample.direction_o = direction_o;
     sample.bsdf = bsdf(direction_i, direction_o, normal);
@@ -73,19 +63,24 @@ public:
   }
 
 private:
-  vector3_type sample_diffuse_direction(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
-  {
+  vector3_type
+  sampleDirectionFromDiffuseComponent(const vector3_type& direction_i,
+                                      const vector3_type& normal,
+                                      Random& random) const {
     const auto w = dot(direction_i, normal) > 0 ? normal : -normal;
     return std::get<0>(random.hemisphere_psa(w));
   }
 
-  vector3_type sample_specular_direction(const vector3_type& direction_i, const vector3_type& normal, Random& random) const
-  {
+  vector3_type
+  sampleDirectionFromSpecularComponent(const vector3_type& direction_i,
+                                       const vector3_type& normal,
+                                       Random& random) const {
     while (true) {
-      const auto r0 = random.uniform<real_type>(), r1 = random.uniform<real_type>();
-      const auto cos_alpha = std::pow(r0, 1 / (m_n + 1));
-      const auto sin_alpha = std::sqrt(1 - std::pow(r0, 2 / (m_n + 1)));
-      const auto phi = static_cast<real_type>(2 * kPI) * r1;
+      const auto r0 = random.uniform<real_type>();
+      const auto r1 = random.uniform<real_type>();
+      const auto cos_alpha = std::pow(r0, 1 / (n_ + 1));
+      const auto sin_alpha = std::sqrt(1 - std::pow(r0, 2 / (n_ + 1)));
+      const auto phi = 2 * kPI * r1;
 
       const auto x = sin_alpha * std::cos(phi);
       const auto y = sin_alpha * std::sin(phi);

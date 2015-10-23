@@ -242,7 +242,7 @@ private:
         break;
       }
 
-      if (object.surface_type() == material::SurfaceType::diffuse) {
+      if (object.surfaceType() == material::SurfaceType::diffuse) {
         Photon photon;
         photon.position = hit.position;
         photon.direction = -ray.direction;
@@ -251,12 +251,12 @@ private:
       }
 
       const auto sample =
-        object.sample_scattering(power, -ray.direction, hit.normal, random);
+        object.sampleScattering(power, -ray.direction, hit.normal, random);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
 
-      if (object.surface_type() == material::SurfaceType::specular) {
+      if (object.surfaceType() == material::SurfaceType::specular) {
         continue;
       }
 
@@ -287,11 +287,11 @@ private:
         break;
       }
 
-      if (object.is_emissive() && dot(hit.normal, ray.direction) < 0) {
+      if (object.isEmissive() && dot(hit.normal, ray.direction) < 0) {
         power += object.emittance();
       }
 
-      if (object.surface_type() == material::SurfaceType::diffuse) {
+      if (object.surfaceType() == material::SurfaceType::diffuse) {
         const auto photons =
           photon_map.kNearestNeighbours(hit.position, 1, n_nearest_photon_);
         power += weight * gaussianFilter(photons, hit, object, -ray.direction);
@@ -299,7 +299,7 @@ private:
       }
 
       const auto sample =
-        object.sample_scattering(weight, -ray.direction, hit.normal, random);
+        object.sampleScattering(weight, -ray.direction, hit.normal, random);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;

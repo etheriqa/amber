@@ -146,7 +146,7 @@ private:
             // zero light subpath vertices
             const auto l = eye_subpath[t - 1];
             const auto e = eye_subpath[t - 2];
-            if (!l.object.is_emissive()) {
+            if (!l.object.isEmissive()) {
               continue;
             }
             if (dot(e.position - l.position, l.normal) <= 0) {
@@ -160,7 +160,7 @@ private:
             // one light subpath vertex
             const auto l = light_subpath[s - 1];
             const auto e = eye_subpath[t - 1];
-            if (e.object.surface_type() == material::SurfaceType::specular) {
+            if (e.object.surfaceType() == material::SurfaceType::specular) {
               continue;
             }
             if (dot(e.position - l.position, l.normal) <= 0) {
@@ -182,10 +182,10 @@ private:
           } else {
             const auto& l = light_subpath[s - 1];
             const auto& e = eye_subpath[t - 1];
-            if (l.object.surface_type() == material::SurfaceType::specular) {
+            if (l.object.surfaceType() == material::SurfaceType::specular) {
               continue;
             }
-            if (e.object.surface_type() == material::SurfaceType::specular) {
+            if (e.object.surfaceType() == material::SurfaceType::specular) {
               continue;
             }
             contribution.power =
@@ -294,7 +294,7 @@ private:
         break;
       }
 
-      const auto sample = object.sample_scattering(event.weight * bsdf / probability, -ray.direction, hit.normal, random);
+      const auto sample = object.sampleScattering(event.weight * bsdf / probability, -ray.direction, hit.normal, random);
 
       const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
 
