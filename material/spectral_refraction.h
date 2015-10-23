@@ -37,26 +37,23 @@ public:
                                            Random& random) const {
     const auto u = random.uniform<real_type>(radiant.sum());
     radiant_type filter;
-    real_type refractive_index, probability;
+    real_type refractive_index;
     if (u < radiant.r()) {
       filter = radiant_type(1, 0, 0);
       refractive_index = refractive_indexes_.r();
-      probability = radiant.r() / radiant.sum();
     } else if (u < radiant.r() + radiant.g()) {
       filter = radiant_type(0, 1, 0);
       refractive_index = refractive_indexes_.g();
-      probability = radiant.g() / radiant.sum();
     } else {
       filter = radiant_type(0, 0, 1);
       refractive_index = refractive_indexes_.b();
-      probability = radiant.b() / radiant.sum();
     }
     const auto refraction =
       Refraction<radiant_type, real_type>(refractive_index);
     auto sample =
       refraction.sample_scattering(radiant_type(), direction_i, normal, random);
     sample.bsdf *= filter;
-    sample.psa_probability *= probability;
+    sample.psa_probability *= (radiant * filter).sum() / radiant.sum();
     return sample;
   }
 };
