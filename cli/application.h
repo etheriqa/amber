@@ -5,15 +5,15 @@
 #include <string>
 #include <thread>
 #include "acceleration/kdtree.h"
-#include "aperture/circle.h"
-#include "aperture/polygon.h"
-#include "camera.h"
+#include "camera/aperture/circle.h"
+#include "camera/aperture/polygon.h"
+#include "camera/camera.h"
+#include "camera/image.h"
+#include "camera/lens/pinhole.h"
+#include "camera/lens/thin.h"
 #include "geometry/vector.h"
-#include "image.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
-#include "lens/pinhole.h"
-#include "lens/thin.h"
 #include "object/object.h"
 #include "post_process/gamma.h"
 #include "post_process/reinhard.h"
@@ -157,10 +157,10 @@ public:
       );
       break;
     }
-    const auto lens   = new amber::lens::Pinhole<real_type>();
-    const auto image  = new amber::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor = new amber::Sensor<radiant_type, real_type>(image);
-    const auto camera = amber::Camera<radiant_type, real_type>(
+    const auto lens   = new amber::camera::lens::Pinhole<real_type>();
+    const auto image  = new amber::camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
+    const auto sensor = new amber::camera::Sensor<radiant_type, real_type>(image);
+    const auto camera = amber::camera::Camera<radiant_type, real_type>(
       lens, sensor,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <fstream>
-#include "image.h"
+#include "camera/image.h"
 #include "radiometry/srgb.h"
 
 namespace amber {
 namespace io {
 
-void export_ppm(const char* filename, const Image<radiometry::SRGB>& image)
+void export_ppm(const char* filename, const camera::Image<radiometry::SRGB>& image)
 {
   std::ofstream ofs(filename, std::ofstream::trunc);
 

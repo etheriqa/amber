@@ -1,6 +1,6 @@
 #pragma once
 
-#include "image.h"
+#include "camera/image.h"
 #include "radiometry/rgb.h"
 #include "radiometry/srgb.h"
 
@@ -16,8 +16,8 @@ public:
   using hdr_type       = radiometry::RGB<real_type>;
   using ldr_type       = radiometry::SRGB;
 
-  using hdr_image_type = Image<hdr_type>;
-  using ldr_image_type = Image<ldr_type>;
+  using hdr_image_type = camera::Image<hdr_type>;
+  using ldr_image_type = camera::Image<ldr_type>;
 
 private:
   real_type m_gamma;

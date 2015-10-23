@@ -4,6 +4,7 @@
 #include "random.h"
 
 namespace amber {
+namespace camera {
 namespace aperture {
 
 template <typename RealType>
@@ -18,5 +19,6 @@ struct Aperture
   virtual vector3_type sample_point(Random& g) const = 0;
 };
 
+}
 }
 }

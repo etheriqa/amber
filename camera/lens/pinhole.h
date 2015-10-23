@@ -1,9 +1,10 @@
 #pragma once
 
 #include <sstream>
-#include "lens/lens.h"
+#include "camera/lens/lens.h"
 
 namespace amber {
+namespace camera {
 namespace lens {
 
 template <typename RealType>
@@ -40,5 +41,6 @@ public:
   }
 };
 
+}
 }
 }

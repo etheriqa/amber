@@ -2,10 +2,11 @@
 
 #include <cmath>
 #include <sstream>
-#include "aperture/aperture.h"
+#include "camera/aperture/aperture.h"
 #include "constant.h"
 
 namespace amber {
+namespace camera {
 namespace aperture {
 
 template <typename RealType>
@@ -39,5 +40,6 @@ public:
   }
 };
 
+}
 }
 }

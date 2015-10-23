@@ -1,9 +1,10 @@
 #pragma once
 
+#include "camera/image.h"
 #include "geometry/vector.h"
-#include "image.h"
 
 namespace amber {
+namespace camera {
 
 template <typename Radiant, typename RealType>
 class Sensor
@@ -59,4 +60,5 @@ public:
   }
 };
 
+}
 }

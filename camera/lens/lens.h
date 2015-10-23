@@ -5,6 +5,7 @@
 #include "geometry/ray.h"
 
 namespace amber {
+namespace camera {
 namespace lens {
 
 template <typename RealType>
@@ -22,5 +23,6 @@ struct Lens {
   virtual ray_type sample_ray(const vector3_type&, Random&) const = 0;
 };
 
+}
 }
 }
