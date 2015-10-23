@@ -82,14 +82,14 @@ public:
     return m_primitive->sample_initial_ray(random);
   }
 
-  bool is_emissive() const noexcept
+  bool isEmissive() const noexcept
   {
-    return m_material->is_emissive();
+    return m_material->isEmissive();
   }
 
-  material::SurfaceType surface_type() const noexcept
+  material::SurfaceType surfaceType() const noexcept
   {
-    return m_material->surface_type();
+    return m_material->surfaceType();
   }
 
   radiant_type emittance() const noexcept
@@ -102,9 +102,16 @@ public:
     return m_material->bsdf(direction_i, direction_o, normal);
   }
 
-  scattering_sample_type sample_scattering(const radiant_type& radiant, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
+  scattering_sample_type sampleScattering(const radiant_type& radiant, const vector3_type& direction_i, const vector3_type& normal, Random& random) const
   {
-    return m_material->sample_scattering(radiant, direction_i, normal, random);
+    return m_material->sampleScattering(radiant, direction_i, normal, random);
+  }
+
+  std::vector<scattering_sample_type>
+  scatteringCandidates(const radiant_type& radiant,
+                       const vector3_type& direction_i,
+                       const vector3_type& normal) const {
+    return m_material->scatteringCandidates(radiant, direction_i, normal);
   }
 
   radiant_type power() const noexcept

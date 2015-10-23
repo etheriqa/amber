@@ -242,7 +242,7 @@ private:
         break;
       }
 
-      if (object.surface_type() == material::SurfaceType::diffuse) {
+      if (object.surfaceType() == material::SurfaceType::diffuse) {
         Photon photon;
         photon.position = hit.position;
         photon.direction = -ray.direction;
@@ -251,12 +251,12 @@ private:
       }
 
       const auto sample =
-        object.sample_scattering(power, -ray.direction, hit.normal, random);
+        object.sampleScattering(power, -ray.direction, hit.normal, random);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
 
-      if (object.surface_type() == material::SurfaceType::specular) {
+      if (object.surfaceType() == material::SurfaceType::specular) {
         continue;
       }
 
@@ -276,33 +276,56 @@ private:
             const PhotonMap& photon_map,
             size_t x, size_t y,
             Random& random) const {
-    radiant_type power, weight(1);
-    auto ray = camera.sample_initial_ray(x, y, random).ray;
+    return estimatePower(acceleration,
+                         photon_map,
+                         camera.sample_initial_ray(x, y, random).ray,
+                         radiant_type(1),
+                         random);
+  }
+
+  radiant_type
+  estimatePower(const acceleration_type& acceleration,
+                const PhotonMap& photon_map,
+                const ray_type& ray,
+                const radiant_type& weight,
+                Random& random,
+                size_t depth = 0) const {
+    radiant_type power;
     hit_type hit;
     object_type object;
 
-    for (;;) {
-      std::tie(hit, object) = acceleration.cast(ray);
-      if (!hit) {
-        break;
-      }
+    std::tie(hit, object) = acceleration.cast(ray);
+    if (!hit) {
+      return radiant_type();
+    }
 
-      if (object.is_emissive() && dot(hit.normal, ray.direction) < 0) {
-        power += object.emittance();
-      }
+    if (object.isEmissive() && dot(hit.normal, ray.direction) < 0) {
+      power += weight * object.emittance();
+    }
 
-      if (object.surface_type() == material::SurfaceType::diffuse) {
-        const auto photons =
-          photon_map.kNearestNeighbours(hit.position, 1, n_nearest_photon_);
-        power += weight * gaussianFilter(photons, hit, object, -ray.direction);
-        break;
-      }
+    if (object.surfaceType() == material::SurfaceType::diffuse) {
+      const auto photons =
+        photon_map.kNearestNeighbours(hit.position, 1, n_nearest_photon_);
+      return
+        power + weight * gaussianFilter(photons, hit, object, -ray.direction);
+    }
 
-      const auto sample =
-        object.sample_scattering(weight, -ray.direction, hit.normal, random);
-      ray = ray_type(hit.position, sample.direction_o);
-      const auto reflectance = sample.bsdf / sample.psa_probability;
-      weight *= reflectance;
+    if (depth > 10) { // FIXME biased; need to rewrite with Russian roulette
+      return power;
+    }
+
+    const auto samples =
+      object.scatteringCandidates(weight, -ray.direction, hit.normal);
+    const auto p = std::accumulate(
+      samples.begin(), samples.end(), static_cast<real_type>(0),
+      [](const auto& acc, const auto& s){ return acc + s.psa_probability; });
+    for (const auto& sample : samples) {
+      power += estimatePower(acceleration,
+                             photon_map,
+                             ray_type(hit.position, sample.direction_o),
+                             weight * sample.bsdf / sample.psa_probability,
+                             random,
+                             depth + 1) * sample.psa_probability / p;
     }
 
     return power;

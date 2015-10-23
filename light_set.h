@@ -31,7 +31,7 @@ private:
 public:
   LightSet(const object_buffer_type& objects) {
     for (const auto& object : objects) {
-      if (!object.is_emissive()) {
+      if (!object.isEmissive()) {
         continue;
       }
       total_power_ += object.power();
