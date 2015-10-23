@@ -3,6 +3,7 @@
 #include <vector>
 
 namespace amber {
+namespace camera {
 
 template <typename Pixel>
 class Image
@@ -48,4 +49,5 @@ public:
   }
 };
 
+}
 }

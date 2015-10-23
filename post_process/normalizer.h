@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include "camera/image.h"
 #include "constant.h"
-#include "image.h"
 #include "radiometry/rgb.h"
 
 namespace amber {
@@ -18,7 +18,7 @@ public:
 
   using hdr_type       = radiometry::RGB<real_type>;
 
-  using hdr_image_type = Image<hdr_type>;
+  using hdr_image_type = camera::Image<hdr_type>;
 
   using evaluator_type = std::function<real_type(hdr_type)>;
 

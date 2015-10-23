@@ -2,11 +2,12 @@
 
 #include <cmath>
 #include <sstream>
-#include "aperture/aperture.h"
+#include "camera/aperture/aperture.h"
+#include "camera/lens/lens.h"
 #include "constant.h"
-#include "lens/lens.h"
 
 namespace amber {
+namespace camera {
 namespace lens {
 
 template <typename RealType>
@@ -53,5 +54,6 @@ public:
   }
 };
 
+}
 }
 }

@@ -3,10 +3,11 @@
 #include <cmath>
 #include <sstream>
 #include <string>
-#include "lens/lens.h"
-#include "sensor.h"
+#include "camera/lens/lens.h"
+#include "camera/sensor.h"
 
 namespace amber {
+namespace camera {
 
 template <typename Radiant, typename RealType>
 class Camera
@@ -80,4 +81,5 @@ public:
   }
 };
 
+}
 }

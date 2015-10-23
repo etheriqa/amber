@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include "camera/image.h"
 #include "constant.h"
-#include "image.h"
-#include "radiometry/rgb.h"
 #include "post_process/normalizer.h"
+#include "radiometry/rgb.h"
 
 namespace amber {
 namespace post_process {
@@ -18,7 +18,7 @@ public:
 
   using hdr_type       = radiometry::RGB<real_type>;
 
-  using hdr_image_type = Image<hdr_type>;
+  using hdr_image_type = camera::Image<hdr_type>;
 
 private:
   static constexpr RealType kDelta = 1e-3;
