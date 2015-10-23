@@ -10,17 +10,14 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-struct Primitive
-{
+class Primitive {
+public:
+  using aabb_type               = AABB<RealType>;
+  using hit_type                = Hit<RealType>;
+  using initial_ray_sample_type = InitialRaySample<RealType>;
   using primitive_type          = Primitive<RealType>;
+  using ray_type                = Ray<RealType>;
   using real_type               = RealType;
-
-  using aabb_type               = AABB<real_type>;
-  using hit_type                = Hit<real_type>;
-  using initial_ray_sample_type = InitialRaySample<real_type>;
-  using ray_type                = Ray<real_type>;
-
-  virtual ~Primitive() {}
 
   virtual real_type surface_area() const noexcept = 0;
   virtual aabb_type aabb() const noexcept = 0;

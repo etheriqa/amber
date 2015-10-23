@@ -14,7 +14,7 @@
 #include "io/rgbe.h"
 #include "lens/pinhole.h"
 #include "lens/thin.h"
-#include "object.h"
+#include "object/object.h"
 #include "post_process/gamma.h"
 #include "post_process/reinhard.h"
 #include "radiometry/rgb.h"
@@ -55,7 +55,7 @@ private:
 
   using primitive_type    = amber::geometry::primitive::Primitive<real_type>;
   using material_type     = amber::material::Material<radiant_type, real_type>;
-  using object_type       = amber::Object<primitive_type, material_type>;
+  using object_type       = amber::object::Object<primitive_type, material_type>;
 
   using acceleration_type = amber::acceleration::KDTree<object_type>;
 
