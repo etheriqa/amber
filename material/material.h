@@ -27,16 +27,16 @@ public:
   virtual bool isEmissive() const noexcept { return false; }
   virtual radiant_type emittance() const noexcept { return radiant_type(); }
 
-  virtual radiant_type
-  bsdf(const vector3_type& direction_i,
-       const vector3_type& direction_o,
-       const vector3_type& normal) const noexcept { return radiant_type(); }
+  virtual radiant_type bsdf(const vector3_type&,
+                            const vector3_type&,
+                            const vector3_type&) const noexcept {
+    return radiant_type();
+  }
 
-  virtual ScatteringSample
-  sampleScattering(const radiant_type& radiant,
-                   const vector3_type& direction_i,
-                   const vector3_type& normal,
-                   Random& random) const {
+  virtual ScatteringSample sampleScattering(const radiant_type& radiant,
+                                            const vector3_type& direction_i,
+                                            const vector3_type& normal,
+                                            Random& random) const {
     const auto candidates = scatteringCandidates(radiant, direction_i, normal);
     if (candidates.size() == 1) {
       return candidates.front();
@@ -56,9 +56,9 @@ public:
   }
 
   virtual std::vector<ScatteringSample>
-  scatteringCandidates(const radiant_type& radiant,
-                       const vector3_type& direction_i,
-                       const vector3_type& normal) const {
+  scatteringCandidates(const radiant_type&,
+                       const vector3_type&,
+                       const vector3_type&) const {
     throw std::logic_error("scatteringCandidates is not implemented");
   }
 };

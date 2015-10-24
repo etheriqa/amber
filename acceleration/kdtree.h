@@ -347,8 +347,8 @@ private:
       const auto surface_area = voxel.surface_area();
       const auto p_left = left_voxel.surface_area() / surface_area;
       const auto p_right = right_voxel.surface_area() / surface_area;
-      const auto cost_left = cost(voxel, plane, p_left, p_right, n_left + n_planar, n_right);
-      const auto cost_right = cost(voxel, plane, p_left, p_right, n_left, n_right + n_planar);
+      const auto cost_left = cost(p_left, p_right, n_left + n_planar, n_right);
+      const auto cost_right = cost(p_left, p_right, n_left, n_right + n_planar);
 
       if (voxel.min[static_cast<size_t>(plane.axis)] == plane.position) {
         return std::make_tuple(cost_left, Side::Left);
@@ -374,7 +374,7 @@ private:
       return std::make_tuple(left_voxel, right_voxel);
     }
 
-    static real_type cost(const aabb_type& voxel, const SplitPlane& plane, real_type p_left, real_type p_right, size_t n_left, size_t n_right) noexcept
+    static real_type cost(real_type p_left, real_type p_right, size_t n_left, size_t n_right) noexcept
     {
       return lambda(n_left, n_right) * (TraverseCost + IntersectionCost * (p_left * n_left + p_right * n_right));
     }

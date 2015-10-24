@@ -96,7 +96,7 @@ private:
             return a.position.z() < b.position.z();
           }
       });
-      const auto size = std::distance(first, last);
+      const size_t size = std::distance(first, last);
       size_t left_size = 0, right_size = 0;
       while (left_size + right_size + 1 < size) {
         left_size = std::min(size - 1 - right_size, (left_size << 1) + 1);
