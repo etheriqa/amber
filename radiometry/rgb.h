@@ -41,24 +41,16 @@ public:
   T avg() const noexcept { return sum() / 3; }
 
   template <typename U>
-  RGB<T>& operator+=(const U& u) noexcept {
-    return *this = *this + u;
-  }
+  RGB<T>& operator+=(const U& u) noexcept { return *this = *this + u; }
 
   template <typename U>
-  RGB<T>& operator-=(const U& u) noexcept {
-    return *this = *this - u;
-  }
+  RGB<T>& operator-=(const U& u) noexcept { return *this = *this - u; }
 
   template <typename U>
-  RGB<T>& operator*=(const U& u) noexcept {
-    return *this = *this * u;
-  }
+  RGB<T>& operator*=(const U& u) noexcept { return *this = *this * u; }
 
   template <typename U>
-  RGB<T>& operator/=(const U& u) noexcept {
-    return *this = *this / u;
-  }
+  RGB<T>& operator/=(const U& u) noexcept { return *this = *this / u; }
 };
 
 template <typename T>

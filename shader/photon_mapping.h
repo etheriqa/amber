@@ -38,11 +38,15 @@ public:
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
-  using aabb_type                = geometry::AABB<real_type>;
   using light_set_type           = object::LightSet<acceleration_type>;
   using vector3_type             = geometry::Vector3<real_type>;
 
 private:
+  using photon_real_type         = std::float_t;
+
+  using photon_aabb_type         = geometry::AABB<photon_real_type>;
+  using photon_vector3_type      = geometry::Vector3<photon_real_type>;
+
   enum struct Axis {
     x,
     y,
@@ -50,16 +54,19 @@ private:
   };
 
   struct Photon {
-    vector3_type position;
-    vector3_type direction;
+    photon_vector3_type position;
+    photon_vector3_type direction;
     radiant_type power;
     Axis axis;
   };
 
   struct PhotonComparator {
-    vector3_type point;
-    explicit PhotonComparator(const vector3_type& point) : point(point) {}
-    bool operator()(const Photon& a, const Photon& b) const {
+    photon_vector3_type point;
+    explicit PhotonComparator(const vector3_type& point) noexcept
+      : point(point.template cast<photon_real_type>()) {}
+    explicit PhotonComparator(const photon_vector3_type& point) noexcept
+      : point(point) {}
+    bool operator()(const Photon& a, const Photon& b) const noexcept {
       return
         (a.position - point).squaredLength()
         < (b.position - point).squaredLength();
@@ -69,7 +76,8 @@ private:
   struct PhotonMap {
     std::vector<Photon> photons_;
 
-    PhotonMap(std::vector<Photon> photons) : photons_(photons.size()) {
+    explicit PhotonMap(std::vector<Photon> photons) noexcept
+      : photons_(photons.size()) {
       buildPhotonMap(photons.begin(), photons.end(), 0);
     }
 
@@ -80,9 +88,9 @@ private:
       if (pos >= photons_.size()) {
         return;
       }
-      aabb_type aabb;
+      photon_aabb_type aabb;
       std::for_each(first, last, [&](const auto& photon){
-        aabb += aabb_type(photon.position);
+        aabb += photon_aabb_type(photon.position);
       });
       const auto x = aabb.max.x() - aabb.min.x();
       const auto y = aabb.max.y() - aabb.min.y();
@@ -123,15 +131,19 @@ private:
                                            size_t k) const {
       std::vector<Photon> heap;
       heap.reserve(k + 1);
-      kNearestNeighbours(heap, 0, point, radius * radius, k);
+      kNearestNeighbours(heap,
+                         0,
+                         point.template cast<photon_real_type>(),
+                         radius * radius,
+                         k);
       std::sort_heap(heap.begin(), heap.end(), PhotonComparator(point));
       return heap;
     }
 
     void kNearestNeighbours(std::vector<Photon>& heap,
                             size_t pos,
-                            const vector3_type& point,
-                            real_type squared_radius,
+                            const photon_vector3_type& point,
+                            photon_real_type squared_radius,
                             size_t k) const {
       if (pos >= photons_.size()) {
         return;
@@ -253,8 +265,8 @@ private:
 
       if (object.surfaceType() == material::SurfaceType::diffuse) {
         Photon photon;
-        photon.position = hit.position;
-        photon.direction = -ray.direction;
+        photon.position = hit.position.template cast<photon_real_type>();
+        photon.direction = -ray.direction.template cast<photon_real_type>();
         photon.power = power;
         photons.push_back(photon);
       }
@@ -350,16 +362,23 @@ private:
                  const vector3_type& direction_o) const {
     const real_type alpha = 0.918;
     const real_type beta = 1.953;
+
     const auto squared_max_distance =
-      (photons.back().position - hit.position).squaredLength();
+      (photons.back().position.template cast<real_type>() - hit.position)
+      .squaredLength();
+
     radiant_type power;
     for (const auto& photon : photons) {
       const auto squared_distance =
-        (photon.position - hit.position).squaredLength();
+        (photon.position.template cast<real_type>() - hit.position)
+        .squaredLength();
       const auto weight = 1 -
         (1 - std::exp(-beta * squared_distance / 2 / squared_max_distance)) /
         (1 - std::exp(-beta));
-      const auto bsdf = object.bsdf(photon.direction, direction_o, hit.normal);
+      const auto bsdf =
+        object.bsdf(photon.direction.template cast<real_type>(),
+                    direction_o,
+                    hit.normal);
       power += bsdf * photon.power * weight;
     }
     return power * alpha / kPI / squared_max_distance;

@@ -48,24 +48,19 @@ public:
   T length() const noexcept { return std::sqrt(squaredLength()); }
 
   template <typename U>
-  Vector3<T>& operator+=(const U& u) noexcept {
-    return *this = *this + u;
-  }
+  Vector3<U> cast() const noexcept { return Vector3<U>(x(), y(), z()); }
 
   template <typename U>
-  Vector3<T>& operator-=(const U& u) noexcept {
-    return *this = *this - u;
-  }
+  Vector3<T>& operator+=(const U& u) noexcept { return *this = *this + u; }
 
   template <typename U>
-  Vector3<T>& operator*=(const U& u) noexcept {
-    return *this = *this * u;
-  }
+  Vector3<T>& operator-=(const U& u) noexcept { return *this = *this - u; }
 
   template <typename U>
-  Vector3<T>& operator/=(const U& u) noexcept {
-    return *this = *this / u;
-  }
+  Vector3<T>& operator*=(const U& u) noexcept { return *this = *this * u; }
+
+  template <typename U>
+  Vector3<T>& operator/=(const U& u) noexcept { return *this = *this / u; }
 };
 
 template <typename T>
