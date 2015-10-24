@@ -19,6 +19,7 @@
 #include "camera/image.h"
 #include "camera/lens/pinhole.h"
 #include "camera/lens/thin.h"
+#include "cli/render.h"
 #include "geometry/vector.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
@@ -26,7 +27,6 @@
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
 #include "radiometry/rgb.h"
-#include "render.h"
 #include "scene/cornel_box.h"
 #include "shader/bidirectional_path_tracing.h"
 #include "shader/path_tracing.h"
@@ -57,14 +57,14 @@ class Application
 {
 private:
   using real_type          = std::double_t;
-  using vector3_type       = amber::geometry::Vector3<real_type>;
+  using vector3_type       = geometry::Vector3<real_type>;
 
   using radiant_value_type = std::float_t;
-  using radiant_type       = amber::radiometry::RGB<radiant_value_type>;
+  using radiant_type       = radiometry::RGB<radiant_value_type>;
 
-  using primitive_type     = amber::geometry::primitive::Primitive<real_type>;
-  using material_type      = amber::material::Material<radiant_type, real_type>;
-  using object_type        = amber::object::Object<primitive_type, material_type>;
+  using primitive_type     = geometry::primitive::Primitive<real_type>;
+  using material_type      = material::Material<radiant_type, real_type>;
+  using object_type        = object::Object<primitive_type, material_type>;
 
   using acceleration_type  = amber::acceleration::KDTree<object_type>;
 
@@ -144,41 +144,41 @@ public:
     }
 
     const auto n_thread = std::thread::hardware_concurrency();
-    const auto scene = amber::scene::cornel_box<acceleration_type>();
-    amber::shader::Shader<acceleration_type> *shader;
+    const auto scene = scene::cornel_box<acceleration_type>();
+    shader::Shader<acceleration_type> *shader;
     switch (algorithm) {
     case Algorithm::pt:
-      shader = new amber::shader::PathTracing<acceleration_type>(
+      shader = new shader::PathTracing<acceleration_type>(
         n_thread,
         (spp > 0 ? spp : kPTSPP) / kSSAA / kSSAA
       );
       break;
     case Algorithm::bdpt:
-      shader = new amber::shader::BidirectionalPathTracing<acceleration_type>(
+      shader = new shader::BidirectionalPathTracing<acceleration_type>(
         n_thread,
         (spp > 0 ? spp : kBDPTSPP) / kSSAA / kSSAA
       );
       break;
     case Algorithm::pm:
-      shader = new amber::shader::PhotonMapping<acceleration_type>(
+      shader = new shader::PhotonMapping<acceleration_type>(
         spp > 0 ? spp : kPMNPhoton,
         kPMNNearestPhoton
       );
       break;
     }
-    const auto lens   = new amber::camera::lens::Pinhole<real_type>();
-    const auto image  = new amber::camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor = new amber::camera::Sensor<radiant_type, real_type>(image);
-    const auto camera = amber::camera::Camera<radiant_type, real_type>(
+    const auto lens   = new camera::lens::Pinhole<real_type>();
+    const auto image  = new camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
+    const auto sensor = new camera::Sensor<radiant_type, real_type>(image);
+    const auto camera = camera::Camera<radiant_type, real_type>(
       lens, sensor,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 
-    amber::render(shader, scene, camera);
+    render(shader, scene, camera);
 
-    amber::post_process::Filmic<radiant_type> filmic;
-    amber::post_process::Gamma<radiant_type> gamma;
-    amber::io::export_rgbe("output.hdr", image->down_sample(kSSAA));
-    amber::io::export_ppm("output.ppm", gamma(filmic(image->down_sample(kSSAA))));
+    post_process::Filmic<radiant_type> filmic;
+    post_process::Gamma<radiant_type> gamma;
+    io::export_rgbe("output.hdr", image->down_sample(kSSAA));
+    io::export_ppm("output.ppm", gamma(filmic(image->down_sample(kSSAA))));
 
     return 0;
   }

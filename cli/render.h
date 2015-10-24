@@ -20,6 +20,7 @@
 #include "shader/shader.h"
 
 namespace amber {
+namespace cli {
 
 template <typename Acceleration>
 void render(
@@ -94,4 +95,5 @@ void render(
   }
 }
 
+}
 }
