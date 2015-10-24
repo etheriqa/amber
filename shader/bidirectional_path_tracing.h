@@ -26,6 +26,7 @@ public:
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
   using radiant_type             = typename shader_type::radiant_type;
+  using radiant_value_type       = typename shader_type::radiant_value_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
@@ -115,7 +116,7 @@ private:
         power += sample_pixel(scene, lights, camera, x, y, random);
         progress->done(1);
       }
-      camera.expose(x, y, power / static_cast<real_type>(m_spp));
+      camera.expose(x, y, power / m_spp);
     }
 
     progress->end();
@@ -152,9 +153,7 @@ private:
             if (dot(e.position - l.position, l.normal) <= 0) {
               continue;
             }
-            contribution.power =
-              l.object.emittance() / static_cast<real_type>(kPI) *
-              l.weight;
+            contribution.power = l.object.emittance() / kPI * l.weight;
             contribution.probability = l.probability;
           } else if (s == 1 && t >= 2) {
             // one light subpath vertex
@@ -168,7 +167,7 @@ private:
             }
             contribution.power =
               l.weight *
-              radiant_type(1 / static_cast<real_type>(kPI)) *
+              radiant_type(1 / kPI) *
               geometry_factor(scene, l, e) *
               e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
               e.weight;
@@ -229,7 +228,7 @@ private:
     const auto light = lights->sample(random);
     const auto sample = light.sample_initial_ray(random);
     const auto area_probability = light.emittance().sum() / lights->total_power().sum();
-    const auto psa_probability = static_cast<real_type>(1 / kPI);
+    const auto psa_probability = 1 / kPI;
 
     Event event;
     event.object      = light;
@@ -253,10 +252,10 @@ private:
   ) const
   {
     // t = 0
-    const auto importance = radiant_type(1);                         // FIXME
+    const auto importance = radiant_type(1); // FIXME
     const auto sample = camera.sample_initial_ray(x, y, random);
-    const auto area_probability = static_cast<real_type>(1);      // FIXME
-    const auto psa_probability = static_cast<real_type>(1 / kPI); // FIXME
+    const auto area_probability = 1;         // FIXME
+    const auto psa_probability = 1 / kPI;    // FIXME
 
 
     Event event;
@@ -312,10 +311,10 @@ private:
       probability = sample.psa_probability;
 
       const auto p_russian_roulette = (bsdf / probability).max();
-      if (random.uniform<real_type>() >= p_russian_roulette) {
+      if (random.uniform<radiant_value_type>() >= p_russian_roulette) {
         break;
       }
-      probability *= std::min(static_cast<real_type>(1), p_russian_roulette);
+      probability *= std::min<radiant_value_type>(1, p_russian_roulette);
     }
 
     return subpath;

@@ -45,19 +45,20 @@ const size_t kPMNNearestPhoton = 16;
 namespace amber {
 namespace cli {
 
-template <typename RealType>
 class Application
 {
 private:
-  using real_type         = RealType;
-  using vector3_type      = amber::geometry::Vector3<real_type>;
-  using radiant_type      = amber::radiometry::RGB<real_type>;
+  using real_type          = std::double_t;
+  using vector3_type       = amber::geometry::Vector3<real_type>;
 
-  using primitive_type    = amber::geometry::primitive::Primitive<real_type>;
-  using material_type     = amber::material::Material<radiant_type, real_type>;
-  using object_type       = amber::object::Object<primitive_type, material_type>;
+  using radiant_value_type = std::float_t;
+  using radiant_type       = amber::radiometry::RGB<radiant_value_type>;
 
-  using acceleration_type = amber::acceleration::KDTree<object_type>;
+  using primitive_type     = amber::geometry::primitive::Primitive<real_type>;
+  using material_type      = amber::material::Material<radiant_type, real_type>;
+  using object_type        = amber::object::Object<primitive_type, material_type>;
+
+  using acceleration_type  = amber::acceleration::KDTree<object_type>;
 
   int argc;
   char **argv;
