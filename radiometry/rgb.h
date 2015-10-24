@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <ostream>
 
 namespace amber {
 namespace radiometry {
@@ -53,8 +54,29 @@ public:
 };
 
 template <typename T>
+std::ostream& operator<<(std::ostream& os, const RGB<T>& v) {
+  os << "(" << v.r() << " " << v.g() << " " << v.b() << ")";
+  return os;
+}
+
+template <typename T>
 RGB<T> operator+(const RGB<T>& x, const RGB<T>& y) noexcept {
   return RGB<T>(x.r() + y.r(), x.g() + y.g(), x.b() + y.b());
+}
+
+template <typename T, typename U>
+RGB<T> operator+(const RGB<T>& x, const U& k) noexcept {
+  return RGB<T>(x.r() + k, x.g() + k, x.b() + k);
+}
+
+template <typename T>
+RGB<T> operator-(const RGB<T>& x, const RGB<T>& y) noexcept {
+  return RGB<T>(x.r() - y.r(), x.g() - y.g(), x.b() - y.b());
+}
+
+template <typename T, typename U>
+RGB<T> operator-(const RGB<T>& x, const U& k) noexcept {
+  return RGB<T>(x.r() - k, x.g() - k, x.b() - k);
 }
 
 template <typename T>

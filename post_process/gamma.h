@@ -1,43 +1,40 @@
 #pragma once
 
 #include "camera/image.h"
-#include "radiometry/rgb.h"
 #include "radiometry/srgb.h"
 
 namespace amber {
 namespace post_process {
 
-template <typename RealType>
-class Gamma
-{
-public:
-  using real_type      = RealType;
-
-  using hdr_type       = radiometry::RGB<real_type>;
-  using ldr_type       = radiometry::SRGB;
-
-  using hdr_image_type = camera::Image<hdr_type>;
-  using ldr_image_type = camera::Image<ldr_type>;
+template <typename HDR, typename LDR = radiometry::SRGB>
+class Gamma {
+private:
+  using hdr_image_type = camera::Image<HDR>;
+  using hdr_value_type = typename HDR::value_type;
+  using ldr_image_type = camera::Image<LDR>;
+  using ldr_value_type = typename LDR::value_type;
 
 private:
-  real_type m_gamma;
+  hdr_value_type gamma_;
 
 public:
-  explicit Gamma() : m_gamma(2.2) {}
-  explicit Gamma(real_type gamma) : m_gamma(gamma) {}
+  Gamma() noexcept : gamma_(2.2) {}
+  explicit Gamma(hdr_value_type gamma) noexcept : gamma_(gamma) {}
 
-  ldr_image_type operator()(const hdr_image_type& hdr) const
-  {
+  ldr_image_type operator()(const hdr_image_type& hdr) const {
     const auto& width = hdr.m_width;
     const auto& height = hdr.m_height;
 
     ldr_image_type ldr(width, height);
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        ldr.pixel(i, j) = ldr_type(
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).r(), 1 / m_gamma)),
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).g(), 1 / m_gamma)),
-          std::min(255.0, 256 * std::pow(hdr.pixel(i, j).b(), 1 / m_gamma))
+        const auto& r = hdr.pixel(i, j).r();
+        const auto& g = hdr.pixel(i, j).g();
+        const auto& b = hdr.pixel(i, j).b();
+        ldr.pixel(i, j) = LDR(
+          std::min<hdr_value_type>(255, 255 * std::pow(r, 1 / gamma_)),
+          std::min<hdr_value_type>(255, 255 * std::pow(g, 1 / gamma_)),
+          std::min<hdr_value_type>(255, 255 * std::pow(b, 1 / gamma_))
         );
       }
     }
