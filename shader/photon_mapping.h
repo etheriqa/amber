@@ -26,6 +26,7 @@ public:
   using progress_const_reference = typename shader_type::progress_const_reference;
   using progress_type            = typename shader_type::progress_type;
   using radiant_type             = typename shader_type::radiant_type;
+  using radiant_value_type       = typename shader_type::radiant_value_type;
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
@@ -316,9 +317,12 @@ private:
 
     const auto samples =
       object.scatteringCandidates(weight, -ray.direction, hit.normal);
-    const auto p = std::accumulate(
-      samples.begin(), samples.end(), static_cast<real_type>(0),
-      [](const auto& acc, const auto& s){ return acc + s.psa_probability; });
+    const auto accumulator =
+      [](const auto& acc, const auto& s){ return acc + s.psa_probability; };
+    const auto p = std::accumulate(samples.begin(),
+                                   samples.end(),
+                                   static_cast<radiant_value_type>(0),
+                                   accumulator);
     for (const auto& sample : samples) {
       power += estimatePower(acceleration,
                              photon_map,
@@ -350,7 +354,7 @@ private:
       const auto bsdf = object.bsdf(photon.direction, direction_o, hit.normal);
       power += bsdf * photon.power * weight;
     }
-    return power * alpha / static_cast<real_type>(kPI) / squared_max_distance;
+    return power * alpha / kPI / squared_max_distance;
   }
 };
 

@@ -88,6 +88,7 @@ struct Shader
 
   using hit_type                 = typename object_type::hit_type;
   using radiant_type             = typename object_type::radiant_type;
+  using radiant_value_type       = typename object_type::radiant_value_type;
   using ray_type                 = typename object_type::ray_type;
   using real_type                = typename object_type::real_type;
 

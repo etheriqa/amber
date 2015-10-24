@@ -93,7 +93,7 @@ private:
         power += sample_pixel(scene, camera, x, y, random);
         progress->done(1);
       }
-      camera.expose(x, y, power / static_cast<real_type>(m_spp));
+      camera.expose(x, y, power / m_spp);
     }
 
     progress->end();

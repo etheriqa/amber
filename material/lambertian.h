@@ -13,7 +13,6 @@ private:
   using material_type          = Material<Radiant, RealType>;
 
   using radiant_type           = typename material_type::radiant_type;
-  using real_type              = typename material_type::real_type;
   using scattering_sample_type = typename material_type::ScatteringSample;
   using vector3_type           = typename material_type::vector3_type;
 

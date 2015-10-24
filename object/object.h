@@ -18,6 +18,7 @@ public:
   using ray_type                = typename primitive_type::ray_type;
   using real_type               = typename primitive_type::real_type;
   using radiant_type            = typename material_type::radiant_type;
+  using radiant_value_type      = typename material_type::radiant_value_type;
   using scattering_sample_type  = typename material_type::ScatteringSample;
   using vector3_type            = typename material_type::vector3_type;
 

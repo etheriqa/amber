@@ -11,10 +11,11 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Material {
 public:
-  using material_type = Material<Radiant, RealType>;
-  using radiant_type  = Radiant;
-  using real_type     = RealType;
-  using vector3_type  = geometry::Vector3<RealType>;
+  using material_type      = Material<Radiant, RealType>;
+  using radiant_type       = Radiant;
+  using radiant_value_type = typename Radiant::value_type;
+  using real_type          = RealType;
+  using vector3_type       = geometry::Vector3<RealType>;
 
   struct ScatteringSample
   {
@@ -42,9 +43,14 @@ public:
       return candidates.front();
     }
 
-    const auto r = random.uniform(std::accumulate(
-      candidates.begin(), candidates.end(), static_cast<real_type>(0),
-      [](const auto& acc, const auto& s){ return acc + s.psa_probability; }));
+    const auto accumulator = [](const auto& acc, const auto& sample){
+      return acc + sample.psa_probability;
+    };
+    const auto r =
+      random.uniform(std::accumulate(candidates.begin(),
+                                     candidates.end(),
+                                     static_cast<radiant_value_type>(0),
+                                     accumulator));
     real_type p = 0;
     for (const auto& s : candidates) {
       p += s.psa_probability;
