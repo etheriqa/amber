@@ -310,7 +310,7 @@ private:
         power + weight * gaussianFilter(photons, hit, object, -ray.direction);
     }
 
-    if (depth > 10) { // FIXME biased; need to rewrite with Russian roulette
+    if (depth > 10) { // FIXME inconsistently; need to rewrite with Russian roulette
       return power;
     }
 
