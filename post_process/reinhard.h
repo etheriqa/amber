@@ -1,48 +1,37 @@
 #pragma once
 
-#include <algorithm>
 #include <cmath>
 #include "camera/image.h"
-#include "constant.h"
 #include "post_process/normalizer.h"
-#include "radiometry/rgb.h"
 
 namespace amber {
 namespace post_process {
 
-template <typename RealType>
+template <typename HDR>
 class Reinhard
 {
-public:
-  using real_type      = RealType;
-
-  using hdr_type       = radiometry::RGB<real_type>;
-
-  using hdr_image_type = camera::Image<hdr_type>;
-
 private:
-  static constexpr RealType kDelta = 1e-3;
+  using hdr_image_type = camera::Image<HDR>;
+  using hdr_value_type = typename HDR::value_type;
 
-  RealType m_key;
+  const hdr_image_type kDelta = 1e-3;
+
+  hdr_value_type key_;
 
 public:
-  explicit Reinhard(real_type key = 0.18) :
-    m_key(key)
-  {}
+  Reinhard() noexcept : key_(0.18) {}
+  explicit Reinhard(real_type key) noexcept : key_(key) {}
 
-  hdr_image_type operator()(const hdr_image_type& image) const
-  {
+  hdr_image_type operator()(const hdr_image_type& image) const {
     auto clone = image;
     return (*this)(clone);
   }
 
-  hdr_image_type& operator()(hdr_image_type& image) const
-  {
+  hdr_image_type& operator()(hdr_image_type& image) const {
     const auto& width = image.m_width;
     const auto& height = image.m_height;
 
-    Normalizer<real_type> normalizer(&luminance);
-    normalizer(image);
+    Normalizer<HDR>(&luminance)(image);
 
     real_type log_sum_luminance = 0;
     for (size_t j = 0; j < height; j++) {
@@ -51,13 +40,14 @@ public:
         log_sum_luminance += std::log(kDelta + (std::isfinite(l) ? l : 0));
       }
     }
-    const auto log_average_luminance = std::exp(log_sum_luminance / width / height);
+    const auto log_average_luminance =
+      std::exp(log_sum_luminance / width / height);
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
         auto& p = image.pixel(i, j);
         p *= m_key / log_average_luminance;
-        p /= hdr_type(1) + p;
+        p /= HDR(1) + p;
       }
     }
 
@@ -65,7 +55,7 @@ public:
   }
 
 private:
-  static real_type luminance(const hdr_type& pixel)
+  static hdr_value_type luminance(const HDR& pixel) noexcept
   {
     return 0.27 * pixel.r() + 0.67 * pixel.g() + 0.06 * pixel.b();
   }

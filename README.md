@@ -28,7 +28,9 @@ Features
     - Spectral refraction
     - Specular
 - Depth of Field
-- Reinhard tonemapping
+- Tonemapping
+    - Reinhard
+    - Filmic
 
 References
 ----------

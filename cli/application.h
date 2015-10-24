@@ -15,8 +15,8 @@
 #include "io/ppm.h"
 #include "io/rgbe.h"
 #include "object/object.h"
+#include "post_process/filmic.h"
 #include "post_process/gamma.h"
-#include "post_process/reinhard.h"
 #include "radiometry/rgb.h"
 #include "render.h"
 #include "scene/cornel_box.h"
@@ -166,10 +166,10 @@ public:
 
     amber::render(shader, scene, camera);
 
-    amber::post_process::Reinhard<real_type> reinhard;
-    amber::post_process::Gamma<real_type> gamma;
+    amber::post_process::Filmic<radiant_type> filmic;
+    amber::post_process::Gamma<radiant_type> gamma;
     amber::io::export_rgbe("output.hdr", image->down_sample(kSSAA));
-    amber::io::export_ppm("output.ppm", gamma(reinhard(image->down_sample(kSSAA))));
+    amber::io::export_ppm("output.ppm", gamma(filmic(image->down_sample(kSSAA))));
 
     return 0;
   }
