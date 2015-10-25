@@ -13,6 +13,7 @@
 #include <future>
 #include <sstream>
 #include <vector>
+#include "shader/framework/bidirectional_path_tracing.h"
 #include "shader/framework/light_sampler.h"
 #include "shader/shader.h"
 
@@ -38,6 +39,7 @@ public:
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
+  using bdpt_type                = framework::BidirectionalPathTracing<acceleration_type>;
   using light_sampler_type       = framework::LightSampler<object_type>;
   using vector3_type             = geometry::Vector3<real_type>;
 
@@ -88,10 +90,11 @@ public:
 
     const auto acceleration = std::make_shared<acceleration_type>(objects);
     const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
+    const auto bdpt = std::make_shared<bdpt_type>(acceleration, light_sampler);
 
     for (size_t i = 0; i < m_n_thread; i++) {
       using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5, _6), acceleration, light_sampler, camera, future, current, pixels));
+      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5), bdpt, camera, future, current, pixels));
     }
 
     promise.set_value(std::make_shared<progress_type>(
@@ -104,8 +107,7 @@ public:
 
 private:
   void process(
-    std::shared_ptr<acceleration_type> scene,
-    std::shared_ptr<light_sampler_type> light_sampler,
+    std::shared_ptr<bdpt_type> bdpt,
     const camera_type& camera,
     std::shared_future<progress_reference> future,
     std::shared_ptr<std::atomic<size_t>> current,
@@ -121,225 +123,15 @@ private:
       auto y = pixels->at(i) / camera.image_height();
       radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
-        power += sample_pixel(scene, light_sampler, camera, x, y, random);
+        power += bdpt->connect(bdpt->lightPathTracing(random),
+                               bdpt->eyePathTracing(random, camera, x, y),
+                               framework::PowerHeuristic<radiant_type>());
         progress->done(1);
       }
       camera.expose(x, y, power / m_spp);
     }
 
     progress->end();
-  }
-
-  radiant_type sample_pixel(
-    const std::shared_ptr<acceleration_type>& scene,
-    const std::shared_ptr<light_sampler_type>& light_sampler,
-    const camera_type& camera,
-    size_t x,
-    size_t y,
-    Random& random
-  ) const
-  {
-    while (true) {
-      const auto light_subpath = sample_light_subpath(scene, light_sampler, random);
-      const auto eye_subpath = sample_eye_subpath(scene, camera, x, y, random);
-      const auto max_path_length = light_subpath.size() + eye_subpath.size() - 1;
-
-      std::vector<std::vector<Contribution>> contributions(max_path_length);
-
-      for (size_t s = 0; s <= light_subpath.size(); s++) {
-        for (size_t t = 0; t <= eye_subpath.size(); t++) {
-          Contribution contribution;
-          if (s + t < 2) {
-            continue;
-          } else if (s == 0 && t >= 2) {
-            // zero light subpath vertices
-            const auto l = eye_subpath[t - 1];
-            const auto e = eye_subpath[t - 2];
-            if (!l.object.isEmissive()) {
-              continue;
-            }
-            if (dot(e.position - l.position, l.normal) <= 0) {
-              continue;
-            }
-            contribution.power = l.object.emittance() / kPI * l.weight;
-            contribution.probability = l.probability;
-          } else if (s == 1 && t >= 2) {
-            // one light subpath vertex
-            const auto l = light_subpath[s - 1];
-            const auto e = eye_subpath[t - 1];
-            if (e.object.surfaceType() == material::SurfaceType::specular) {
-              continue;
-            }
-            if (dot(e.position - l.position, l.normal) <= 0) {
-              continue;
-            }
-            contribution.power =
-              l.weight *
-              radiant_type(1 / kPI) *
-              geometry_factor(scene, l, e) *
-              e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
-              e.weight;
-            contribution.probability = l.probability * e.probability;
-          } else if (s >= 2 && t == 0) {
-            continue; // TODO zero eye subpath vertices
-          } else if (s >= 2 && t == 1) {
-            continue; // TODO one eye subpath vertex
-          } else if (s == 1 && t == 1) {
-            continue; // TODO one light subpath vertex and one eye subpath vertex
-          } else {
-            const auto& l = light_subpath[s - 1];
-            const auto& e = eye_subpath[t - 1];
-            if (l.object.surfaceType() == material::SurfaceType::specular) {
-              continue;
-            }
-            if (e.object.surfaceType() == material::SurfaceType::specular) {
-              continue;
-            }
-            contribution.power =
-              l.weight *
-              l.object.bsdf(l.direction_i, normalize(e.position - l.position), l.normal) *
-              geometry_factor(scene, l, e) *
-              e.object.bsdf(normalize(l.position - e.position), e.direction_i, e.normal) *
-              e.weight;
-            contribution.probability = l.probability * e.probability;
-          }
-          contributions[s + t - 2].push_back(contribution);
-        }
-      }
-
-      radiant_type power;
-      for (size_t i = 0; i < max_path_length; i++) {
-        for (const auto& c0 : contributions[i]) {
-          real_type weight = 0;
-          for (const auto& c1 : contributions[i]) {
-            weight += std::pow(c1.probability / c0.probability, 2);
-          }
-          power += c0.power / weight;
-        }
-      }
-
-      if (!std::isfinite(power.max())) { // FIXME biased
-        continue;
-      }
-
-      return power;
-    }
-  }
-
-  std::vector<Event> sample_light_subpath(
-    const std::shared_ptr<acceleration_type>& scene,
-    const std::shared_ptr<light_sampler_type>& light_sampler,
-    Random& random
-  ) const
-  {
-    // s = 0
-    const auto light = (*light_sampler)(random);
-    const auto sample = light.sample_initial_ray(random);
-    const auto area_probability = light.emittance().sum() / light_sampler->total_power().sum();
-    const auto psa_probability = static_cast<real_type>(1 / kPI);
-
-    Event event;
-    event.object      = light;
-    event.position    = sample.ray.origin;
-    event.normal      = sample.normal;
-    event.direction_i = vector3_type();
-    event.direction_o = sample.ray.direction;
-    event.probability = area_probability;
-    event.weight      = light.emittance() / area_probability;
-
-    // s > 0
-    return extend_subpath(scene, event, radiant_type(psa_probability), psa_probability, random);
-  }
-
-  std::vector<Event> sample_eye_subpath(
-    const std::shared_ptr<acceleration_type>& scene,
-    const camera_type& camera,
-    size_t x,
-    size_t y,
-    Random& random
-  ) const
-  {
-    // t = 0
-    const auto importance = radiant_type(1); // FIXME
-    const auto sample = camera.sample_initial_ray(x, y, random);
-    const auto area_probability = 1;         // FIXME
-    const auto psa_probability = 1 / kPI;    // FIXME
-
-
-    Event event;
-    event.object      = object_type(nullptr, nullptr);
-    event.position    = sample.ray.origin;
-    event.normal      = sample.normal;
-    event.direction_i = vector3_type();
-    event.direction_o = sample.ray.direction;
-    event.probability = area_probability;
-    event.weight      = importance / area_probability;
-
-    // t > 0
-    return extend_subpath(scene, event, radiant_type(psa_probability), psa_probability, random);
-  }
-
-  std::vector<Event> extend_subpath(
-    const std::shared_ptr<acceleration_type>& scene,
-    Event event,
-    radiant_type bsdf,
-    real_type probability,
-    Random& random
-  ) const
-  {
-    std::vector<Event> subpath;
-    subpath.reserve(16);
-    subpath.push_back(event);
-
-    ray_type ray(event.position, event.direction_o);
-    hit_type hit;
-    object_type object;
-
-    while (true) {
-      std::tie(hit, object) = scene->cast(ray);
-      if (!hit) {
-        break;
-      }
-
-      const auto sample = object.sampleScattering(event.weight * bsdf / probability, -ray.direction, hit.normal, random);
-
-      const auto geometry_factor = std::abs(dot(ray.direction, event.normal) * dot(ray.direction, hit.normal)) / (hit.distance * hit.distance);
-
-      event.object      = object;
-      event.position    = hit.position;
-      event.normal      = hit.normal;
-      event.direction_i = -ray.direction;
-      event.direction_o = sample.direction_o;
-      event.probability *= probability * geometry_factor;
-      event.weight      *= bsdf / probability;
-      subpath.push_back(event);
-
-      ray = ray_type(hit.position, sample.direction_o);
-      bsdf = sample.bsdf;
-      probability = sample.psa_probability;
-
-      const auto p_russian_roulette = (bsdf / probability).max();
-      if (random.uniform<radiant_value_type>() >= p_russian_roulette) {
-        break;
-      }
-      probability *= std::min<radiant_value_type>(1, p_russian_roulette);
-    }
-
-    return subpath;
-  }
-
-  real_type geometry_factor(
-    const std::shared_ptr<acceleration_type>& scene,
-    const Event& l,
-    const Event& e
-  ) const noexcept
-  {
-    ray_type ray(l.position, e.position - l.position);
-    if (!scene->test_visibility(ray, e.object)) {
-      return 0;
-    }
-
-    return std::abs(dot(ray.direction, l.normal) * dot(ray.direction, e.normal)) / (e.position - l.position).squaredLength();
   }
 };
 
