@@ -1,17 +1,16 @@
 TARGET = ./amber
 
-SRC_DIR = $(PWD)
-SRCS = $(shell find $(SRC_DIR) -name '*.cc')
-DEPS = $(SRCS:.cc=.d)
-OBJS = $(SRCS:.cc=.o)
+SOURCES = $(shell find . -name '*.cc')
+DEPENDS = $(SOURCES:.cc=.d)
+OBJECTS = $(SOURCES:.cc=.o)
 
-CPPFLAGS = -MMD -MP -I$(SRC_DIR)
+CPPFLAGS = -MMD -MP -I.
 CXXFLAGS = -Wall -Wextra -std=c++1y -O3 -mavx
 LDLIBS = -lpthread
 
 .PHONY: pt bdpt clean
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJECTS)
 	$(CXX) $(LDLIBS) $^ -o $@
 
 pt: $(TARGET)
@@ -30,6 +29,8 @@ pm: $(TARGET)
 	open pm.png
 
 clean:
-	$(RM) $(TARGET) $(shell find $(SRC_DIR) -name '*.o') $(shell find $(SRC_DIR) -name '*.d')
+	$(RM) $(TARGET)
+	$(RM) $(shell find . -maxdepth 1 -name '*.ppm' -o -name '*.hdr' -o -name '*.png')
+	$(RM) $(shell find . -name '*.o' -o -name '*.d')
 
--include $(DEPS)
+-include $(DEPENDS)
