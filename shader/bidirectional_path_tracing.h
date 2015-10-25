@@ -13,7 +13,7 @@
 #include <future>
 #include <sstream>
 #include <vector>
-#include "object/light_set.h"
+#include "shader/framework/light_sampler.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -38,7 +38,7 @@ public:
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
-  using light_set_type           = object::LightSet<acceleration_type>;
+  using light_sampler_type       = framework::LightSampler<object_type>;
   using vector3_type             = geometry::Vector3<real_type>;
 
 private:
@@ -87,11 +87,11 @@ public:
     std::shuffle(pixels->begin(), pixels->end(), Random().generator());
 
     const auto acceleration = std::make_shared<acceleration_type>(objects);
-    const auto lights = std::make_shared<light_set_type>(objects);
+    const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
 
     for (size_t i = 0; i < m_n_thread; i++) {
       using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5, _6), acceleration, lights, camera, future, current, pixels));
+      threads.push_back(std::thread(std::bind(&BidirectionalPathTracing::process, this, _1, _2, _3, _4, _5, _6), acceleration, light_sampler, camera, future, current, pixels));
     }
 
     promise.set_value(std::make_shared<progress_type>(
@@ -105,7 +105,7 @@ public:
 private:
   void process(
     std::shared_ptr<acceleration_type> scene,
-    std::shared_ptr<light_set_type> lights,
+    std::shared_ptr<light_sampler_type> light_sampler,
     const camera_type& camera,
     std::shared_future<progress_reference> future,
     std::shared_ptr<std::atomic<size_t>> current,
@@ -121,7 +121,7 @@ private:
       auto y = pixels->at(i) / camera.image_height();
       radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
-        power += sample_pixel(scene, lights, camera, x, y, random);
+        power += sample_pixel(scene, light_sampler, camera, x, y, random);
         progress->done(1);
       }
       camera.expose(x, y, power / m_spp);
@@ -132,7 +132,7 @@ private:
 
   radiant_type sample_pixel(
     const std::shared_ptr<acceleration_type>& scene,
-    const std::shared_ptr<light_set_type>& lights,
+    const std::shared_ptr<light_sampler_type>& light_sampler,
     const camera_type& camera,
     size_t x,
     size_t y,
@@ -140,7 +140,7 @@ private:
   ) const
   {
     while (true) {
-      const auto light_subpath = sample_light_subpath(scene, lights, random);
+      const auto light_subpath = sample_light_subpath(scene, light_sampler, random);
       const auto eye_subpath = sample_eye_subpath(scene, camera, x, y, random);
       const auto max_path_length = light_subpath.size() + eye_subpath.size() - 1;
 
@@ -228,15 +228,15 @@ private:
 
   std::vector<Event> sample_light_subpath(
     const std::shared_ptr<acceleration_type>& scene,
-    const std::shared_ptr<light_set_type>& lights,
+    const std::shared_ptr<light_sampler_type>& light_sampler,
     Random& random
   ) const
   {
     // s = 0
-    const auto light = lights->sample(random);
+    const auto light = (*light_sampler)(random);
     const auto sample = light.sample_initial_ray(random);
-    const auto area_probability = light.emittance().sum() / lights->total_power().sum();
-    const auto psa_probability = 1 / kPI;
+    const auto area_probability = light.emittance().sum() / light_sampler->total_power().sum();
+    const auto psa_probability = static_cast<real_type>(1 / kPI);
 
     Event event;
     event.object      = light;

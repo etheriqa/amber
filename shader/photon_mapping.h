@@ -14,7 +14,7 @@
 #include <sstream>
 #include <vector>
 #include "geometry/aabb.h"
-#include "object/light_set.h"
+#include "shader/framework/light_sampler.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -38,7 +38,7 @@ public:
   using ray_type                 = typename shader_type::ray_type;
   using real_type                = typename shader_type::real_type;
 
-  using light_set_type           = object::LightSet<acceleration_type>;
+  using light_sampler_type       = framework::LightSampler<object_type>;
   using vector3_type             = geometry::Vector3<real_type>;
 
 private:
@@ -204,12 +204,12 @@ public:
   render(const object_buffer_type& objects, const camera_type& camera) const {
     Random random;
     const acceleration_type acceleration(objects);
-    const light_set_type lights(objects);
+    const light_sampler_type light_sampler(objects.begin(), objects.end());
 
     std::cerr << "(1/3) Photon tracing ... ";
     std::vector<Photon> photons;
     for (size_t i = 0; i < n_photon_; i++) {
-      const auto samples = photonTracing(acceleration, lights, random);
+      const auto samples = photonTracing(acceleration, light_sampler, random);
       std::move(samples.begin(), samples.end(), std::back_inserter(photons));
     }
     for (auto& photon : photons) {
@@ -245,12 +245,12 @@ public:
 private:
   std::vector<Photon>
   photonTracing(const acceleration_type& acceleration,
-                const light_set_type& lights,
+                const light_sampler_type& light_sampler,
                 Random& random) const {
-    const auto light = lights.sample(random);
+    const auto light = light_sampler(random);
     const auto sample = light.sample_initial_ray(random);
 
-    auto power = lights.total_power();
+    auto power = light_sampler.total_power();
     auto ray = sample.ray;
     hit_type hit;
     object_type object;
