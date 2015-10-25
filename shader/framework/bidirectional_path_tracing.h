@@ -41,7 +41,7 @@ private:
     vector3_type normal;
     vector3_type direction_i;
     vector3_type direction_o;
-    radiant_value_type probability;
+    radiant_value_type log_probability;
     radiant_type weight;
   };
 
@@ -62,13 +62,13 @@ public:
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
 
     Event event;
-    event.object      = light;
-    event.position    = sample.ray.origin;
-    event.normal      = sample.normal;
-    event.direction_i = vector3_type();
-    event.direction_o = sample.ray.direction;
-    event.probability = area_probability;
-    event.weight      = light.emittance() / area_probability;
+    event.object          = light;
+    event.position        = sample.ray.origin;
+    event.normal          = sample.normal;
+    event.direction_i     = vector3_type();
+    event.direction_o     = sample.ray.direction;
+    event.log_probability = std::log(area_probability);
+    event.weight          = light.emittance() / area_probability;
 
     return pathTracing(event, psa_probability, random);
   }
@@ -85,13 +85,13 @@ public:
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
 
     Event event;
-    event.object      = Object();
-    event.position    = sample.ray.origin;
-    event.normal      = sample.normal;
-    event.direction_i = vector3_type();
-    event.direction_o = sample.ray.direction;
-    event.probability = area_probability;
-    event.weight      = importance / area_probability;
+    event.object          = Object();
+    event.position        = sample.ray.origin;
+    event.normal          = sample.normal;
+    event.direction_i     = vector3_type();
+    event.direction_o     = sample.ray.direction;
+    event.log_probability = std::log(area_probability);
+    event.weight          = importance / area_probability;
 
     return pathTracing(event, psa_probability, random);
   }
@@ -99,7 +99,7 @@ public:
   template <typename MIS>
   radiant_type connect(const std::vector<Event>& light,
                        const std::vector<Event>& eye,
-                       MIS mis) const noexcept {
+                       const MIS& mis) const noexcept {
     std::vector<std::vector<Sample<radiant_type>>>
       sample_map(light.size() + eye.size() - 1);
 
@@ -120,7 +120,7 @@ public:
           }
           samples.emplace_back(
             l.object.emittance() / kPI * l.weight,
-            l.probability
+            l.log_probability
           );
         } else if (s == 1 && t >= 2) {
           // one light subpath vertex
@@ -132,14 +132,18 @@ public:
           if (dot(e.position - l.position, l.normal) <= 0) {
             continue;
           }
+          const auto geometry_factor = geometryFactor(l, e);
+          if (geometry_factor == 0) {
+            continue;
+          }
           const auto direction_le = normalize(e.position - l.position);
           samples.emplace_back(
             l.weight /
               kPI *
-              geometryFactor(l, e) *
+              geometry_factor *
               e.object.bsdf(-direction_le, e.direction_i, e.normal) *
               e.weight,
-            l.probability * e.probability
+            l.log_probability + e.log_probability
           );
         } else if (s >= 2 && t == 0) {
           // TODO zero eye subpath vertices
@@ -159,14 +163,18 @@ public:
           if (e.object.surfaceType() == material::SurfaceType::specular) {
             continue;
           }
+          const auto geometry_factor = geometryFactor(l, e);
+          if (geometry_factor == 0) {
+            continue;
+          }
           const auto direction_le = normalize(e.position - l.position);
           samples.emplace_back(
             l.weight *
               l.object.bsdf(l.direction_i, direction_le, l.normal) *
-              geometryFactor(l, e) *
+              geometry_factor *
               e.object.bsdf(-direction_le, e.direction_i, e.normal) *
               e.weight,
-            l.probability * e.probability
+            l.log_probability + e.log_probability
           );
         }
       }
@@ -203,18 +211,18 @@ private:
                                 -ray.direction,
                                 hit.normal,
                                 random);
-      const auto signed_geometry_factor =
-        dot(ray.direction, event.normal) *
-        dot(ray.direction, hit.normal) /
-        (hit.distance * hit.distance);
+      const auto log_geometry_factor =
+        std::log(std::abs(dot(ray.direction, event.normal) *
+                          dot(ray.direction, hit.normal) /
+                          (hit.distance * hit.distance)));
 
-      event.object       = object;
-      event.position     = hit.position;
-      event.normal       = hit.normal;
-      event.direction_i  = -ray.direction;
-      event.direction_o  = sample.direction_o;
-      event.probability *= probability * std::abs(signed_geometry_factor);
-      event.weight      *= bsdf / probability;
+      event.object           = object;
+      event.position         = hit.position;
+      event.normal           = hit.normal;
+      event.direction_i      = -ray.direction;
+      event.direction_o      = sample.direction_o;
+      event.log_probability += std::log(probability) + log_geometry_factor;
+      event.weight          *= bsdf / probability;
       events.push_back(event);
 
       ray = ray_type(hit.position, sample.direction_o);
