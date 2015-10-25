@@ -23,17 +23,22 @@ private:
   using value_type = typename Contribution::value_type;
 
   Contribution contribution_;
-  value_type probability_;
+  value_type log_probability_;
 
 public:
-  Sample(const Contribution& contribution, value_type probability) noexcept
-    : contribution_(contribution), probability_(probability) {}
+  Sample(const Contribution& contribution, value_type log_probability) noexcept
+    : contribution_(contribution), log_probability_(log_probability) {}
 
-  const Contribution& contribution() const noexcept { return contribution_; }
-  const value_type& probability() const noexcept { return probability_; }
+  const Contribution& contribution() const noexcept {
+    return contribution_;
+  }
+
+  const value_type& log_probability() const noexcept {
+    return log_probability_;
+  }
 
   bool operator<(const Sample& sample) const noexcept {
-    return probability_ < sample.probability_;
+    return log_probability_ < sample.log_probability_;
   }
 };
 
@@ -51,7 +56,8 @@ public:
         return contribution + x.contribution() /
           std::accumulate(first, last, value_type(),
             [&](const auto& weight, const auto& y){
-              return weight + y.probability() / x.probability();
+              return weight +
+                std::exp(y.log_probability() - x.log_probability());
             });
       });
   }
@@ -78,7 +84,8 @@ public:
           std::accumulate(first, last, value_type(),
             [&](const auto& weight, const auto& y){
               return weight +
-                std::pow(y.probability() / x.probability(), beta_);
+                std::pow(std::exp(y.log_probability() - x.log_probability()),
+                         beta_);
             });
       });
   }
