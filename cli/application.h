@@ -8,10 +8,12 @@
 
 #pragma once
 
-#include <getopt.h>
 #include <iostream>
 #include <string>
 #include <thread>
+
+#include "getopt.h"
+
 #include "acceleration/kdtree.h"
 #include "camera/aperture/circle.h"
 #include "camera/aperture/polygon.h"
@@ -31,6 +33,7 @@
 #include "shader/bidirectional_path_tracing.h"
 #include "shader/path_tracing.h"
 #include "shader/photon_mapping.h"
+#include "shader/primary_sample_space_mlt.h"
 
 namespace {
 
@@ -38,15 +41,19 @@ enum class Algorithm {
   pt,
   bdpt,
   pm,
+  pssmlt,
 };
 
 const size_t kSSAA             = 2;
 const size_t kWidth            = 512;
 const size_t kHeight           = 512;
-const size_t kPTSPP            = 1024;
+const size_t kPTSPP            = 512;
 const size_t kBDPTSPP          = 128;
-const size_t kPMNPhoton        = 4194304;
+const size_t kPMNPhoton        = 8388608;
 const size_t kPMNNearestPhoton = 16;
+const size_t kPSSMLTNSeed      = 8;
+const size_t kPSSMLTNMutation  = 64;
+const double kPSSMLTPLargeStep = 0.5;
 
 }
 
@@ -96,6 +103,7 @@ public:
     std::cerr << "    pt          path tracing (spp=" << kPTSPP << ")" << std::endl;
     std::cerr << "    bdpt        bidirectional path tracing (spp=" << kBDPTSPP << ")" << std::endl;
     std::cerr << "    pm          photon mapping (spp=" << kPMNPhoton << ")" << std::endl;
+    std::cerr << "    pssmlt      primary sample space MLT (spp=" << kPSSMLTNMutation << ")" << std::endl;
   }
 
   int run() {
@@ -127,6 +135,7 @@ public:
         if (std::string(optarg) == "pt") { algorithm = Algorithm::pt; }
         if (std::string(optarg) == "bdpt") { algorithm = Algorithm::bdpt; }
         if (std::string(optarg) == "pm") { algorithm = Algorithm::pm; }
+        if (std::string(optarg) == "pssmlt") { algorithm = Algorithm::pssmlt; }
         break;
       case 's':
         spp = std::stoi(std::string(optarg));
@@ -163,6 +172,14 @@ public:
       shader = new shader::PhotonMapping<acceleration_type>(
         spp > 0 ? spp : kPMNPhoton,
         kPMNNearestPhoton
+      );
+      break;
+    case Algorithm::pssmlt:
+      shader = new shader::PrimarySampleSpaceMLT<acceleration_type>(
+        n_thread,
+        kPSSMLTNSeed,
+        (spp > 0 ? spp : kPSSMLTNMutation) / kSSAA / kSSAA,
+        kPSSMLTPLargeStep
       );
       break;
     }

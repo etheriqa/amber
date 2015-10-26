@@ -106,13 +106,36 @@ public:
 
     for (size_t s = 0; s <= light.size(); s++) {
       for (size_t t = 0; t <= eye.size(); t++) {
-        auto& samples = sample_map[s + t - 2];
         if (s + t < 2) {
           continue;
+        }
+        auto& samples = sample_map.at(s + t - 2);
+        if (s >= 2 && t >= 2) {
+          const auto& l = light.at(s - 1);
+          const auto& e = eye.at(t - 1);
+          if (l.object.surfaceType() == material::SurfaceType::specular) {
+            continue;
+          }
+          if (e.object.surfaceType() == material::SurfaceType::specular) {
+            continue;
+          }
+          const auto geometry_factor = geometryFactor(l, e);
+          if (geometry_factor == 0) {
+            continue;
+          }
+          const auto direction_le = normalize(e.position - l.position);
+          samples.emplace_back(
+            l.weight *
+              l.object.bsdf(l.direction_i, direction_le, l.normal) *
+              geometry_factor *
+              e.object.bsdf(-direction_le, e.direction_i, e.normal) *
+              e.weight,
+            l.log_probability + e.log_probability
+          );
         } else if (s == 0 && t >= 2) {
           // zero light subpath vertices
-          const auto& l = eye[t - 1];
-          const auto& e = eye[t - 2];
+          const auto& l = eye.at(t - 1);
+          const auto& e = eye.at(t - 2);
           if (!l.object.isEmissive()) {
             continue;
           }
@@ -125,8 +148,8 @@ public:
           );
         } else if (s == 1 && t >= 2) {
           // one light subpath vertex
-          const auto& l = light[s - 1];
-          const auto& e = eye[t - 1];
+          const auto& l = light.at(s - 1);
+          const auto& e = eye.at(t - 1);
           if (e.object.surfaceType() == material::SurfaceType::specular) {
             continue;
           }
@@ -155,28 +178,6 @@ public:
         } else if (s == 1 && t == 1) {
           // TODO one light subpath vertex and one eye subpath vertex
           continue;
-        } else {
-          const auto& l = light[s - 1];
-          const auto& e = eye[t - 1];
-          if (l.object.surfaceType() == material::SurfaceType::specular) {
-            continue;
-          }
-          if (e.object.surfaceType() == material::SurfaceType::specular) {
-            continue;
-          }
-          const auto geometry_factor = geometryFactor(l, e);
-          if (geometry_factor == 0) {
-            continue;
-          }
-          const auto direction_le = normalize(e.position - l.position);
-          samples.emplace_back(
-            l.weight *
-              l.object.bsdf(l.direction_i, direction_le, l.normal) *
-              geometry_factor *
-              e.object.bsdf(-direction_le, e.direction_i, e.normal) *
-              e.weight,
-            l.log_probability + e.log_probability
-          );
         }
       }
     }
