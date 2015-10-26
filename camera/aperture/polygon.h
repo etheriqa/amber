@@ -10,8 +10,9 @@
 
 #include <cmath>
 #include <sstream>
+
+#include "base/constant.h"
 #include "camera/aperture/aperture.h"
-#include "constant.h"
 
 namespace amber {
 namespace camera {
@@ -47,11 +48,13 @@ public:
     return ss.str();
   }
 
-  vector3_type sample_point(Random& g) const
+  vector3_type sample_point(Sampler *sampler) const
   {
-    const auto x = std::sqrt(g.uniform(m_height * m_height));
-    const auto y = x * m_tan_half_angle * g.uniform<real_type>(-1, 1);
-    const auto angle = m_angle * std::floor(g.uniform<real_type>(m_n)) + static_cast<real_type>(kPI) / 2;
+    const auto x = std::sqrt(sampler->uniform(m_height * m_height));
+    const auto y = x * m_tan_half_angle * sampler->uniform<real_type>(-1, 1);
+    const auto angle =
+      m_angle * std::floor(sampler->uniform<real_type>(m_n)) +
+        static_cast<real_type>(kPI) / 2;
 
     return vector3_type(
       x * std::cos(angle) - y * std::sin(angle),

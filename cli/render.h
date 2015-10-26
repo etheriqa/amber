@@ -16,7 +16,6 @@
 #include <sstream>
 #include <thread>
 #include "camera/camera.h"
-#include "random.h"
 #include "shader/shader.h"
 
 namespace amber {

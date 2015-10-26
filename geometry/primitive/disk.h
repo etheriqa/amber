@@ -9,7 +9,8 @@
 #pragma once
 
 #include <cmath>
-#include "constant.h"
+
+#include "base/constant.h"
 #include "geometry/primitive/primitive.h"
 
 namespace amber {
@@ -35,16 +36,16 @@ private:
   real_type m_radius;
 
 public:
-  Disk(const vector3_type& center, const vector3_type& normal, real_type radius) :
-    m_center(center), m_normal(normalize(normal)), m_radius(radius) {}
+  Disk(const vector3_type& center,
+       const vector3_type& normal,
+       real_type radius)
+    : m_center(center), m_normal(normalize(normal)), m_radius(radius) {}
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     return static_cast<real_type>(kPI) * m_radius * m_radius;
   }
 
-  aabb_type aabb() const noexcept
-  {
+  aabb_type aabb() const noexcept {
     const auto factor = vector3_type(
       std::sqrt(1 - m_normal.x() * m_normal.x()),
       std::sqrt(1 - m_normal.y() * m_normal.y()),
@@ -54,8 +55,7 @@ public:
     return aabb_type(m_center - m_radius * factor, m_center + m_radius * factor);
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept
-  {
+  hit_type intersect(const ray_type& ray) const noexcept {
      const auto cos_theta = dot(ray.direction, m_normal);
      if (cos_theta == 0) {
        return hit_type();
@@ -77,18 +77,17 @@ public:
      );
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const
-  {
-    const auto radius = std::sqrt(random.uniform(m_radius * m_radius));
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
+    const auto radius = std::sqrt(sampler->uniform(m_radius * m_radius));
 
     vector3_type u, v;
     std::tie(u, v) = orthonormalBasis(m_normal);
 
     real_type x, y;
-    std::tie(x, y) = random.circle<real_type>();
+    std::tie(x, y) = sampler->circle<real_type>();
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(u, v, m_normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(u, v, m_normal);
 
     return initial_ray_sample_type(
       ray_type(m_center + (u * x + v * y) * radius, direction_o),

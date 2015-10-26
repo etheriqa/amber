@@ -9,7 +9,7 @@
 #pragma once
 
 #include <string>
-#include "random.h"
+#include "base/sampler.h"
 #include "geometry/ray.h"
 
 namespace amber {
@@ -28,7 +28,7 @@ struct Lens {
   virtual ~Lens() {}
 
   virtual std::string to_string() const = 0;
-  virtual ray_type sample_ray(const vector3_type&, Random&) const = 0;
+  virtual ray_type sample_ray(const vector3_type&, Sampler*) const = 0;
 };
 
 }

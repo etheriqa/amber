@@ -9,7 +9,8 @@
 #pragma once
 
 #include <cmath>
-#include "constant.h"
+
+#include "base/constant.h"
 #include "material/material.h"
 
 namespace amber {
@@ -41,13 +42,14 @@ public:
     }
   }
 
-  scattering_sample_type sampleScattering(const radiant_type&,
-                                          const vector3_type& direction_i,
-                                          const vector3_type& normal,
-                                          Random& random) const {
+  scattering_sample_type
+  sampleScattering(const radiant_type&,
+                   const vector3_type& direction_i,
+                   const vector3_type& normal,
+                   Sampler *sampler) const {
     const auto w = dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(w);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
 
     scattering_sample_type sample;
     sample.direction_o = direction_o;

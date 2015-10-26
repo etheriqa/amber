@@ -40,7 +40,7 @@ public:
     return ss.str();
   }
 
-  ray_type sample_ray(const vector3_type& sensor_point, Random&) const
+  ray_type sample_ray(const vector3_type& sensor_point, Sampler*) const
   {
     return ray_type(
       vector3_type(0, 0, 0),

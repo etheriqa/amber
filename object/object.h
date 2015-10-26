@@ -78,8 +78,8 @@ public:
     return primitive_->intersect(ray);
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const {
-    return primitive_->sample_initial_ray(random);
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
+    return primitive_->sample_initial_ray(sampler);
   }
 
   material::SurfaceType surfaceType() const noexcept {
@@ -103,8 +103,8 @@ public:
   scattering_sample_type sampleScattering(const radiant_type& radiant,
                                           const vector3_type& direction_i,
                                           const vector3_type& normal,
-                                          Random& random) const {
-    return material_->sampleScattering(radiant, direction_i, normal, random);
+                                          Sampler *sampler) const {
+    return material_->sampleScattering(radiant, direction_i, normal, sampler);
   }
 
   std::vector<scattering_sample_type>

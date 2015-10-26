@@ -11,8 +11,9 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+
+#include "base/constant.h"
 #include "camera/image.h"
-#include "constant.h"
 #include "radiometry/rgb.h"
 
 namespace amber {

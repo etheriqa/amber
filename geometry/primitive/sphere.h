@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "algebra.h"
-#include "constant.h"
+#include "base/algebra.h"
+#include "base/constant.h"
 #include "geometry/primitive/primitive.h"
 
 namespace amber {
@@ -35,21 +35,18 @@ private:
   real_type m_radius;
 
 public:
-  Sphere(const vector3_type& center, real_type radius) :
-    m_center(center), m_radius(radius) {}
+  Sphere(const vector3_type& center, real_type radius)
+    : m_center(center), m_radius(radius) {}
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     return 4 * static_cast<real_type>(kPI) * m_radius * m_radius;
   }
 
-  aabb_type aabb() const noexcept
-  {
+  aabb_type aabb() const noexcept {
     return aabb_type(m_center - m_radius, m_center + m_radius);
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept
-  {
+  hit_type intersect(const ray_type& ray) const noexcept {
     const real_type a = 1;
     const auto b = -2 * dot(m_center - ray.origin, ray.direction);
     const auto c = (m_center - ray.origin).squaredLength() - m_radius * m_radius;
@@ -81,12 +78,11 @@ public:
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const
-  {
-    const auto normal = random.sphere_sa<real_type>();
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
+    const auto normal = sampler->sphereSA<real_type>();
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal);
 
     return initial_ray_sample_type(
       ray_type(m_center + m_radius * normal, direction_o),

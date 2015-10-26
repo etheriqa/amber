@@ -18,8 +18,7 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class ConvexPolygon : public Primitive<RealType>
-{
+class ConvexPolygon : public Primitive<RealType> {
 public:
   using primitive_type          = Primitive<RealType>;
 
@@ -36,8 +35,7 @@ private:
   std::vector<triangle_type> m_triangles;
 
 public:
-  ConvexPolygon(std::initializer_list<vector3_type> vertices)
-  {
+  ConvexPolygon(std::initializer_list<vector3_type> vertices) {
     const auto it = vertices.begin();
     for (size_t i = 2; i < vertices.size(); i++) {
       m_triangles.push_back(triangle_type(
@@ -48,8 +46,7 @@ public:
     }
   }
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     real_type area = 0;
     for (const auto& triangle : m_triangles) {
       area += triangle.surface_area();
@@ -57,8 +54,7 @@ public:
     return area;
   }
 
-  aabb_type aabb() const noexcept
-  {
+  aabb_type aabb() const noexcept {
     aabb_type aabb;
     for (const auto& triangle : m_triangles) {
       aabb += triangle.aabb();
@@ -66,8 +62,7 @@ public:
     return aabb;
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept
-  {
+  hit_type intersect(const ray_type& ray) const noexcept {
     for (const auto& triangle : m_triangles) {
       const auto hit = triangle.intersect(ray);
       if (hit) {
@@ -77,17 +72,16 @@ public:
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const
-  {
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
     const auto polygon_area = surface_area();
-    const auto r = random.uniform(polygon_area);
+    const auto r = sampler->uniform(polygon_area);
 
     real_type area = 0;
     for (const auto& triangle : m_triangles) {
       const auto triangle_area = triangle.surface_area();
       area += triangle_area;
       if (area > r) {
-        return triangle.sample_initial_ray(random);
+        return triangle.sample_initial_ray(sampler);
       }
     }
 

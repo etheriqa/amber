@@ -10,9 +10,10 @@
 
 #include <cmath>
 #include <sstream>
+
+#include "base/constant.h"
 #include "camera/aperture/aperture.h"
 #include "camera/lens/lens.h"
-#include "constant.h"
 
 namespace amber {
 namespace camera {
@@ -53,9 +54,9 @@ public:
     return ss.str();
   }
 
-  ray_type sample_ray(const vector3_type& sensor_point, Random& g) const
+  ray_type sample_ray(const vector3_type& sensor_point, Sampler *sampler) const
   {
-    const auto lens_point = m_aperture->sample_point(g);
+    const auto lens_point = m_aperture->sample_point(sampler);
     const auto focal_point = (vector3_type(0, 0, -m_sensor_distance) - sensor_point) * m_magnifier;
 
     return ray_type(lens_point, focal_point - lens_point);

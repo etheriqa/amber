@@ -9,7 +9,8 @@
 #pragma once
 
 #include <cmath>
-#include "constant.h"
+
+#include "base/constant.h"
 #include "material/lambertian.h"
 #include "material/material.h"
 
@@ -50,13 +51,14 @@ public:
       * std::pow(std::max<real_type>(0, cos_alpha), n_);
   }
 
-  scattering_sample_type sampleScattering(const radiant_type&,
-                                          const vector3_type& direction_i,
-                                          const vector3_type& normal,
-                                          Random& random) const {
-    const auto direction_o = p_diffuse_ > random.uniform<real_type>()
-      ? sampleDirectionFromDiffuseComponent(direction_i, normal, random)
-      : sampleDirectionFromSpecularComponent(direction_i, normal, random);
+  scattering_sample_type
+  sampleScattering(const radiant_type&,
+                   const vector3_type& direction_i,
+                   const vector3_type& normal,
+                   Sampler *sampler) const {
+    const auto direction_o = p_diffuse_ > sampler->uniform<real_type>()
+      ? sampleDirectionFromDiffuseComponent(direction_i, normal, sampler)
+      : sampleDirectionFromSpecularComponent(direction_i, normal, sampler);
     const auto cos_alpha =
       dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
     const auto psa_probability =
@@ -74,18 +76,18 @@ private:
   vector3_type
   sampleDirectionFromDiffuseComponent(const vector3_type& direction_i,
                                       const vector3_type& normal,
-                                      Random& random) const {
+                                      Sampler *sampler) const {
     const auto w = dot(direction_i, normal) > 0 ? normal : -normal;
-    return std::get<0>(random.hemisphere_psa(w));
+    return std::get<0>(sampler->hemispherePSA(w));
   }
 
   vector3_type
   sampleDirectionFromSpecularComponent(const vector3_type& direction_i,
                                        const vector3_type& normal,
-                                       Random& random) const {
-    while (true) {
-      const auto r0 = random.uniform<real_type>();
-      const auto r1 = random.uniform<real_type>();
+                                       Sampler *sampler) const {
+    for (;;) {
+      const auto r0 = sampler->uniform<real_type>();
+      const auto r1 = sampler->uniform<real_type>();
       const auto cos_alpha = std::pow(r0, 1 / (n_ + 1));
       const auto sin_alpha = std::sqrt(1 - std::pow(r0, 2 / (n_ + 1)));
       const auto phi = 2 * kPI * r1;

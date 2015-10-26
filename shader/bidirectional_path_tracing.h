@@ -13,6 +13,7 @@
 #include <future>
 #include <sstream>
 #include <vector>
+
 #include "shader/framework/bidirectional_path_tracing.h"
 #include "shader/framework/light_sampler.h"
 #include "shader/shader.h"
@@ -86,7 +87,7 @@ public:
     auto current = std::make_shared<std::atomic<size_t>>(0);
     auto pixels = std::make_shared<std::vector<size_t>>(camera.image_pixels());
     std::iota(pixels->begin(), pixels->end(), 0);
-    std::shuffle(pixels->begin(), pixels->end(), Random().generator());
+    std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
     const auto acceleration = std::make_shared<acceleration_type>(objects);
     const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
@@ -116,15 +117,15 @@ private:
   {
     // TODO refactor
     auto progress = future.get();
-    Random random;
+    DefaultSampler<> sampler;
 
     for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
       auto x = pixels->at(i) % camera.image_width();
       auto y = pixels->at(i) / camera.image_height();
       radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
-        power += bdpt->connect(bdpt->lightPathTracing(random),
-                               bdpt->eyePathTracing(random, camera, x, y),
+        power += bdpt->connect(bdpt->lightPathTracing(&sampler),
+                               bdpt->eyePathTracing(&sampler, camera, x, y),
                                framework::PowerHeuristic<radiant_type>());
         progress->done(1);
       }

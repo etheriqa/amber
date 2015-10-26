@@ -12,8 +12,10 @@
 #include <limits>
 #include <ostream>
 #include <tuple>
-#include <immintrin.h>
-#include "constant.h"
+
+#include "immintrin.h"
+
+#include "base/constant.h"
 #include "geometry/ray.h"
 #include "geometry/vector.h"
 

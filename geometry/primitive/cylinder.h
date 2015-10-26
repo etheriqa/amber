@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "algebra.h"
-#include "constant.h"
+#include "base/algebra.h"
+#include "base/constant.h"
 #include "geometry/primitive/circle.h"
 #include "geometry/primitive/primitive.h"
 
@@ -37,23 +37,26 @@ private:
   real_type m_radius, m_height;
 
 public:
-  Cylinder(const vector3_type& center, const vector3_type& normal, real_type radius, real_type height) :
-    m_center(center), m_normal(normalize(normal)), m_radius(radius), m_height(height) {}
+  Cylinder(const vector3_type& center,
+           const vector3_type& normal,
+           real_type radius,
+           real_type height)
+    : m_center(center),
+      m_normal(normalize(normal)),
+      m_radius(radius),
+      m_height(height) {}
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     return 2 * static_cast<real_type>(kPI) * m_radius * m_height;
   }
 
-  aabb_type aabb() const noexcept
-  {
+  aabb_type aabb() const noexcept {
     const auto bottom = circle_type(m_center, m_normal, m_radius);
     const auto top = circle_type(m_center + m_height * m_normal, m_normal, m_radius);
     return bottom.aabb() + top.aabb();
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept
-  {
+  hit_type intersect(const ray_type& ray) const noexcept {
     const auto OC = m_center - ray.origin;
     const auto u = ray.direction - dot(ray.direction, m_normal) * m_normal;
     const auto v = OC - dot(OC, m_normal) * m_normal;
@@ -95,20 +98,19 @@ public:
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const
-  {
-    const auto height = random.uniform(m_height);
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
+    const auto height = sampler->uniform(m_height);
 
     vector3_type u, v;
-    std::tie(u, v) = orthonormal_basis(m_normal);
+    std::tie(u, v) = orthonormalBasis(m_normal);
 
     real_type x, y;
-    std::tie(x, y) = random.circle<real_type>();
+    std::tie(x, y) = sampler->circle<real_type>();
 
     const auto normal = u * x + v * y;
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal);
 
     return initial_ray_sample_type(
       ray_type(m_center + m_normal * height + normal * m_radius, direction_o),

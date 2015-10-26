@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "base/sampler.h"
+
 namespace amber {
 namespace shader {
 namespace framework {
@@ -47,11 +49,10 @@ public:
 
   const radiant_type& total_power() const noexcept { return total_power_; }
 
-  template <typename Random>
-  object_type operator()(Random& random) const {
+  object_type operator()(Sampler *sampler) const {
     const auto it = std::upper_bound(
       nodes_.begin(), nodes_.end(),
-      Node(random.uniform(nodes_.back().partial_sum_power), object_type()),
+      Node(sampler->uniform(nodes_.back().partial_sum_power), object_type()),
       [](const auto& a, const auto& b){
         return a.partial_sum_power < b.partial_sum_power;
       }
