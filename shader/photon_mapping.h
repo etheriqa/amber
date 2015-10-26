@@ -13,6 +13,7 @@
 #include <iterator>
 #include <sstream>
 #include <vector>
+
 #include "geometry/aabb.h"
 #include "shader/framework/light_sampler.h"
 #include "shader/shader.h"
@@ -202,14 +203,14 @@ public:
 
   progress_const_reference
   render(const object_buffer_type& objects, const camera_type& camera) const {
-    Random random;
+    DefaultSampler<> sampler;
     const acceleration_type acceleration(objects);
     const light_sampler_type light_sampler(objects.begin(), objects.end());
 
     std::cerr << "(1/3) Photon tracing ... ";
     std::vector<Photon> photons;
     for (size_t i = 0; i < n_photon_; i++) {
-      const auto samples = photonTracing(acceleration, light_sampler, random);
+      const auto samples = photonTracing(acceleration, light_sampler, &sampler);
       std::move(samples.begin(), samples.end(), std::back_inserter(photons));
     }
     for (auto& photon : photons) {
@@ -227,7 +228,7 @@ public:
       for (size_t x = 0; x < camera.image_width(); x++) {
         std::cerr << "\ry = " << y << std::flush;
         radiant_type power;
-        power += rendering(acceleration, camera, photon_map, x, y, random);
+        power += rendering(acceleration, camera, photon_map, x, y, &sampler);
         camera.expose(x, y, power);
       }
     }
@@ -246,9 +247,9 @@ private:
   std::vector<Photon>
   photonTracing(const acceleration_type& acceleration,
                 const light_sampler_type& light_sampler,
-                Random& random) const {
-    const auto light = light_sampler(random);
-    const auto sample = light.sample_initial_ray(random);
+                Sampler *sampler) const {
+    const auto light = light_sampler(sampler);
+    const auto sample = light.sample_initial_ray(sampler);
 
     auto power = light_sampler.total_power();
     auto ray = sample.ray;
@@ -272,7 +273,7 @@ private:
       }
 
       const auto sample =
-        object.sampleScattering(power, -ray.direction, hit.normal, random);
+        object.sampleScattering(power, -ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
@@ -282,7 +283,7 @@ private:
       }
 
       const auto p_russian_roulette = reflectance.max();
-      if (random.uniform<real_type>() >= p_russian_roulette) {
+      if (sampler->uniform<real_type>() >= p_russian_roulette) {
         break;
       }
       power /= std::min<real_type>(1, p_russian_roulette);
@@ -296,12 +297,12 @@ private:
             const camera_type& camera,
             const PhotonMap& photon_map,
             size_t x, size_t y,
-            Random& random) const {
+            Sampler *sampler) const {
     return estimatePower(acceleration,
                          photon_map,
-                         camera.sample_initial_ray(x, y, random).ray,
+                         camera.sample_initial_ray(x, y, sampler).ray,
                          radiant_type(1),
-                         random);
+                         sampler);
   }
 
   radiant_type
@@ -309,7 +310,7 @@ private:
                 const PhotonMap& photon_map,
                 const ray_type& ray,
                 const radiant_type& weight,
-                Random& random,
+                Sampler *sampler,
                 size_t depth = 0) const {
     radiant_type power;
     hit_type hit;
@@ -348,7 +349,7 @@ private:
                              photon_map,
                              ray_type(hit.position, sample.direction_o),
                              weight * sample.bsdf / sample.psa_probability,
-                             random,
+                             sampler,
                              depth + 1) * sample.psa_probability / p;
     }
 

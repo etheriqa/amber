@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "constant.h"
+#include "base/constant.h"
 #include "material/lambertian.h"
 #include "material/material.h"
 
@@ -35,12 +35,13 @@ public:
   bool isEmissive() const noexcept { return true; }
   radiant_type emittance() const noexcept { return radiance_; }
 
-  scattering_sample_type sampleScattering(const radiant_type&,
-                                          const vector3_type& direction_i,
-                                          const vector3_type& normal,
-                                          Random& random) const {
+  scattering_sample_type
+  sampleScattering(const radiant_type&,
+                   const vector3_type& direction_i,
+                   const vector3_type& normal,
+                   Sampler *sampler) const {
     return Lambertian<radiant_type, real_type>(radiant_type())
-      .sampleScattering(radiant_type(), direction_i, normal, random);
+      .sampleScattering(radiant_type(), direction_i, normal, sampler);
   }
 };
 

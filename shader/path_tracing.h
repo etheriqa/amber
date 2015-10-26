@@ -13,7 +13,8 @@
 #include <future>
 #include <sstream>
 #include <vector>
-#include "random.h"
+
+#include "base/sampler.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -63,7 +64,7 @@ public:
     auto current = std::make_shared<std::atomic<size_t>>(0);
     auto pixels = std::make_shared<std::vector<size_t>>(camera.image_pixels());
     std::iota(pixels->begin(), pixels->end(), 0);
-    std::shuffle(pixels->begin(), pixels->end(), Random().generator());
+    std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
     const auto acceleration = std::make_shared<acceleration_type>(objects);
 
@@ -91,14 +92,14 @@ private:
   {
     // TODO refactor
     auto progress = future.get();
-    Random random;
+    DefaultSampler<> sampler;
 
     for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
       auto x = pixels->at(i) % camera.image_width();
       auto y = pixels->at(i) / camera.image_height();
       radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
-        power += sample_pixel(scene, camera, x, y, random);
+        power += sample_pixel(scene, camera, x, y, &sampler);
         progress->done(1);
       }
       camera.expose(x, y, power / m_spp);
@@ -112,11 +113,11 @@ private:
     const camera_type& camera,
     size_t x,
     size_t y,
-    Random& random
+    Sampler *sampler
   ) const
   {
     radiant_type power, weight(1);
-    auto ray = camera.sample_initial_ray(x, y, random).ray;
+    auto ray = camera.sample_initial_ray(x, y, sampler).ray;
     hit_type hit;
     object_type object;
 
@@ -130,13 +131,13 @@ private:
         power += weight * object.emittance();
       }
 
-      const auto sample = object.sampleScattering(weight, -ray.direction, hit.normal, random);
+      const auto sample = object.sampleScattering(weight, -ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;
 
       const auto p_russian_roulette = reflectance.max();
-      if (random.uniform<real_type>() >= p_russian_roulette) {
+      if (sampler->uniform<real_type>() >= p_russian_roulette) {
         break;
       }
       weight /= std::min<real_type>(1, p_russian_roulette);

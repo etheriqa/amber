@@ -8,25 +8,33 @@ CPPFLAGS = -MMD -MP -I.
 CXXFLAGS = -Wall -Wextra -std=c++1y -O3 -mavx
 LDLIBS = -lpthread
 
-.PHONY: pt bdpt clean
+.PHONY: pt bdpt pm pssmlt convert clean
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(LDLIBS) $^ -o $@
 
 pt: $(TARGET)
 	$(TARGET) --algorithm pt
-	convert output.ppm pt.png
+	@$(MAKE) pt.png
 	open pt.png
 
 bdpt: $(TARGET)
 	$(TARGET) --algorithm bdpt
-	convert output.ppm bdpt.png
+	@$(MAKE) bdpt.png
 	open bdpt.png
 
 pm: $(TARGET)
 	$(TARGET) --algorithm pm
-	convert output.ppm pm.png
+	@$(MAKE) pm.png
 	open pm.png
+
+pssmlt: $(TARGET)
+	$(TARGET) --algorithm pssmlt
+	@$(MAKE) pssmlt.png
+	open pssmlt.png
+
+%.png: output.ppm
+	convert output.ppm $@
 
 clean:
 	$(RM) $(TARGET)

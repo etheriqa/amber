@@ -9,7 +9,8 @@
 #pragma once
 
 #include <algorithm>
-#include "constant.h"
+
+#include "base/constant.h"
 #include "geometry/primitive/primitive.h"
 
 namespace amber {
@@ -35,19 +36,17 @@ private:
   vector3_type m_normal;
 
 public:
-  Triangle(const vector3_type& v0, const vector3_type& v1, const vector3_type& v2) :
-    m_v0(v0), m_v1(v1), m_v2(v2)
-  {
-    m_normal = normalize(cross(m_v1 - m_v0, m_v2 - m_v0));
-  }
+  Triangle(const vector3_type& v0,
+           const vector3_type& v1,
+           const vector3_type& v2)
+    : m_v0(v0), m_v1(v1), m_v2(v2),
+      m_normal(normalize(cross(v1 - v0, v2 - v0))) {}
 
-  real_type surface_area() const noexcept
-  {
+  real_type surface_area() const noexcept {
     return (cross(m_v1 - m_v0, m_v2 - m_v0)).length() / 2;
   }
 
-  aabb_type aabb() const noexcept
-  {
+  aabb_type aabb() const noexcept {
     return aabb_type(
       vector3_type(
         std::min({m_v0.x(), m_v1.x(), m_v2.x()}),
@@ -62,8 +61,7 @@ public:
     );
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept
-  {
+  hit_type intersect(const ray_type& ray) const noexcept {
     const auto E1 = m_v1 - m_v0;
     const auto E2 = m_v2 - m_v0;
 
@@ -98,9 +96,9 @@ public:
     );
   }
 
-  initial_ray_sample_type sample_initial_ray(Random& random) const
-  {
-    auto u = random.uniform<real_type>(), v = random.uniform<real_type>();
+  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
+    auto u = sampler->uniform<real_type>();
+    auto v = sampler->uniform<real_type>();
 
     if (u + v >= 1) {
       u = 1 - u;
@@ -110,7 +108,7 @@ public:
     const auto origin = (1 - u - v) * m_v0 + u * m_v1 + v * m_v2;
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = random.hemisphere_psa(m_normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(m_normal);
 
     return initial_ray_sample_type(
       ray_type(origin, direction_o),

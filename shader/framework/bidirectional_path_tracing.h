@@ -13,7 +13,9 @@
 #include <memory>
 #include <numeric>
 #include <vector>
-#include "constant.h"
+
+#include "base/constant.h"
+#include "base/sampler.h"
 #include "material/surface_type.h"
 #include "shader/framework/light_sampler.h"
 #include "shader/framework/multiple_importance_sampling.h"
@@ -53,10 +55,9 @@ public:
                            const light_sampler_ptr& light_sampler) noexcept
    : acceleration_(acceleration), light_sampler_(light_sampler) {}
 
-  template <typename Random>
-  std::vector<Event> lightPathTracing(Random& random) const {
-    const auto light = (*light_sampler_)(random);
-    const auto sample = light.sample_initial_ray(random);
+  std::vector<Event> lightPathTracing(Sampler *sampler) const {
+    const auto light = (*light_sampler_)(sampler);
+    const auto sample = light.sample_initial_ray(sampler);
     const auto area_probability =
       light.emittance().sum() * kPI / light_sampler_->total_power().sum();
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
@@ -70,17 +71,17 @@ public:
     event.log_probability = std::log(area_probability);
     event.weight          = light.emittance() / area_probability;
 
-    return pathTracing(event, psa_probability, random);
+    return pathTracing(event, psa_probability, sampler);
   }
 
-  template <typename Random, typename Camera>
-  std::vector<Event> eyePathTracing(Random& random,
+  template <typename Camera>
+  std::vector<Event> eyePathTracing(Sampler *sampler,
                                     const Camera& camera,
                                     size_t x,
                                     size_t y) const {
     // TODO importance, area_probability, psa_probability
     const auto importance = radiant_type(1);
-    const auto sample = camera.sample_initial_ray(x, y, random);
+    const auto sample = camera.sample_initial_ray(x, y, sampler);
     const auto area_probability = static_cast<radiant_value_type>(1);
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
 
@@ -93,7 +94,7 @@ public:
     event.log_probability = std::log(area_probability);
     event.weight          = importance / area_probability;
 
-    return pathTracing(event, psa_probability, random);
+    return pathTracing(event, psa_probability, sampler);
   }
 
   template <typename MIS>
@@ -105,13 +106,36 @@ public:
 
     for (size_t s = 0; s <= light.size(); s++) {
       for (size_t t = 0; t <= eye.size(); t++) {
-        auto& samples = sample_map[s + t - 2];
         if (s + t < 2) {
           continue;
+        }
+        auto& samples = sample_map.at(s + t - 2);
+        if (s >= 2 && t >= 2) {
+          const auto& l = light.at(s - 1);
+          const auto& e = eye.at(t - 1);
+          if (l.object.surfaceType() == material::SurfaceType::specular) {
+            continue;
+          }
+          if (e.object.surfaceType() == material::SurfaceType::specular) {
+            continue;
+          }
+          const auto geometry_factor = geometryFactor(l, e);
+          if (geometry_factor == 0) {
+            continue;
+          }
+          const auto direction_le = normalize(e.position - l.position);
+          samples.emplace_back(
+            l.weight *
+              l.object.bsdf(l.direction_i, direction_le, l.normal) *
+              geometry_factor *
+              e.object.bsdf(-direction_le, e.direction_i, e.normal) *
+              e.weight,
+            l.log_probability + e.log_probability
+          );
         } else if (s == 0 && t >= 2) {
           // zero light subpath vertices
-          const auto& l = eye[t - 1];
-          const auto& e = eye[t - 2];
+          const auto& l = eye.at(t - 1);
+          const auto& e = eye.at(t - 2);
           if (!l.object.isEmissive()) {
             continue;
           }
@@ -124,8 +148,8 @@ public:
           );
         } else if (s == 1 && t >= 2) {
           // one light subpath vertex
-          const auto& l = light[s - 1];
-          const auto& e = eye[t - 1];
+          const auto& l = light.at(s - 1);
+          const auto& e = eye.at(t - 1);
           if (e.object.surfaceType() == material::SurfaceType::specular) {
             continue;
           }
@@ -154,28 +178,6 @@ public:
         } else if (s == 1 && t == 1) {
           // TODO one light subpath vertex and one eye subpath vertex
           continue;
-        } else {
-          const auto& l = light[s - 1];
-          const auto& e = eye[t - 1];
-          if (l.object.surfaceType() == material::SurfaceType::specular) {
-            continue;
-          }
-          if (e.object.surfaceType() == material::SurfaceType::specular) {
-            continue;
-          }
-          const auto geometry_factor = geometryFactor(l, e);
-          if (geometry_factor == 0) {
-            continue;
-          }
-          const auto direction_le = normalize(e.position - l.position);
-          samples.emplace_back(
-            l.weight *
-              l.object.bsdf(l.direction_i, direction_le, l.normal) *
-              geometry_factor *
-              e.object.bsdf(-direction_le, e.direction_i, e.normal) *
-              e.weight,
-            l.log_probability + e.log_probability
-          );
         }
       }
     }
@@ -187,10 +189,9 @@ public:
   }
 
 private:
-  template <typename Random>
   std::vector<Event> pathTracing(Event event,
                                  radiant_value_type probability,
-                                 Random& random) const {
+                                 Sampler *sampler) const {
     std::vector<Event> events;
     events.reserve(16);
     events.push_back(event);
@@ -210,7 +211,7 @@ private:
         object.sampleScattering(event.weight * bsdf,
                                 -ray.direction,
                                 hit.normal,
-                                random);
+                                sampler);
       const auto log_geometry_factor =
         std::log(std::abs(dot(ray.direction, event.normal) *
                           dot(ray.direction, hit.normal) /
@@ -230,7 +231,7 @@ private:
       probability = sample.psa_probability;
 
       const auto russian_roulette = (bsdf / probability).max();
-      if (random.template uniform<radiant_value_type>() >= russian_roulette) {
+      if (sampler->uniform<radiant_value_type>() >= russian_roulette) {
         break;
       }
       probability *= std::min<radiant_value_type>(1, russian_roulette);

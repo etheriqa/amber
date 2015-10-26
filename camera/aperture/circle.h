@@ -10,8 +10,9 @@
 
 #include <cmath>
 #include <sstream>
+
+#include "base/constant.h"
 #include "camera/aperture/aperture.h"
-#include "constant.h"
 
 namespace amber {
 namespace camera {
@@ -39,11 +40,11 @@ public:
     return ss.str();
   }
 
-  vector3_type sample_point(Random& g) const
+  vector3_type sample_point(Sampler *sampler) const
   {
     // TODO refactor
-    const auto radius = std::sqrt(g.uniform(m_radius * m_radius));
-    const auto theta = g.uniform(2 * static_cast<real_type>(kPI));
+    const auto radius = std::sqrt(sampler->uniform(m_radius * m_radius));
+    const auto theta = sampler->uniform(2 * static_cast<real_type>(kPI));
     return vector3_type(radius * std::cos(theta), radius * std::cos(theta), 0);
   }
 };

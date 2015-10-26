@@ -9,7 +9,8 @@
 #pragma once
 
 #include <cmath>
-#include "constant.h"
+
+#include "base/constant.h"
 #include "material/material.h"
 
 namespace amber {

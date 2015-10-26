@@ -69,10 +69,10 @@ public:
     return ss.str();
   }
 
-  initial_ray_sample_type sample_initial_ray(size_t x, size_t y, Random& g) const
+  initial_ray_sample_type sample_initial_ray(size_t x, size_t y, Sampler *sampler) const
   {
     const auto sensor_point = m_sensor->sample_point(x, y);
-    const auto ray = m_lens->sample_ray(sensor_point, g);
+    const auto ray = m_lens->sample_ray(sensor_point, sampler);
 
     return initial_ray_sample_type(
       ray_type(

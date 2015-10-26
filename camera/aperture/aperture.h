@@ -9,7 +9,7 @@
 #pragma once
 
 #include <string>
-#include "random.h"
+#include "base/sampler.h"
 
 namespace amber {
 namespace camera {
@@ -24,7 +24,7 @@ struct Aperture
   using vector3_type  = geometry::Vector3<real_type>;
 
   virtual std::string to_string() const = 0;
-  virtual vector3_type sample_point(Random& g) const = 0;
+  virtual vector3_type sample_point(Sampler*) const = 0;
 };
 
 }
