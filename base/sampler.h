@@ -142,6 +142,10 @@ public:
   real_type canonical() {
     return std::uniform_real_distribution<real_type>(0, 1)(engine_);
   }
+
+  result_type operator()() {
+    return engine_();
+  }
 };
 
 }
