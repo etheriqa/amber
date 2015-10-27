@@ -151,16 +151,16 @@ public:
         if (std::string(optarg) == "pssmlt") { algorithm = Algorithm::pssmlt; }
         break;
       case 's':
-        spp = std::stoi(std::string(optarg));
+        spp = std::stoull(std::string(optarg));
         break;
       case 'p':
-        n_photon = std::stoi(std::string(optarg));
+        n_photon = std::stoull(std::string(optarg));
         break;
       case 'k':
-        k_nearest_photon = std::stoi(std::string(optarg));
+        k_nearest_photon = std::stoull(std::string(optarg));
         break;
       case 'm':
-        n_mutation = std::stoi(std::string(optarg));
+        n_mutation = std::stoull(std::string(optarg));
         break;
       case '?':
         help();
