@@ -186,16 +186,16 @@ private:
     }
   };
 
-  size_t n_photon_, n_nearest_photon_;
+  size_t n_photon_, k_nearest_photon_;
 
 public:
-  PhotonMapping(size_t n_photon, size_t n_nearest_photon) :
-    n_photon_(n_photon), n_nearest_photon_(n_nearest_photon) {}
+  PhotonMapping(size_t n_photon, size_t k_nearest_photon) :
+    n_photon_(n_photon), k_nearest_photon_(k_nearest_photon) {}
 
   void write(std::ostream& os) const noexcept {
     os
       << "PhotonMapping(n_photon=" << n_photon_
-      << ", n_nearest_photon=" << n_nearest_photon_
+      << ", k_nearest_photon=" << k_nearest_photon_
       << ")";
   }
 
@@ -324,7 +324,7 @@ private:
 
     if (object.surfaceType() == material::SurfaceType::diffuse) {
       const auto photons =
-        photon_map.kNearestNeighbours(hit.position, 1, n_nearest_photon_);
+        photon_map.kNearestNeighbours(hit.position, 1, k_nearest_photon_);
       return
         power + weight * gaussianFilter(photons, hit, object, -ray.direction);
     }
