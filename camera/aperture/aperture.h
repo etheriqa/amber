@@ -8,23 +8,19 @@
 
 #pragma once
 
-#include <string>
 #include "base/sampler.h"
+#include "base/writer.h"
 
 namespace amber {
 namespace camera {
 namespace aperture {
 
 template <typename RealType>
-struct Aperture
-{
-  using aperture_type = Aperture<RealType>;
-  using real_type     = RealType;
+class Aperture : public Writer {
+public:
+  using vector3_type  = geometry::Vector3<RealType>;
 
-  using vector3_type  = geometry::Vector3<real_type>;
-
-  virtual std::string to_string() const = 0;
-  virtual vector3_type sample_point(Sampler*) const = 0;
+  virtual vector3_type samplePoint(Sampler*) const = 0;
 };
 
 }

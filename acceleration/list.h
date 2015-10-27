@@ -9,8 +9,8 @@
 #pragma once
 
 #include <limits>
-#include <string>
 #include <vector>
+
 #include "acceleration/acceleration.h"
 
 namespace amber {
@@ -33,12 +33,11 @@ private:
   ObjectBuffer m_objects;
 
 public:
-  static std::string to_string() noexcept
-  {
-    return std::string("List");
-  }
-
   explicit List(const object_buffer_type& objects) : m_objects(objects) {}
+
+  void write(std::ostream& os) const noexcept {
+    os << "List()";
+  }
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
   {

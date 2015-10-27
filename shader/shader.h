@@ -11,9 +11,10 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <string>
 #include <thread>
 #include <vector>
+
+#include "base/writer.h"
 #include "camera/camera.h"
 
 namespace amber {
@@ -86,8 +87,7 @@ public:
 };
 
 template <typename Acceleration>
-struct Shader
-{
+struct Shader : public Writer {
   using shader_type              = Shader<Acceleration>;
   using acceleration_type        = Acceleration;
 
@@ -105,7 +105,6 @@ struct Shader
   using progress_reference       = std::shared_ptr<ShadingProgress>;
   using progress_type            = ShadingProgress;
 
-  virtual std::string to_string() const = 0;
   virtual progress_const_reference render(const object_buffer_type&, const camera_type&) const = 0;
 };
 

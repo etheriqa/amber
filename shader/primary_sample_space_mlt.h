@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <functional>
 #include <future>
-#include <sstream>
 #include <vector>
 
 #include "shader/framework/bidirectional_path_tracing.h"
@@ -55,16 +54,13 @@ public:
       n_mutation_(n_mutation),
       p_large_step_(p_large_step) {}
 
-  std::string to_string() const {
-    std::stringstream ss;
-    ss
-      << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl
+  void write(std::ostream& os) const noexcept {
+    os
       << "Shader: PrimarySampleSpaceMLT(n_thread=" << n_thread_
       << ", n_seed=" << n_seed_
       << ", n_mutation=" << n_mutation_
       << ", p_large_step=" << p_large_step_
       << ")";
-    return ss.str();
   }
 
   progress_const_reference render(const object_buffer_type& objects,
@@ -74,7 +70,7 @@ public:
     std::promise<progress_reference> promise;
     auto future = promise.get_future().share();
     auto current = std::make_shared<std::atomic<size_t>>(0);
-    auto pixels = std::make_shared<std::vector<size_t>>(camera.image_pixels());
+    auto pixels = std::make_shared<std::vector<size_t>>(camera.imageSize());
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
@@ -88,7 +84,7 @@ public:
     }
 
     promise.set_value(std::make_shared<progress_type>(
-      n_mutation_ * camera.image_pixels(),
+      n_mutation_ * camera.imageSize(),
       std::move(threads)
     ));
 
@@ -105,9 +101,9 @@ private:
     auto progress = future.get();
     DefaultSampler<> sampler((std::random_device()()));
 
-    for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
-      auto x = pixels->at(i) % camera.image_width();
-      auto y = pixels->at(i) / camera.image_height();
+    for (size_t i = (*current)++; i < camera.imageSize(); i = (*current)++) {
+      auto x = pixels->at(i) % camera.imageWidth();
+      auto y = pixels->at(i) / camera.imageHeight();
 
       framework::PrimarySampleSpace<> pss_light, pss_eye;
       radiant_type current;

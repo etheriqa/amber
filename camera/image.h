@@ -13,44 +13,42 @@
 namespace amber {
 namespace camera {
 
-template <typename Pixel>
-class Image
-{
-public:
-  using pixel_type = Pixel;
-  using image_type = Image<Pixel>;
-
-  const size_t m_width,
-               m_height;
+template <typename Radiant>
+class Image {
 private:
-  std::vector<pixel_type> m_pixel;
+  size_t width_, height_;
+  std::vector<Radiant> pixels_;
 
 public:
-  Image(size_t w, size_t h) :
-    m_width(w), m_height(h), m_pixel(w * h)
-  {}
+  Image(size_t width, size_t height) noexcept
+    : width_(width), height_(height), pixels_(width * height) {}
 
-  const pixel_type& pixel(size_t x, size_t y) const
-  {
-    return m_pixel[x + y * m_width];
+  size_t const& width() const noexcept { return width_; }
+  size_t const& height() const noexcept { return height_; }
+
+  Radiant& at(size_t x, size_t y) {
+    if (x >= width_ || y >= height_) {
+      throw std::out_of_range("amber::camera::Image::at: invalid coordinates");
+    }
+    return pixels_.at(x + y * width_);
   }
 
-  pixel_type& pixel(size_t x, size_t y)
-  {
-    return m_pixel[x + y * m_width];
+  Radiant const& at(size_t x, size_t y) const {
+    if (x >= width_ || y >= height_) {
+      throw std::out_of_range("amber::camera::Image::at: invalid coordinates");
+    }
+    return pixels_.at(x + y * width_);
   }
 
-  void expose(size_t x, size_t y, const pixel_type& p)
-  {
-    pixel(x, y) += p;
-  }
-
-  image_type down_sample(size_t n) const
-  {
-    image_type image(m_width / n, m_height / n);
-    for (size_t i = 0; i < m_width; i++) {
-      for (size_t j = 0; j < m_height; j++) {
-        image.expose(i / n, j / n, pixel(i, j) / static_cast<pixel_type>(n * n));
+  Image<Radiant> downSample(size_t n) const {
+    if ((width_ % n) * (height_ % n) > 0) {
+      throw std::invalid_argument(
+        "amber::camera::Image::downSample: invalid n");
+    }
+    Image<Radiant> image(width_ / n, height_ / n);
+    for (size_t i = 0; i < width_; i++) {
+      for (size_t j = 0; j < height_; j++) {
+        image.at(i / n, j / n) = at(i, j);
       }
     }
     return image;

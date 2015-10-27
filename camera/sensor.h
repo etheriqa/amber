@@ -15,56 +15,33 @@ namespace amber {
 namespace camera {
 
 template <typename Radiant, typename RealType>
-class Sensor
-{
+class Sensor {
 public:
-  using radiant_type    = Radiant;
-  using real_type       = RealType;
+  using image_type   = Image<Radiant>;
+  using vector3_type = geometry::Vector3<RealType>;
 
-  using image_reference = Image<radiant_type>*;
-  using vector3_type    = geometry::Vector3<real_type>;
-
-  static constexpr real_type kFilmSize = 0.036;
+  RealType static constexpr kFilmSize = 0.036;
 
 private:
-  image_reference m_image;
-  real_type       m_width,
-                  m_height;
+  image_type* image_;
+  RealType width_, height_;
 
 public:
-  Sensor(image_reference i, real_type fs = kFilmSize) :
-    m_image(i),
-    m_width(fs),
-    m_height(fs / i->m_width * i->m_height)
-  {}
+  explicit Sensor(image_type* image) noexcept : Sensor(image, kFilmSize) {}
 
-  size_t image_width() const
-  {
-    return m_image->m_width;
-  }
+  Sensor(image_type* image, RealType film_size) noexcept
+    : image_(image),
+      width_(film_size),
+      height_(film_size / image_->width() * image_->height()) {}
 
-  size_t image_height() const
-  {
-    return m_image->m_height;
-  }
+  image_type* const& image() const noexcept { return image_; }
 
-  size_t image_pixels() const
-  {
-    return m_image->m_width * m_image->m_height;
-  }
-
-  vector3_type sample_point(size_t x, size_t y) const
-  {
+  vector3_type samplePoint(size_t x, size_t y) const noexcept {
     return vector3_type(
-      - ((x + real_type(0.5)) / image_width() - real_type(0.5)) * m_width,
-      ((y + real_type(0.5)) / image_height() - real_type(0.5)) * m_height,
+      - ((x + RealType(0.5)) / image_->width() - RealType(0.5)) * width_,
+      ((y + RealType(0.5)) / image_->height() - RealType(0.5)) * height_,
       0
     );
-  }
-
-  void expose(size_t x, size_t y, const radiant_type& power) const
-  {
-    m_image->expose(x, y, power);
   }
 };
 

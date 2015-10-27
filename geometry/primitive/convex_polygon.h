@@ -9,8 +9,9 @@
 #pragma once
 
 #include <initializer_list>
+#include <numeric>
 #include <vector>
-#include "geometry/primitive/primitive.h"
+
 #include "geometry/primitive/triangle.h"
 
 namespace amber {
@@ -20,51 +21,45 @@ namespace primitive {
 template <typename RealType>
 class ConvexPolygon : public Primitive<RealType> {
 public:
-  using primitive_type          = Primitive<RealType>;
+  using aabb_type      = typename Primitive<RealType>::aabb_type;
+  using hit_type       = typename Primitive<RealType>::hit_type;
+  using first_ray_type = typename Primitive<RealType>::first_ray_type;
+  using ray_type       = typename Primitive<RealType>::ray_type;
 
-  using aabb_type               = typename primitive_type::aabb_type;
-  using hit_type                = typename primitive_type::hit_type;
-  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
-  using ray_type                = typename primitive_type::ray_type;
-  using real_type               = typename primitive_type::real_type;
-
-  using triangle_type           = Triangle<real_type>;
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type   = Vector3<RealType>;
 
 private:
-  std::vector<triangle_type> m_triangles;
+  using triangle_type  = Triangle<RealType>;
+
+  std::vector<triangle_type> triangles_;
 
 public:
-  ConvexPolygon(std::initializer_list<vector3_type> vertices) {
-    const auto it = vertices.begin();
+  ConvexPolygon(std::initializer_list<vector3_type> vertices) noexcept {
+    auto const it = vertices.begin();
     for (size_t i = 2; i < vertices.size(); i++) {
-      m_triangles.push_back(triangle_type(
-        *std::next(it, i - 1),
-        *std::next(it, i),
-        *it
-      ));
+      triangles_.emplace_back(*std::next(it, i - 1), *std::next(it, i), *it);
     }
   }
 
-  real_type surface_area() const noexcept {
-    real_type area = 0;
-    for (const auto& triangle : m_triangles) {
-      area += triangle.surface_area();
+  RealType surfaceArea() const noexcept {
+    RealType surface_area = 0;
+    for (auto const& triangle : triangles_) {
+      surface_area += triangle.surfaceArea();
     }
-    return area;
+    return surface_area;
   }
 
   aabb_type aabb() const noexcept {
     aabb_type aabb;
-    for (const auto& triangle : m_triangles) {
+    for (auto const& triangle : triangles_) {
       aabb += triangle.aabb();
     }
     return aabb;
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept {
-    for (const auto& triangle : m_triangles) {
-      const auto hit = triangle.intersect(ray);
+  hit_type intersect(ray_type const& ray) const noexcept {
+    for (auto const& triangle : triangles_) {
+      auto const hit = triangle.intersect(ray);
       if (hit) {
         return hit;
       }
@@ -72,16 +67,16 @@ public:
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
-    const auto polygon_area = surface_area();
-    const auto r = sampler->uniform(polygon_area);
+  first_ray_type sampleFirstRay(Sampler* sampler) const {
+    auto const polygon_area = surfaceArea();
+    auto const r = sampler->uniform(polygon_area);
 
-    real_type area = 0;
-    for (const auto& triangle : m_triangles) {
-      const auto triangle_area = triangle.surface_area();
+    RealType area = 0;
+    for (auto const& triangle : triangles_) {
+      auto const triangle_area = triangle.surfaceArea();
       area += triangle_area;
       if (area > r) {
-        return triangle.sample_initial_ray(sampler);
+        return triangle.sampleFirstRay(sampler);
       }
     }
 

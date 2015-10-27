@@ -40,14 +40,14 @@ public:
   }
 
   hdr_image_type& operator()(hdr_image_type& image) const noexcept {
-    const auto& width = image.m_width;
-    const auto& height = image.m_height;
+    const auto& width = image.width();
+    const auto& height = image.height();
 
     Normalizer<HDR>()(image);
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        auto& p = image.pixel(i, j);
+        auto& p = image.at(i, j);
         p = map(p * exposure_) / map(HDR(kW));
       }
     }

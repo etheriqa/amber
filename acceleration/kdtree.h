@@ -8,15 +8,19 @@
 
 #pragma once
 
-#include <sstream>
 #include <unordered_map>
 #include <vector>
+
 #include "acceleration/acceleration.h"
 
 namespace amber {
 namespace acceleration {
 
-template <typename Object, size_t TraverseCost = 500, size_t IntersectionCost = 100, size_t LeafCapacity = 16, size_t MaxDepth = 24>
+template <typename Object,
+          size_t TraverseCost = 500,
+          size_t IntersectionCost = 100,
+          size_t LeafCapacity = 16,
+          size_t MaxDepth = 24>
 class KDTree : public Acceleration<Object>
 {
 public:
@@ -352,9 +356,9 @@ private:
       aabb_type left_voxel, right_voxel;
       std::tie(left_voxel, right_voxel) = split_box(voxel, plane);
 
-      const auto surface_area = voxel.surface_area();
-      const auto p_left = left_voxel.surface_area() / surface_area;
-      const auto p_right = right_voxel.surface_area() / surface_area;
+      const auto surface_area = voxel.surfaceArea();
+      const auto p_left = left_voxel.surfaceArea() / surface_area;
+      const auto p_right = right_voxel.surfaceArea() / surface_area;
       const auto cost_left = cost(p_left, p_right, n_left + n_planar, n_right);
       const auto cost_right = cost(p_left, p_right, n_left, n_right + n_planar);
 
@@ -437,18 +441,20 @@ private:
   Node *m_root;
 
 public:
-  static std::string to_string() noexcept
-  {
-    std::stringstream ss;
-    ss << "KDTree(traverse_cost=" << TraverseCost << ", intersection_cost=" << IntersectionCost << ", leaf_capacity=" << LeafCapacity << ", max_depth=" << MaxDepth << ")";
-    return ss.str();
-  }
-
   explicit KDTree(const object_buffer_type& objects) : m_root(new Node(objects)) {}
 
   ~KDTree()
   {
     delete m_root;
+  }
+
+  void write(std::ostream& os) const noexcept {
+    os
+      << "KDTree(traverse_cost=" << TraverseCost
+      << ", intersection_cost=" << IntersectionCost
+      << ", leaf_capacity=" << LeafCapacity
+      << ", max_depth=" << MaxDepth
+      << ")";
   }
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept

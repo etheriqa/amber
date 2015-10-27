@@ -9,8 +9,8 @@
 #pragma once
 
 #include <limits>
-#include <sstream>
 #include <vector>
+
 #include "acceleration/acceleration.h"
 
 namespace amber {
@@ -153,18 +153,18 @@ private:
   Node *m_root;
 
 public:
-  static std::string to_string() noexcept
-  {
-    std::stringstream ss;
-    ss << "BSP(leaf_capacity=" << LeafCapacity << ", max_depth=" << MaxDepth << ")";
-    return ss.str();
-  }
-
   explicit BSP(const object_buffer_type& objects) : m_root(new Node(objects)) {}
 
   ~BSP()
   {
     delete m_root;
+  }
+
+  void write(std::ostream& os) const noexcept{
+    os
+      << "BSP(leaf_capacity=" << LeafCapacity
+      << ", max_depth=" << MaxDepth
+      << ")";
   }
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept

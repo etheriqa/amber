@@ -9,9 +9,9 @@
 #pragma once
 
 #include <limits>
-#include <sstream>
 #include <unordered_set>
 #include <vector>
+
 #include "acceleration/acceleration.h"
 
 namespace amber {
@@ -190,7 +190,7 @@ private:
 
     static std::tuple<size_t, size_t, event_list_type, event_list_type, aabb_type, aabb_type> split(size_t n, const event_list_type& events, const aabb_type& voxel) noexcept
     {
-      const auto surface_area = voxel.surface_area();
+      const auto surface_area = voxel.surfaceArea();
 
       real_type optimal_cost = IntersectionCost * n;
       Axis optimal_axis = Axis::None;
@@ -223,8 +223,8 @@ private:
         for (size_t i = 1; i < n; i++) {
           const auto cost = surface_area_heuristic(
             surface_area,
-            left_including_voxels[i].surface_area(),
-            right_intersection_voxels[n - i].surface_area(),
+            left_including_voxels[i].surfaceArea(),
+            right_intersection_voxels[n - i].surfaceArea(),
             i,
             n - i
           );
@@ -238,8 +238,8 @@ private:
         for (size_t i = 1; i < n; i++) {
           const auto cost = surface_area_heuristic(
             surface_area,
-            left_intersection_voxels[i].surface_area(),
-            right_including_voxels[n - i].surface_area(),
+            left_intersection_voxels[i].surfaceArea(),
+            right_including_voxels[n - i].surfaceArea(),
             i,
             n - i
           );
@@ -295,18 +295,18 @@ private:
   Node *m_root;
 
 public:
-  static std::string to_string() noexcept
-  {
-    std::stringstream ss;
-    ss << "BVH(traverse_cost=" << TraverseCost << ", intersection_cost=" << IntersectionCost << ")";
-    return ss.str();
-  }
-
   explicit BVH(const object_buffer_type& objects) : m_root(new Node(objects)) {}
 
   ~BVH()
   {
     delete m_root;
+  }
+
+  void write(std::ostream& os) const noexcept {
+    os
+      << "BVH(traverse_cost=" << TraverseCost
+      << ", intersection_cost=" << IntersectionCost
+      << ")";
   }
 
   std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept

@@ -18,70 +18,62 @@ namespace material {
 
 template <typename Radiant, typename RealType>
 class Refraction : public Material<Radiant, RealType> {
+public:
+  using radiant_value_type = typename Radiant::value_type;
+  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
+
 private:
-  using material_type          = Material<Radiant, RealType>;
-
-  using radiant_type           = typename material_type::radiant_type;
-  using real_type              = typename material_type::real_type;
-  using scattering_sample_type = typename material_type::ScatteringSample;
-  using vector3_type           = typename material_type::vector3_type;
-
-  real_type refractive_index_;
+  radiant_value_type refractive_index_;
 
 public:
-  explicit Refraction(real_type refractive_index) noexcept
+  explicit Refraction(radiant_value_type refractive_index) noexcept
     : refractive_index_(refractive_index) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
-  std::vector<scattering_sample_type>
-  scatteringCandidates(const radiant_type&,
-                       const vector3_type& direction_i,
-                       const vector3_type& normal) const {
-    std::vector<scattering_sample_type> candidates;
-    scattering_sample_type sample;
-
-    const auto signed_cos_i = dot(direction_i, normal);
-    const auto reflection_direction_o = 2 * signed_cos_i * normal - direction_i;
-    const auto ri = signed_cos_i > 0
+  std::vector<scatter_type>
+  specularScatters(Radiant const&,
+                   vector3_type const& direction_i,
+                   vector3_type const& normal) const {
+    auto const signed_cos_i =
+      dot(direction_i, normal);
+    auto const reflection_direction_o =
+      2 * signed_cos_i * normal - direction_i;
+    auto const ri = signed_cos_i > 0
       ? 1 / refractive_index_
       : refractive_index_;
-    const auto squared_cos_o =
+    auto const squared_cos_o =
       1 - (1 - signed_cos_i * signed_cos_i) * (ri * ri);
 
     if (squared_cos_o < 0) {
-      // Full reflection
-      sample.direction_o = reflection_direction_o;
-      sample.bsdf = radiant_type(1 / kEPS);
-      sample.psa_probability = 1 / kEPS;
-      candidates.push_back(sample);
-      return candidates;
+      return std::vector<scatter_type>({
+        // Full reflection
+        scatter_type(reflection_direction_o,
+                     Radiant(1 / kEPS),
+                     1 / kEPS)});
     }
 
-    const auto cos_i = std::abs(signed_cos_i);
-    const auto cos_o = std::sqrt(squared_cos_o);
-    const auto p_reflection = fresnel(std::acos(cos_i), std::acos(cos_o));
+    auto const cos_i = std::abs(signed_cos_i);
+    auto const cos_o = std::sqrt(squared_cos_o);
+    auto const p_reflection = fresnel(std::acos(cos_i), std::acos(cos_o));
 
-    // Partial reflection
-    sample.direction_o = reflection_direction_o;
-    sample.bsdf = radiant_type(p_reflection / kEPS);
-    sample.psa_probability = p_reflection / kEPS;
-    candidates.push_back(sample);
-
-    // Refraction
-    sample.direction_o = (cos_i - cos_o / ri) * normal - direction_i;
-    sample.bsdf = radiant_type((1 - p_reflection) / kEPS);
-    sample.psa_probability = (1 - p_reflection) / kEPS;
-    candidates.push_back(sample);
-
-    return candidates;
+    return std::vector<scatter_type>({
+      // Partial reflection
+      scatter_type(reflection_direction_o,
+                   Radiant(p_reflection / kEPS),
+                   p_reflection / kEPS),
+      // Refraction
+      scatter_type((cos_i - cos_o / ri) * normal - direction_i,
+                   Radiant((1 - p_reflection) / kEPS),
+                   (1 - p_reflection) / kEPS)});
   }
 
 private:
-  static real_type fresnel(real_type alpha, real_type beta) noexcept
+  RealType static fresnel(RealType alpha, RealType beta) noexcept
   {
-    const auto s = std::sin(alpha - beta) / std::sin(alpha + beta);
-    const auto t = std::tan(alpha - beta) / std::tan(alpha + beta);
+    auto const s = std::sin(alpha - beta) / std::sin(alpha + beta);
+    auto const t = std::tan(alpha - beta) / std::tan(alpha + beta);
     return (s * s + t * t) / 2;
   }
 };

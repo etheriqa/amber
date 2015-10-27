@@ -10,7 +10,9 @@
 
 #include <numeric>
 #include <vector>
+
 #include "base/sampler.h"
+#include "material/scatter.h"
 #include "material/surface_type.h"
 
 namespace amber {
@@ -19,61 +21,55 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Material {
 public:
-  using material_type      = Material<Radiant, RealType>;
-  using radiant_type       = Radiant;
-  using radiant_value_type = typename Radiant::value_type;
-  using real_type          = RealType;
+  using scatter_type       = Scatter<Radiant, RealType>;
   using vector3_type       = geometry::Vector3<RealType>;
 
-  struct ScatteringSample {
-    vector3_type direction_o;
-    radiant_type bsdf;
-    real_type psa_probability;
-  };
+  using radiant_value_type = typename Radiant::value_type; // TODO remove
+  using radiant_type       = Radiant;                      // TODO remove
 
+public:
   virtual SurfaceType surfaceType() const noexcept = 0;
   virtual bool isEmissive() const noexcept { return false; }
-  virtual radiant_type emittance() const noexcept { return radiant_type(); }
+  virtual Radiant emittance() const noexcept { return Radiant(); }
 
-  virtual radiant_type bsdf(const vector3_type&,
-                            const vector3_type&,
-                            const vector3_type&) const noexcept {
-    return radiant_type();
+  virtual Radiant bsdf(vector3_type const&,
+                       vector3_type const&,
+                       vector3_type const&) const noexcept {
+    return Radiant();
   }
 
-  virtual ScatteringSample
-  sampleScattering(const radiant_type& radiant,
-                   const vector3_type& direction_i,
-                   const vector3_type& normal,
-                   Sampler *sampler) const {
-    const auto candidates = scatteringCandidates(radiant, direction_i, normal);
-    if (candidates.size() == 1) {
-      return candidates.front();
+  virtual scatter_type sampleScatter(Radiant const& radiant,
+                                     vector3_type const& direction_i,
+                                     vector3_type const& normal,
+                                     Sampler* sampler) const {
+    auto const scatters = specularScatters(radiant, direction_i, normal);
+    if (scatters.size() == 1) {
+      return scatters.front();
     }
 
-    const auto accumulator = [](const auto& acc, const auto& sample){
-      return acc + sample.psa_probability;
+    auto const accumulator = [](auto const& acc, auto const& scatter){
+      return acc + scatter.psa_probability;
     };
-    const auto r =
-      sampler->uniform(std::accumulate(candidates.begin(),
-                                       candidates.end(),
+    auto const r =
+      sampler->uniform(std::accumulate(scatters.begin(),
+                                       scatters.end(),
                                        static_cast<radiant_value_type>(0),
                                        accumulator));
-    real_type p = 0;
-    for (const auto& s : candidates) {
-      p += s.psa_probability;
+    radiant_value_type p = 0;
+    for (auto const& scatter : scatters) {
+      p += scatter.psa_probability;
       if (r < p) {
-        return s;
+        return scatter;
       }
     }
-    return candidates.back();
+    return scatters.back();
   }
 
-  virtual std::vector<ScatteringSample>
-  scatteringCandidates(const radiant_type&,
-                       const vector3_type&,
-                       const vector3_type&) const {
-    throw std::logic_error("scatteringCandidates is not implemented");
+  virtual std::vector<scatter_type>
+  specularScatters(Radiant const&,
+                   vector3_type const&,
+                   vector3_type const&) const {
+    throw std::logic_error("specularScatters is not implemented");
   }
 };
 

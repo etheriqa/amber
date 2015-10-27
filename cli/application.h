@@ -185,17 +185,17 @@ public:
     }
     const auto lens   = new camera::lens::Pinhole<real_type>();
     const auto image  = new camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor = new camera::Sensor<radiant_type, real_type>(image);
+    const auto sensor = camera::Sensor<radiant_type, real_type>(image);
     const auto camera = camera::Camera<radiant_type, real_type>(
-      lens, sensor,
+      sensor, lens,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 
     render(shader, scene, camera);
 
     post_process::Filmic<radiant_type> filmic;
     post_process::Gamma<radiant_type> gamma;
-    io::export_rgbe("output.hdr", image->down_sample(kSSAA));
-    io::export_ppm("output.ppm", gamma(filmic(image->down_sample(kSSAA))));
+    io::export_rgbe("output.hdr", image->downSample(kSSAA));
+    io::export_ppm("output.ppm", gamma(filmic(image->downSample(kSSAA))));
 
     return 0;
   }

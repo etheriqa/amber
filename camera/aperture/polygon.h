@@ -9,7 +9,6 @@
 #pragma once
 
 #include <cmath>
-#include <sstream>
 
 #include "base/constant.h"
 #include "camera/aperture/aperture.h"
@@ -19,48 +18,34 @@ namespace camera {
 namespace aperture {
 
 template <typename RealType>
-class Polygon : public Aperture<RealType>
-{
+class Polygon : public Aperture<RealType> {
 public:
-  using aperture_type = Aperture<RealType>;
-
-  using real_type     = typename aperture_type::real_type;
-  using vector3_type  = typename aperture_type::vector3_type;
+  using vector3_type = typename Aperture<RealType>::vector3_type;
 
 private:
-  size_t    m_n;
-  real_type m_angle,
-            m_tan_half_angle,
-            m_height;
+  size_t n_;
+  RealType angle_, tan_half_angle_, height_;
 
 public:
-  Polygon(size_t n, real_type height) :
-    m_n(n),
-    m_angle(2 * static_cast<real_type>(kPI) / m_n),
-    m_tan_half_angle(std::tan(m_angle / 2)),
-    m_height(height)
-  {}
+  Polygon(size_t n, RealType height) noexcept
+    : n_(n),
+      angle_(2 * kPI / n),
+      tan_half_angle_(std::tan(angle_ / 2)),
+      height_(height) {}
 
-  std::string to_string() const
-  {
-    std::stringstream ss;
-    ss << "Aperture: Polygon(n=" << m_n << ", height=" << m_height << ")";
-    return ss.str();
+  void write(std::ostream& os) const noexcept {
+    os << "Polygon(n=" << n_ << ", height=" << height_ << ")";
   }
 
-  vector3_type sample_point(Sampler *sampler) const
-  {
-    const auto x = std::sqrt(sampler->uniform(m_height * m_height));
-    const auto y = x * m_tan_half_angle * sampler->uniform<real_type>(-1, 1);
+  vector3_type samplePoint(Sampler* sampler) const {
+    const auto x = std::sqrt(sampler->uniform(height_ * height_));
+    const auto y = x * tan_half_angle_ * sampler->uniform<RealType>(-1, 1);
     const auto angle =
-      m_angle * std::floor(sampler->uniform<real_type>(m_n)) +
-        static_cast<real_type>(kPI) / 2;
-
-    return vector3_type(
-      x * std::cos(angle) - y * std::sin(angle),
-      x * std::sin(angle) + y * std::cos(angle),
-      0
-    );
+      angle_ * std::floor(sampler->uniform<RealType>(n_)) +
+        static_cast<RealType>(kPI) / 2;
+    return vector3_type(x * std::cos(angle) - y * std::sin(angle),
+                        x * std::sin(angle) + y * std::cos(angle),
+                        0);
   }
 };
 

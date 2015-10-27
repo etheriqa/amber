@@ -11,12 +11,13 @@
 #include <algorithm>
 #include <tuple>
 
+#include "base/writer.h"
+
 namespace amber {
 namespace acceleration {
 
 template <typename Object>
-struct Acceleration
-{
+struct Acceleration : public Writer {
   using object_type = Object;
 
   using hit_type    = typename object_type::hit_type;

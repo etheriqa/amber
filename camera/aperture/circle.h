@@ -9,7 +9,6 @@
 #pragma once
 
 #include <cmath>
-#include <sstream>
 
 #include "base/constant.h"
 #include "camera/aperture/aperture.h"
@@ -19,33 +18,26 @@ namespace camera {
 namespace aperture {
 
 template <typename RealType>
-class Circle : public Aperture<RealType>
-{
+class Circle : public Aperture<RealType> {
 public:
-  using aperture_type = Aperture<RealType>;
-
-  using real_type     = typename aperture_type::real_type;
-  using vector3_type  = typename aperture_type::vector3_type;
+  using vector3_type = typename Aperture<RealType>::vector3_type;
 
 private:
-  real_type m_radius;
+  RealType radius_;
 
 public:
-  explicit Circle(real_type r) : m_radius(r) {}
+  explicit Circle(RealType radius) noexcept : radius_(radius) {}
 
-  std::string to_string() const
-  {
-    std::stringstream ss;
-    ss << "Aperture: Circle(radius=" << m_radius << ")";
-    return ss.str();
+  void write(std::ostream& os) const noexcept {
+    os << "Circle(radius=" << radius_ << ")";
   }
 
-  vector3_type sample_point(Sampler *sampler) const
-  {
-    // TODO refactor
-    const auto radius = std::sqrt(sampler->uniform(m_radius * m_radius));
-    const auto theta = sampler->uniform(2 * static_cast<real_type>(kPI));
-    return vector3_type(radius * std::cos(theta), radius * std::cos(theta), 0);
+  vector3_type samplePoint(Sampler* sampler) const {
+    const auto radius = std::sqrt(sampler->uniform(radius_ * radius_));
+    const auto theta = sampler->uniform<RealType>(2 * kPI);
+    return vector3_type(radius * std::cos(theta),
+                        radius * std::cos(theta),
+                        0);
   }
 };
 

@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <future>
 #include <iterator>
-#include <sstream>
 #include <vector>
 
 #include "geometry/aabb.h"
@@ -22,8 +21,7 @@ namespace amber {
 namespace shader {
 
 template <typename Acceleration>
-class PhotonMapping : public Shader<Acceleration>
-{
+class PhotonMapping : public Shader<Acceleration> {
 public:
   using shader_type              = Shader<Acceleration>;
 
@@ -194,11 +192,11 @@ public:
   PhotonMapping(size_t n_photon, size_t n_nearest_photon) :
     n_photon_(n_photon), n_nearest_photon_(n_nearest_photon) {}
 
-  std::string to_string() const {
-    std::stringstream ss;
-    ss << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl;
-    ss << "Shader: PhotonMapping(n_photon=" << n_photon_ << ", n_nearest_photon=" << n_nearest_photon_ << ")";
-    return ss.str();
+  void write(std::ostream& os) const noexcept {
+    os
+      << "PhotonMapping(n_photon=" << n_photon_
+      << ", n_nearest_photon=" << n_nearest_photon_
+      << ")";
   }
 
   progress_const_reference
@@ -224,8 +222,8 @@ public:
     std::cerr << "done." << std::endl;
 
     std::cerr << "(3/3) Rendering ... " << std::endl;
-    for (size_t y = 0; y < camera.image_height(); y++) {
-      for (size_t x = 0; x < camera.image_width(); x++) {
+    for (size_t y = 0; y < camera.imageHeight(); y++) {
+      for (size_t x = 0; x < camera.imageWidth(); x++) {
         std::cerr << "\ry = " << y << std::flush;
         radiant_type power;
         power += rendering(acceleration, camera, photon_map, x, y, &sampler);
@@ -249,10 +247,9 @@ private:
                 const light_sampler_type& light_sampler,
                 Sampler *sampler) const {
     const auto light = light_sampler(sampler);
-    const auto sample = light.sample_initial_ray(sampler);
 
     auto power = light_sampler.total_power();
-    auto ray = sample.ray;
+    ray_type ray = light.sampleFirstRay(sampler);
     hit_type hit;
     object_type object;
 
@@ -273,7 +270,7 @@ private:
       }
 
       const auto sample =
-        object.sampleScattering(power, -ray.direction, hit.normal, sampler);
+        object.sampleScatter(power, -ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
@@ -300,7 +297,7 @@ private:
             Sampler *sampler) const {
     return estimatePower(acceleration,
                          photon_map,
-                         camera.sample_initial_ray(x, y, sampler).ray,
+                         camera.sampleFirstRay(x, y, sampler),
                          radiant_type(1),
                          sampler);
   }
@@ -337,7 +334,7 @@ private:
     }
 
     const auto samples =
-      object.scatteringCandidates(weight, -ray.direction, hit.normal);
+      object.specularScatters(weight, -ray.direction, hit.normal);
     const auto accumulator =
       [](const auto& acc, const auto& s){ return acc + s.psa_probability; };
     const auto p = std::accumulate(samples.begin(),

@@ -11,62 +11,58 @@
 #include "base/algebra.h"
 #include "base/constant.h"
 #include "geometry/primitive/circle.h"
-#include "geometry/primitive/primitive.h"
 
 namespace amber {
 namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Cylinder : public Primitive<RealType>
-{
+class Cylinder : public Primitive<RealType> {
 public:
-  using primitive_type          = Primitive<RealType>;
+  using aabb_type      = typename Primitive<RealType>::aabb_type;
+  using first_ray_type = typename Primitive<RealType>::first_ray_type;
+  using hit_type       = typename Primitive<RealType>::hit_type;
+  using ray_type       = typename Primitive<RealType>::ray_type;
 
-  using aabb_type               = typename primitive_type::aabb_type;
-  using hit_type                = typename primitive_type::hit_type;
-  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
-  using ray_type                = typename primitive_type::ray_type;
-  using real_type               = typename primitive_type::real_type;
-
-  using circle_type             = Circle<real_type>;
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type   = Vector3<RealType>;
 
 private:
-  vector3_type m_center, m_normal;
-  real_type m_radius, m_height;
+  using circle_type    = Circle<RealType>;
+
+  vector3_type center_, normal_;
+  RealType radius_, height_;
 
 public:
-  Cylinder(const vector3_type& center,
-           const vector3_type& normal,
-           real_type radius,
-           real_type height)
-    : m_center(center),
-      m_normal(normalize(normal)),
-      m_radius(radius),
-      m_height(height) {}
+  Cylinder(vector3_type const& center,
+           vector3_type const& normal,
+           RealType radius,
+           RealType height) noexcept
+    : center_(center),
+      normal_(normalize(normal)),
+      radius_(radius),
+      height_(height) {}
 
-  real_type surface_area() const noexcept {
-    return 2 * static_cast<real_type>(kPI) * m_radius * m_height;
+  RealType surfaceArea() const noexcept {
+    return 2 * static_cast<RealType>(kPI) * radius_ * height_;
   }
 
   aabb_type aabb() const noexcept {
-    const auto bottom = circle_type(m_center, m_normal, m_radius);
-    const auto top = circle_type(m_center + m_height * m_normal, m_normal, m_radius);
+    auto const bottom = circle_type(center_, normal_, radius_);
+    auto const top = circle_type(center_ + height_ * normal_, normal_, radius_);
     return bottom.aabb() + top.aabb();
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept {
-    const auto OC = m_center - ray.origin;
-    const auto u = ray.direction - dot(ray.direction, m_normal) * m_normal;
-    const auto v = OC - dot(OC, m_normal) * m_normal;
+  hit_type intersect(ray_type const& ray) const noexcept {
+    auto const OC = center_ - ray.origin;
+    auto const u = ray.direction - dot(ray.direction, normal_) * normal_;
+    auto const v = OC - dot(OC, normal_) * normal_;
 
-    const auto a = u.squaredLength();
-    const auto b = -2 * dot(u, v);
-    const auto c = v.squaredLength() - m_radius * m_radius;
+    auto const a = u.squaredLength();
+    auto const b = -2 * dot(u, v);
+    auto const c = v.squaredLength() - radius_ * radius_;
 
     bool hit;
-    real_type alpha, beta;
+    RealType alpha, beta;
     std::tie(hit, alpha, beta) = solve_quadratic(a, b, c);
 
     if (!hit) {
@@ -74,48 +70,45 @@ public:
     }
 
     if (alpha > kEPS) {
-      const auto h = dot(alpha * ray.direction - OC, m_normal);
-      if (h >= 0 && h <= m_height) {
-        return hit_type(
-          ray.origin + alpha * ray.direction,
-          ray.origin + alpha * ray.direction - m_center - h * m_normal,
-          alpha
-        );
+      auto const h = dot(alpha * ray.direction - OC, normal_);
+      if (h >= 0 && h <= height_) {
+        return
+          hit_type(ray.origin + alpha * ray.direction,
+                   ray.origin + alpha * ray.direction - center_ - h * normal_,
+                   alpha);
       }
     }
 
     if (beta > kEPS) {
-      const auto h = dot(beta * ray.direction - OC, m_normal);
-      if (h >= 0 && h <= m_height) {
-        return hit_type(
-          ray.origin + beta * ray.direction,
-          ray.origin + beta * ray.direction - m_center - h * m_normal,
-          beta
-        );
+      auto const h = dot(beta * ray.direction - OC, normal_);
+      if (h >= 0 && h <= height_) {
+        return
+          hit_type(ray.origin + beta * ray.direction,
+                   ray.origin + beta * ray.direction - center_ - h * normal_,
+                   beta);
       }
     }
 
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
-    const auto height = sampler->uniform(m_height);
+  first_ray_type sampleFirstRay(Sampler* sampler) const {
+    auto const height = sampler->uniform(height_);
 
     vector3_type u, v;
-    std::tie(u, v) = orthonormalBasis(m_normal);
+    std::tie(u, v) = orthonormalBasis(normal_);
 
-    real_type x, y;
-    std::tie(x, y) = sampler->circle<real_type>();
+    RealType x, y;
+    std::tie(x, y) = sampler->circle<RealType>();
 
-    const auto normal = u * x + v * y;
+    auto const normal = u * x + v * y;
 
     vector3_type direction_o;
     std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal);
 
-    return initial_ray_sample_type(
-      ray_type(m_center + m_normal * height + normal * m_radius, direction_o),
-      normal
-    );
+    return first_ray_type(center_ + normal_ * height + normal * radius_,
+                          direction_o,
+                          normal);
   }
 };
 
