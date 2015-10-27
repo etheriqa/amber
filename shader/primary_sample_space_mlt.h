@@ -69,10 +69,7 @@ public:
     std::vector<std::thread> threads;
     std::promise<progress_reference> promise;
     auto future = promise.get_future().share();
-    auto current = std::make_shared<std::atomic<size_t>>(0);
-    auto pixels = std::make_shared<std::vector<size_t>>(camera.imageSize());
-    std::iota(pixels->begin(), pixels->end(), 0);
-    std::shuffle(pixels->begin(), pixels->end(), std::random_device());
+    auto n_done = std::make_shared<std::atomic<size_t>>(0);
 
     const auto acceleration = std::make_shared<acceleration_type>(objects);
     const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
@@ -80,11 +77,11 @@ public:
 
     for (size_t i = 0; i < n_thread_; i++) {
       using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&PrimarySampleSpaceMLT::process, this, _1, _2, _3, _4, _5), bdpt, camera, future, current, pixels));
+      threads.push_back(std::thread(std::bind(&PrimarySampleSpaceMLT::process, this, _1, _2, _3, _4), bdpt, camera, future, n_done));
     }
 
     promise.set_value(std::make_shared<progress_type>(
-      n_mutation_ * camera.imageSize(),
+      n_mutation_,
       std::move(threads)
     ));
 
@@ -95,104 +92,107 @@ private:
   void process(std::shared_ptr<bdpt_type> bdpt,
                const camera_type& camera,
                std::shared_future<progress_reference> future,
-               std::shared_ptr<std::atomic<size_t>> current,
-               std::shared_ptr<std::vector<size_t>> pixels) const {
+               std::shared_ptr<std::atomic<size_t>> n_done) const {
     // TODO refactor
     auto progress = future.get();
+
     DefaultSampler<> sampler((std::random_device()()));
+    framework::PrimarySampleSpace<> pss_light, pss_eye;
+    size_t current_x, current_y;
+    radiant_type current;
+    radiant_value_type b;
+    std::tie(pss_light, pss_eye, current_x, current_y, current, b) =
+      preprocess(bdpt, camera, sampler);
+    radiant_value_type current_contribution = current.sum();
+    radiant_value_type current_weight = 0;
 
-    for (size_t i = (*current)++; i < camera.imageSize(); i = (*current)++) {
-      auto x = pixels->at(i) % camera.imageWidth();
-      auto y = pixels->at(i) / camera.imageHeight();
-
-      framework::PrimarySampleSpace<> pss_light, pss_eye;
-      radiant_type current;
-      radiant_value_type b;
-      std::tie(pss_light, pss_eye, current, b) =
-        preprocess(bdpt, camera, x, y, sampler);
-
-      if (b == 0) {
-        progress->done(n_mutation_);
-        continue;
+    for (size_t i = (*n_done)++; i < n_mutation_; i = (*n_done)++) {
+      const auto large_step = sampler.canonical() < p_large_step_;
+      if (large_step) {
+        pss_light.setLargeStep();
+        pss_eye.setLargeStep();
       }
 
-      radiant_value_type current_contribution = current.sum();
-      radiant_value_type current_weight = 0;
+      const size_t proposal_x =
+        std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
+      const size_t proposal_y =
+        std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
 
-      radiant_type power;
-      for (size_t j = 0; j < n_mutation_; j++) {
-        const auto large_step = sampler.canonical() < p_large_step_;
-        if (large_step) {
-          pss_light.setLargeStep();
-          pss_eye.setLargeStep();
-        }
+      const auto proposal =
+        bdpt->connect(bdpt->lightPathTracing(&pss_light),
+                      bdpt->eyePathTracing(&pss_eye,
+                                           camera,
+                                           proposal_x,
+                                           proposal_y),
+                      framework::PowerHeuristic<radiant_type>());
+      const auto proposal_contribution = proposal.sum();
+      const auto p_acceptance =
+        std::min<radiant_value_type>(1,
+                                     proposal_contribution /
+                                       current_contribution);
+      const auto proposal_weight =
+        (p_acceptance + large_step) /
+          (proposal_contribution / b + p_large_step_) / n_mutation_;
+      current_weight +=
+        (1 - p_acceptance) /
+          (current_contribution / b + p_large_step_) / n_mutation_;
 
-        const auto proposal =
-          bdpt->connect(bdpt->lightPathTracing(&pss_light),
-                        bdpt->eyePathTracing(&pss_eye, camera, x, y),
-                        framework::PowerHeuristic<radiant_type>());
-        const auto proposal_contribution = proposal.sum();
-        const auto p_acceptance =
-          std::min<radiant_value_type>(1,
-                                       proposal_contribution /
-                                         current_contribution);
-        const auto proposal_weight =
-          (p_acceptance + large_step) /
-            (proposal_contribution / b + p_large_step_) / n_mutation_;
-        current_weight +=
-          (1 - p_acceptance) /
-            (current_contribution / b + p_large_step_) / n_mutation_;
-
-        if (sampler.uniform<radiant_value_type>() < p_acceptance) {
-          power += current * current_weight;
-          current = proposal;
-          current_contribution = proposal_contribution;
-          current_weight = proposal_weight;
-          pss_light.accept();
-          pss_eye.accept();
-        } else {
-          power += proposal * proposal_weight;
-          pss_light.reject();
-          pss_eye.reject();
-        }
-
-        progress->done(1);
+      if (sampler.uniform<radiant_value_type>() < p_acceptance) {
+        camera.expose(current_x, current_y, current * current_weight);
+        current_x = proposal_x;
+        current_y = proposal_y;
+        current = proposal;
+        current_contribution = proposal_contribution;
+        current_weight = proposal_weight;
+        pss_light.accept();
+        pss_eye.accept();
+      } else {
+        camera.expose(proposal_x, proposal_y, proposal * proposal_weight);
+        pss_light.reject();
+        pss_eye.reject();
       }
-      power += current * current_weight;
-      camera.expose(x, y, power);
+
+      progress->done(1);
     }
 
+    camera.expose(current_x, current_y, current * current_weight);
     progress->end();
   }
 
   std::tuple<framework::PrimarySampleSpace<>,
              framework::PrimarySampleSpace<>,
+             size_t,
+             size_t,
              radiant_type,
              radiant_value_type>
   preprocess(std::shared_ptr<bdpt_type> const& bdpt,
              camera_type const& camera,
-             size_t x,
-             size_t y,
              DefaultSampler<>& sampler) const {
     std::vector<std::tuple<framework::PrimarySampleSpace<>,
                            framework::PrimarySampleSpace<>,
+                           size_t,
+                           size_t,
                            radiant_type>> samples;
     for (size_t i = 0; i < n_seed_; i++) {
       framework::PrimarySampleSpace<> pss_light(sampler()),
                                       pss_eye(sampler());
+      const size_t x =
+        std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
+      const size_t y =
+        std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
       const auto power =
         bdpt->connect(bdpt->lightPathTracing(&pss_light),
                       bdpt->eyePathTracing(&pss_eye, camera, x, y),
                       framework::PowerHeuristic<radiant_type>());
       pss_light.accept();
       pss_eye.accept();
-      samples.emplace_back(pss_light, pss_eye, power);
+      samples.emplace_back(pss_light, pss_eye, x, y, power);
     }
 
     radiant_value_type contribution = 0;
     std::vector<radiant_value_type> contributions;
     for (const auto& sample : samples) {
-      const auto& power = std::get<2>(sample);
+      const auto& power = std::get<4>(sample);
       contribution += power.sum();
       contributions.push_back(contribution);
     }
