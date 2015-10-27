@@ -56,7 +56,7 @@ public:
 
   void write(std::ostream& os) const noexcept {
     os
-      << "Shader: PrimarySampleSpaceMLT(n_thread=" << n_thread_
+      << "PrimarySampleSpaceMLT(n_thread=" << n_thread_
       << ", n_seed=" << n_seed_
       << ", n_mutation=" << n_mutation_
       << ", p_large_step=" << p_large_step_
