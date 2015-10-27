@@ -16,25 +16,22 @@ $(TARGET): $(OBJECTS)
 pt: $(TARGET)
 	$(TARGET) --algorithm pt
 	@$(MAKE) pt.png
-	open pt.png
 
 bdpt: $(TARGET)
 	$(TARGET) --algorithm bdpt
 	@$(MAKE) bdpt.png
-	open bdpt.png
 
 pm: $(TARGET)
 	$(TARGET) --algorithm pm
 	@$(MAKE) pm.png
-	open pm.png
 
 pssmlt: $(TARGET)
 	$(TARGET) --algorithm pssmlt
 	@$(MAKE) pssmlt.png
-	open pssmlt.png
 
 %.png: output.ppm
 	convert output.ppm $@
+	open $@
 
 clean:
 	$(RM) $(TARGET)
