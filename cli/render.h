@@ -28,12 +28,15 @@ void render(
   const typename shader::Shader<Acceleration>::camera_type& camera
 )
 {
-  std::cerr
-    << shader->to_string() << std::endl
-    << "Acceleration: " << Acceleration::to_string() << std::endl
-    << "Objects: " << objects.size() << std::endl
-    << camera.to_string() << std::endl
-    << std::endl;
+  {
+    typename Acceleration::object_buffer_type dummy_objects;
+    std::cerr
+      << "Shader: " << *shader << std::endl
+      << "Acceleration: " << Acceleration(dummy_objects) << std::endl
+      << "Objects: " << objects.size() << std::endl
+      << "Camera: " << camera << std::endl
+      << std::endl;
+  }
 
   const auto progress = shader->render(objects, camera);
   std::list<size_t> n_done_history({0});

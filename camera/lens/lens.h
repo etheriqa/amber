@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include <string>
 #include "base/sampler.h"
+#include "base/writer.h"
 #include "geometry/ray.h"
 
 namespace amber {
@@ -17,18 +17,14 @@ namespace camera {
 namespace lens {
 
 template <typename RealType>
-struct Lens {
-  using real_type    = RealType;
+class Lens : public Writer {
+public:
+  using ray_type     = geometry::Ray<RealType>;
+  using vector3_type = geometry::Vector3<RealType>;
 
-  using ray_type     = geometry::Ray<real_type>;
-  using vector3_type = geometry::Vector3<real_type>;
+  RealType static constexpr kFocalLength = 0.050;
 
-  static constexpr real_type kFocalLength = 0.050;
-
-  virtual ~Lens() {}
-
-  virtual std::string to_string() const = 0;
-  virtual ray_type sample_ray(const vector3_type&, Sampler*) const = 0;
+  virtual ray_type sampleRay(vector3_type const&, Sampler*) const = 0;
 };
 
 }

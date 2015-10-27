@@ -30,6 +30,10 @@ private:
 
     Node(real_type partial_sum_power, const object_type& object) noexcept
       : partial_sum_power(partial_sum_power), object(object) {}
+
+    bool operator<(const Node& node) const noexcept {
+      return partial_sum_power < node.partial_sum_power;
+    }
   };
 
   std::vector<Node> nodes_;
@@ -50,13 +54,9 @@ public:
   const radiant_type& total_power() const noexcept { return total_power_; }
 
   object_type operator()(Sampler *sampler) const {
-    const auto it = std::upper_bound(
+    const auto it = std::lower_bound(
       nodes_.begin(), nodes_.end(),
-      Node(sampler->uniform(nodes_.back().partial_sum_power), object_type()),
-      [](const auto& a, const auto& b){
-        return a.partial_sum_power < b.partial_sum_power;
-      }
-    );
+      Node(sampler->uniform(total_power_.sum()), object_type()));
     return it->object;
   }
 };

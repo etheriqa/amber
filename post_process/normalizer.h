@@ -43,13 +43,13 @@ public:
 
   hdr_image_type& operator()(hdr_image_type& image) const
   {
-    const auto& width = image.m_width;
-    const auto& height = image.m_height;
+    const auto& width = image.width();
+    const auto& height = image.height();
 
     hdr_value_type max = 0;
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        const auto value = evaluator_(image.pixel(i, j));
+        const auto value = evaluator_(image.at(i, j));
         if (std::isfinite(value)) {
           max = std::max(max, value);
         }
@@ -62,7 +62,7 @@ public:
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        image.pixel(i, j) /= max;
+        image.at(i, j) /= max;
       }
     }
 

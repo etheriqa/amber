@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <functional>
 #include <future>
-#include <sstream>
 #include <vector>
 
 #include "base/sampler.h"
@@ -21,8 +20,7 @@ namespace amber {
 namespace shader {
 
 template <typename Acceleration>
-class PathTracing : public Shader<Acceleration>
-{
+class PathTracing : public Shader<Acceleration> {
 public:
   using shader_type              = Shader<Acceleration>;
 
@@ -47,12 +45,11 @@ public:
     m_spp(spp)
   {}
 
-  std::string to_string() const
-  {
-    std::stringstream ss;
-    ss << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl;
-    ss << "Shader: PathTracing(n_thread=" << m_n_thread << ", spp=" << m_spp << ")";
-    return ss.str();
+  void write(std::ostream& os) const noexcept {
+    os
+      << "PathTracing(n_thread=" << m_n_thread
+      << ", spp=" << m_spp
+      << ")";
   }
 
   progress_const_reference render(const object_buffer_type& objects, const camera_type& camera) const
@@ -62,7 +59,7 @@ public:
     std::promise<progress_reference> promise;
     auto future = promise.get_future().share();
     auto current = std::make_shared<std::atomic<size_t>>(0);
-    auto pixels = std::make_shared<std::vector<size_t>>(camera.image_pixels());
+    auto pixels = std::make_shared<std::vector<size_t>>(camera.imageSize());
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
@@ -74,7 +71,7 @@ public:
     }
 
     promise.set_value(std::make_shared<progress_type>(
-      m_spp * camera.image_pixels(),
+      m_spp * camera.imageSize(),
       std::move(threads)
     ));
 
@@ -94,9 +91,9 @@ private:
     auto progress = future.get();
     DefaultSampler<> sampler;
 
-    for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
-      auto x = pixels->at(i) % camera.image_width();
-      auto y = pixels->at(i) / camera.image_height();
+    for (size_t i = (*current)++; i < camera.imageSize(); i = (*current)++) {
+      auto x = pixels->at(i) % camera.imageWidth();
+      auto y = pixels->at(i) / camera.imageHeight();
       radiant_type power;
       for (size_t j = 0; j < m_spp; j++) {
         power += sample_pixel(scene, camera, x, y, &sampler);
@@ -117,7 +114,7 @@ private:
   ) const
   {
     radiant_type power, weight(1);
-    auto ray = camera.sample_initial_ray(x, y, sampler).ray;
+    ray_type ray = camera.sampleFirstRay(x, y, sampler);
     hit_type hit;
     object_type object;
 
@@ -131,7 +128,7 @@ private:
         power += weight * object.emittance();
       }
 
-      const auto sample = object.sampleScattering(weight, -ray.direction, hit.normal, sampler);
+      const auto sample = object.sampleScatter(weight, -ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;

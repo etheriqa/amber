@@ -10,8 +10,8 @@
 
 #include "base/sampler.h"
 #include "geometry/aabb.h"
+#include "geometry/first_ray.h"
 #include "geometry/hit.h"
-#include "geometry/ray.h"
 
 namespace amber {
 namespace geometry {
@@ -20,17 +20,16 @@ namespace primitive {
 template <typename RealType>
 class Primitive {
 public:
-  using aabb_type               = AABB<RealType>;
-  using hit_type                = Hit<RealType>;
-  using initial_ray_sample_type = InitialRaySample<RealType>;
-  using primitive_type          = Primitive<RealType>;
-  using ray_type                = Ray<RealType>;
-  using real_type               = RealType;
+  using aabb_type      = AABB<RealType>;
+  using first_ray_type = FirstRay<RealType>;
+  using hit_type       = Hit<RealType>;
+  using ray_type       = Ray<RealType>;
+  using real_type      = RealType;
 
-  virtual real_type surface_area() const noexcept = 0;
+  virtual real_type surfaceArea() const noexcept = 0;
   virtual aabb_type aabb() const noexcept = 0;
-  virtual hit_type intersect(const ray_type&) const noexcept = 0;
-  virtual initial_ray_sample_type sample_initial_ray(Sampler*) const = 0;
+  virtual hit_type intersect(ray_type const&) const noexcept = 0;
+  virtual first_ray_type sampleFirstRay(Sampler*) const = 0;
 };
 
 }

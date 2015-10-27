@@ -18,81 +18,73 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Disk : public Primitive<RealType>
-{
+class Disk : public Primitive<RealType> {
 public:
-  using primitive_type          = Primitive<RealType>;
+  using aabb_type      = typename Primitive<RealType>::aabb_type;
+  using hit_type       = typename Primitive<RealType>::hit_type;
+  using first_ray_type = typename Primitive<RealType>::first_ray_type;
+  using ray_type       = typename Primitive<RealType>::ray_type;
 
-  using aabb_type               = typename primitive_type::aabb_type;
-  using hit_type                = typename primitive_type::hit_type;
-  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
-  using ray_type                = typename primitive_type::ray_type;
-  using real_type               = typename primitive_type::real_type;
-
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type   = Vector3<RealType>;
 
 private:
-  vector3_type m_center, m_normal;
-  real_type m_radius;
+  vector3_type center_, normal_;
+  RealType radius_;
 
 public:
-  Disk(const vector3_type& center,
-       const vector3_type& normal,
-       real_type radius)
-    : m_center(center), m_normal(normalize(normal)), m_radius(radius) {}
+  Disk(vector3_type const& center,
+       vector3_type const& normal,
+       RealType radius) noexcept
+    : center_(center), normal_(normalize(normal)), radius_(radius) {}
 
-  real_type surface_area() const noexcept {
-    return static_cast<real_type>(kPI) * m_radius * m_radius;
+  RealType surfaceArea() const noexcept {
+    return static_cast<RealType>(kPI) * radius_ * radius_;
   }
 
   aabb_type aabb() const noexcept {
-    const auto factor = vector3_type(
-      std::sqrt(1 - m_normal.x() * m_normal.x()),
-      std::sqrt(1 - m_normal.y() * m_normal.y()),
-      std::sqrt(1 - m_normal.z() * m_normal.z())
-    );
+    auto const factor =
+      vector3_type(std::sqrt(1 - normal_.x() * normal_.x()),
+                   std::sqrt(1 - normal_.y() * normal_.y()),
+                   std::sqrt(1 - normal_.z() * normal_.z()));
 
-    return aabb_type(m_center - m_radius * factor, m_center + m_radius * factor);
+    return aabb_type(center_ - radius_ * factor, center_ + radius_ * factor);
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept {
-     const auto cos_theta = dot(ray.direction, m_normal);
+  hit_type intersect(ray_type const& ray) const noexcept {
+     auto const cos_theta = dot(ray.direction, normal_);
      if (cos_theta == 0) {
        return hit_type();
      }
 
-     const auto t = dot(m_center - ray.origin, m_normal) / cos_theta;
+     auto const t = dot(center_ - ray.origin, normal_) / cos_theta;
      if (t < kEPS) {
        return hit_type();
      }
 
-     if ((ray.origin + t * ray.direction - m_center).squaredLength() > m_radius * m_radius) {
+     auto const squared_distance =
+       (ray.origin + t * ray.direction - center_).squaredLength();
+     if (squared_distance > radius_ * radius_) {
        return hit_type();
      }
 
-     return hit_type(
-      ray.origin + t * ray.direction,
-      m_normal,
-      t
-     );
+     return hit_type(ray.origin + t * ray.direction, normal_, t);
   }
 
-  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
-    const auto radius = std::sqrt(sampler->uniform(m_radius * m_radius));
+  first_ray_type sampleFirstRay(Sampler* sampler) const {
+    auto const radius = std::sqrt(sampler->uniform(radius_ * radius_));
 
     vector3_type u, v;
-    std::tie(u, v) = orthonormalBasis(m_normal);
+    std::tie(u, v) = orthonormalBasis(normal_);
 
-    real_type x, y;
-    std::tie(x, y) = sampler->circle<real_type>();
+    RealType x, y;
+    std::tie(x, y) = sampler->circle<RealType>();
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(u, v, m_normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(u, v, normal_);
 
-    return initial_ray_sample_type(
-      ray_type(m_center + (u * x + v * y) * radius, direction_o),
-      m_normal
-    );
+    return first_ray_type(center_ + (u * x + v * y) * radius,
+                          direction_o,
+                          normal_);
   }
 };
 

@@ -11,14 +11,15 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <ostream>
 #include <tuple>
+
+#include "base/writer.h"
 
 namespace amber {
 namespace geometry {
 
 template <typename T>
-class Vector3 {
+class Vector3 : public Writer {
 public:
   using value_type = T;
 
@@ -27,18 +28,22 @@ private:
 
 public:
   Vector3() noexcept {}
-  explicit Vector3(const T& value) noexcept { values_.fill(value); }
-  Vector3(const T& x, const T& y, const T& z) noexcept : values_({{x, y, z}}) {}
+  explicit Vector3(T const& value) noexcept { values_.fill(value); }
+  Vector3(T const& x, T const& y, T const& z) noexcept : values_({{x, y, z}}) {}
 
   T& x() noexcept { return values_[0]; }
-  const T& x() const noexcept { return values_[0]; }
+  T const& x() const noexcept { return values_[0]; }
   T& y() noexcept { return values_[1]; }
-  const T& y() const noexcept { return values_[1]; }
+  T const& y() const noexcept { return values_[1]; }
   T& z() noexcept { return values_[2]; }
-  const T& z() const noexcept { return values_[2]; }
+  T const& z() const noexcept { return values_[2]; }
 
   T& operator[](size_t pos) { return values_[pos]; }
-  const T& operator[](size_t pos) const { return values_[pos]; }
+  T const& operator[](size_t pos) const { return values_[pos]; }
+
+  void write(std::ostream& os) const noexcept {
+    os << "(" << x() << " " << y() << " " << z() << ")";
+  }
 
   T min() const noexcept { return std::min({x(), y(), z()}); }
   T max() const noexcept { return std::max({x(), y(), z()}); }
@@ -51,106 +56,100 @@ public:
   Vector3<U> cast() const noexcept { return Vector3<U>(x(), y(), z()); }
 
   template <typename U>
-  Vector3<T>& operator+=(const U& u) noexcept { return *this = *this + u; }
+  Vector3<T>& operator+=(U const& u) noexcept { return *this = *this + u; }
 
   template <typename U>
-  Vector3<T>& operator-=(const U& u) noexcept { return *this = *this - u; }
+  Vector3<T>& operator-=(U const& u) noexcept { return *this = *this - u; }
 
   template <typename U>
-  Vector3<T>& operator*=(const U& u) noexcept { return *this = *this * u; }
+  Vector3<T>& operator*=(U const& u) noexcept { return *this = *this * u; }
 
   template <typename U>
-  Vector3<T>& operator/=(const U& u) noexcept { return *this = *this / u; }
+  Vector3<T>& operator/=(U const& u) noexcept { return *this = *this / u; }
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Vector3<T>& v) {
-  os << "(" << v.x() << " " << v.y() << " " << v.z() << ")";
-  return os;
-}
-
-template <typename T>
-const Vector3<T>& operator+(const Vector3<T>& v) noexcept {
+Vector3<T> const& operator+(Vector3<T> const& v) noexcept {
   return v;
 }
 
 template <typename T>
-Vector3<T> operator-(const Vector3<T>& v) noexcept {
+Vector3<T> operator-(Vector3<T> const& v) noexcept {
   return Vector3<T>(-v.x(), -v.y(), -v.z());
 }
 
 template <typename T>
-Vector3<T> operator+(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+Vector3<T> operator+(Vector3<T> const& u, Vector3<T> const& v) noexcept {
   return Vector3<T>(u.x() + v.x(), u.y() + v.y(), u.z() + v.z());
 }
 
 template <typename T, typename U>
-Vector3<T> operator+(const Vector3<T>& v, const U& s) noexcept {
+Vector3<T> operator+(Vector3<T> const& v, U const& s) noexcept {
   return Vector3<T>(v.x() + s, v.y() + s, v.z() + s);
 }
 
 template <typename T, typename U>
-Vector3<T> operator+(const U& s, const Vector3<T>& v) noexcept {
+Vector3<T> operator+(U const& s, Vector3<T> const& v) noexcept {
   return Vector3<T>(s + v.x(), s + v.y(), s + v.z());
 }
 
 template <typename T>
-Vector3<T> operator-(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+Vector3<T> operator-(Vector3<T> const& u, Vector3<T> const& v) noexcept {
   return Vector3<T>(u.x() - v.x(), u.y() - v.y(), u.z() - v.z());
 }
 
 template <typename T, typename U>
-Vector3<T> operator-(const Vector3<T>& v, const U& s) noexcept {
+Vector3<T> operator-(Vector3<T> const& v, U const& s) noexcept {
   return Vector3<T>(v.x() - s, v.y() - s, v.z() - s);
 }
 
 template <typename T, typename U>
-Vector3<T> operator-(const U& s, const Vector3<T>& v) noexcept {
+Vector3<T> operator-(U const& s, Vector3<T> const& v) noexcept {
   return Vector3<T>(s - v.x(), s - v.y(), s - v.z());
 }
 
 template <typename T>
-Vector3<T> operator*(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+Vector3<T> operator*(Vector3<T> const& u, Vector3<T> const& v) noexcept {
   return Vector3<T>(u.x() * v.x(), u.y() * v.y(), u.z() * v.z());
 }
 
 template <typename T, typename U>
-Vector3<T> operator*(const Vector3<T>& v, const U& s) noexcept {
+Vector3<T> operator*(Vector3<T> const& v, U const& s) noexcept {
   return Vector3<T>(v.x() * s, v.y() * s, v.z() * s);
 }
 
 template <typename T, typename U>
-Vector3<T> operator*(const U& s, const Vector3<T>& v) noexcept {
+Vector3<T> operator*(U const& s, Vector3<T> const& v) noexcept {
   return Vector3<T>(s * v.x(), s * v.y(), s * v.z());
 }
 
 template <typename T>
-Vector3<T> operator/(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+Vector3<T> operator/(Vector3<T> const& u, Vector3<T> const& v) noexcept {
   return Vector3<T>(u.x() / v.x(), u.y() / v.y(), u.z() / v.z());
 }
 
 template <typename T, typename U>
-Vector3<T> operator/(const Vector3<T>& v, const U& s) noexcept {
+Vector3<T> operator/(Vector3<T> const& v, U const& s) noexcept {
   return Vector3<T>(v.x() / s, v.y() / s, v.z() / s);
 }
 
 template <typename T, typename U>
-Vector3<T> operator/(const U& s, const Vector3<T>& v) noexcept {
+Vector3<T> operator/(U const& s, Vector3<T> const& v) noexcept {
   return Vector3<T>(s / v.x(), s / v.y(), s / v.z());
 }
 
 template <typename T>
-T dot(const Vector3<T>& u, const Vector3<T>& v) noexcept {
+T dot(Vector3<T> const& u, Vector3<T> const& v) noexcept {
   return u.x() * v.x() + u.y() * v.y() + u.z() * v.z();
 }
 
 template <typename T>
-Vector3<T> normalize(const Vector3<T>& v) noexcept {
+Vector3<T> normalize(Vector3<T> const& v) noexcept {
   return v / v.length();
 }
 
 template <typename T>
-Vector3<T> cross(const Vector3<T>& u, const Vector3<T>& v) noexcept
+Vector3<T> cross(Vector3<T> const& u, Vector3<T> const& v) noexcept
 {
   return Vector3<T>(
     u.y() * v.z() - u.z() * v.y(),
@@ -161,13 +160,13 @@ Vector3<T> cross(const Vector3<T>& u, const Vector3<T>& v) noexcept
 
 template <typename T>
 std::tuple<Vector3<T>, Vector3<T>>
-orthonormalBasis(const Vector3<T>& w) noexcept
+orthonormalBasis(Vector3<T> const& w) noexcept
 {
-  const auto u = normalize(cross(w,
+  auto const u = normalize(cross(w,
                                  std::abs(w.x()) < std::abs(w.y())
                                  ? Vector3<T>(1, 0, 0)
                                  : Vector3<T>(0, 1, 0)));
-  const auto v = normalize(cross(w, u));
+  auto const v = normalize(cross(w, u));
   return std::make_tuple(u, v);
 }
 

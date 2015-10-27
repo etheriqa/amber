@@ -9,7 +9,6 @@
 #pragma once
 
 #include "base/constant.h"
-#include "material/lambertian.h"
 #include "material/material.h"
 
 namespace amber {
@@ -18,30 +17,24 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Light : public Material<Radiant, RealType> {
 public:
-  using material_type          = Material<Radiant, RealType>;
-
-  using radiant_type           = typename material_type::radiant_type;
-  using real_type              = typename material_type::real_type;
-  using scattering_sample_type = typename material_type::ScatteringSample;
-  using vector3_type           = typename material_type::vector3_type;
+  using scatter_type = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type = typename Material<Radiant, RealType>::vector3_type;
 
 private:
-  radiant_type radiance_;
+  Radiant radiance_;
 
 public:
-  explicit Light(const radiant_type& radiance) noexcept : radiance_(radiance) {}
+  explicit Light(Radiant const& radiance) noexcept : radiance_(radiance) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::diffuse; }
   bool isEmissive() const noexcept { return true; }
-  radiant_type emittance() const noexcept { return radiance_; }
+  Radiant emittance() const noexcept { return radiance_; }
 
-  scattering_sample_type
-  sampleScattering(const radiant_type&,
-                   const vector3_type& direction_i,
-                   const vector3_type& normal,
-                   Sampler *sampler) const {
-    return Lambertian<radiant_type, real_type>(radiant_type())
-      .sampleScattering(radiant_type(), direction_i, normal, sampler);
+  scatter_type sampleScatter(Radiant const&,
+                             vector3_type const&,
+                             vector3_type const&,
+                             Sampler*) const {
+    return scatter_type(vector3_type(), Radiant(), 1);
   }
 };
 

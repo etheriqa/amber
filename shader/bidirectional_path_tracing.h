@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <functional>
 #include <future>
-#include <sstream>
 #include <vector>
 
 #include "shader/framework/bidirectional_path_tracing.h"
@@ -45,14 +44,11 @@ public:
   BidirectionalPathTracing(size_t n_thread, size_t spp) noexcept
     : n_thread_(n_thread), spp_(spp) {}
 
-  std::string to_string() const {
-    std::stringstream ss;
-    ss
-      << "RealType: " << sizeof(real_type) * 8 << "bit" << std::endl
-      << "Shader: BidirectionalPathTracing(n_thread=" << n_thread_
+  void write(std::ostream& os) const noexcept {
+    os
+      << "BidirectionalPathTracing(n_thread=" << n_thread_
       << ", spp=" << spp_
       << ")";
-    return ss.str();
   }
 
   progress_const_reference render(const object_buffer_type& objects,
@@ -62,7 +58,7 @@ public:
     std::promise<progress_reference> promise;
     auto future = promise.get_future().share();
     auto current = std::make_shared<std::atomic<size_t>>(0);
-    auto pixels = std::make_shared<std::vector<size_t>>(camera.image_pixels());
+    auto pixels = std::make_shared<std::vector<size_t>>(camera.imageSize());
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
@@ -76,7 +72,7 @@ public:
     }
 
     promise.set_value(std::make_shared<progress_type>(
-      spp_ * camera.image_pixels(),
+      spp_ * camera.imageSize(),
       std::move(threads)
     ));
 
@@ -93,9 +89,9 @@ private:
     auto progress = future.get();
     DefaultSampler<> sampler;
 
-    for (size_t i = (*current)++; i < camera.image_pixels(); i = (*current)++) {
-      auto x = pixels->at(i) % camera.image_width();
-      auto y = pixels->at(i) / camera.image_height();
+    for (size_t i = (*current)++; i < camera.imageSize(); i = (*current)++) {
+      auto x = pixels->at(i) % camera.imageWidth();
+      auto y = pixels->at(i) / camera.imageHeight();
       radiant_type power;
       for (size_t j = 0; j < spp_; j++) {
         power += bdpt->connect(bdpt->lightPathTracing(&sampler),

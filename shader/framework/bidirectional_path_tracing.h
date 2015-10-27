@@ -57,17 +57,17 @@ public:
 
   std::vector<Event> lightPathTracing(Sampler *sampler) const {
     const auto light = (*light_sampler_)(sampler);
-    const auto sample = light.sample_initial_ray(sampler);
+    const auto ray = light.sampleFirstRay(sampler);
     const auto area_probability =
       light.emittance().sum() * kPI / light_sampler_->total_power().sum();
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
 
     Event event;
     event.object          = light;
-    event.position        = sample.ray.origin;
-    event.normal          = sample.normal;
+    event.position        = ray.origin;
+    event.normal          = ray.normal;
     event.direction_i     = vector3_type();
-    event.direction_o     = sample.ray.direction;
+    event.direction_o     = ray.direction;
     event.log_probability = std::log(area_probability);
     event.weight          = light.emittance() / area_probability;
 
@@ -81,16 +81,16 @@ public:
                                     size_t y) const {
     // TODO importance, area_probability, psa_probability
     const auto importance = radiant_type(1);
-    const auto sample = camera.sample_initial_ray(x, y, sampler);
+    const auto ray = camera.sampleFirstRay(x, y, sampler);
     const auto area_probability = static_cast<radiant_value_type>(1);
     const auto psa_probability = static_cast<radiant_value_type>(1 / kPI);
 
     Event event;
     event.object          = Object();
-    event.position        = sample.ray.origin;
-    event.normal          = sample.normal;
+    event.position        = ray.origin;
+    event.normal          = ray.normal;
     event.direction_i     = vector3_type();
-    event.direction_o     = sample.ray.direction;
+    event.direction_o     = ray.direction;
     event.log_probability = std::log(area_probability);
     event.weight          = importance / area_probability;
 
@@ -208,7 +208,7 @@ private:
       }
 
       const auto sample =
-        object.sampleScattering(event.weight * bsdf,
+        object.sampleScatter(event.weight * bsdf,
                                 -ray.direction,
                                 hit.normal,
                                 sampler);

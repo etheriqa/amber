@@ -18,64 +18,53 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Triangle : public Primitive<RealType>
-{
+class Triangle : public Primitive<RealType> {
 public:
-  using primitive_type          = Primitive<RealType>;
+  using aabb_type      = typename Primitive<RealType>::aabb_type;
+  using first_ray_type = typename Primitive<RealType>::first_ray_type;
+  using hit_type       = typename Primitive<RealType>::hit_type;
+  using ray_type       = typename Primitive<RealType>::ray_type;
 
-  using aabb_type               = typename primitive_type::aabb_type;
-  using hit_type                = typename primitive_type::hit_type;
-  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
-  using ray_type                = typename primitive_type::ray_type;
-  using real_type               = typename primitive_type::real_type;
-
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type   = Vector3<RealType>;
 
 private:
-  vector3_type m_v0, m_v1, m_v2;
-  vector3_type m_normal;
+  vector3_type v0_, v1_, v2_;
+  vector3_type normal_;
 
 public:
-  Triangle(const vector3_type& v0,
-           const vector3_type& v1,
-           const vector3_type& v2)
-    : m_v0(v0), m_v1(v1), m_v2(v2),
-      m_normal(normalize(cross(v1 - v0, v2 - v0))) {}
+  Triangle(vector3_type const& v0,
+           vector3_type const& v1,
+           vector3_type const& v2) noexcept
+    : v0_(v0), v1_(v1), v2_(v2), normal_(normalize(cross(v1 - v0, v2 - v0))) {}
 
-  real_type surface_area() const noexcept {
-    return (cross(m_v1 - m_v0, m_v2 - m_v0)).length() / 2;
+  RealType surfaceArea() const noexcept {
+    return (cross(v1_ - v0_, v2_ - v0_)).length() / 2;
   }
 
   aabb_type aabb() const noexcept {
-    return aabb_type(
-      vector3_type(
-        std::min({m_v0.x(), m_v1.x(), m_v2.x()}),
-        std::min({m_v0.y(), m_v1.y(), m_v2.y()}),
-        std::min({m_v0.z(), m_v1.z(), m_v2.z()})
-      ),
-      vector3_type(
-        std::max({m_v0.x(), m_v1.x(), m_v2.x()}),
-        std::max({m_v0.y(), m_v1.y(), m_v2.y()}),
-        std::max({m_v0.z(), m_v1.z(), m_v2.z()})
-      )
-    );
+    return aabb_type(vector3_type(std::min({v0_.x(), v1_.x(), v2_.x()}),
+                                  std::min({v0_.y(), v1_.y(), v2_.y()}),
+                                  std::min({v0_.z(), v1_.z(), v2_.z()})),
+                     vector3_type(std::max({v0_.x(), v1_.x(), v2_.x()}),
+                                  std::max({v0_.y(), v1_.y(), v2_.y()}),
+                                  std::max({v0_.z(), v1_.z(), v2_.z()})));
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept {
-    const auto E1 = m_v1 - m_v0;
-    const auto E2 = m_v2 - m_v0;
+  hit_type intersect(ray_type const& ray) const noexcept {
+    auto const E1 = v1_ - v0_;
+    auto const E2 = v2_ - v0_;
 
-    const auto P = cross(ray.direction, E2);
-    const auto det = dot(P, E1);
+    auto const P = cross(ray.direction, E2);
+    auto const det = dot(P, E1);
 
-    const auto T = ray.origin - m_v0;
-    const auto u = dot(P, T) / det;
+    auto const T = ray.origin - v0_;
+    auto const u = dot(P, T) / det;
     if (u > 1 || u < 0) {
       return hit_type();
     }
 
-    const auto Q = cross(T, E1);
-    const auto v = dot(Q, ray.direction) / det;
+    auto const Q = cross(T, E1);
+    auto const v = dot(Q, ray.direction) / det;
     if (v > 1 || v < 0) {
       return hit_type();
     }
@@ -84,36 +73,31 @@ public:
       return hit_type();
     }
 
-    const auto t = dot(Q, E2) / det;
+    auto const t = dot(Q, E2) / det;
     if (t < kEPS) {
       return hit_type();
     }
 
-    return hit_type(
-      m_v0 + u * E1 + v * E2,
-      m_normal,
-      t
-    );
+    return hit_type(v0_ + u * E1 + v * E2,
+                    normal_,
+                    t);
   }
 
-  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
-    auto u = sampler->uniform<real_type>();
-    auto v = sampler->uniform<real_type>();
+  first_ray_type sampleFirstRay(Sampler* sampler) const {
+    auto u = sampler->uniform<RealType>();
+    auto v = sampler->uniform<RealType>();
 
     if (u + v >= 1) {
       u = 1 - u;
       v = 1 - v;
     }
 
-    const auto origin = (1 - u - v) * m_v0 + u * m_v1 + v * m_v2;
+    auto const origin = (1 - u - v) * v0_ + u * v1_ + v * v2_;
 
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(m_normal);
+    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal_);
 
-    return initial_ray_sample_type(
-      ray_type(origin, direction_o),
-      m_normal
-    );
+    return first_ray_type(origin, direction_o, normal_);
   }
 };
 

@@ -18,32 +18,26 @@ namespace material {
 
 template <typename Radiant, typename RealType>
 class Specular : public Material<Radiant, RealType> {
+public:
+  using scatter_type = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type = typename Material<Radiant, RealType>::vector3_type;
+
 private:
-  using material_type          = Material<Radiant, RealType>;
-
-  using radiant_type           = typename material_type::radiant_type;
-  using real_type              = typename material_type::real_type;
-  using scattering_sample_type = typename material_type::ScatteringSample;
-  using vector3_type           = typename material_type::vector3_type;
-
-  radiant_type ks_;
+  Radiant ks_;
 
 public:
-  explicit Specular(const radiant_type& ks) noexcept : ks_(ks) {}
+  explicit Specular(Radiant const& ks) noexcept : ks_(ks) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
-  std::vector<scattering_sample_type>
-  scatteringCandidates(const radiant_type&,
-                       const vector3_type& direction_i,
-                       const vector3_type& normal) const {
-    const auto direction_o =
-      2 * dot(direction_i, normal) * normal - direction_i;
-    scattering_sample_type sample;
-    sample.direction_o = direction_o;
-    sample.bsdf = ks_ / kEPS;
-    sample.psa_probability = 1 / kEPS;
-    return std::vector<scattering_sample_type>({sample});
+  std::vector<scatter_type>
+  specularScatters(Radiant const&,
+                   vector3_type const& direction_i,
+                   vector3_type const& normal) const {
+    return std::vector<scatter_type>({
+      scatter_type(2 * dot(direction_i, normal) * normal - direction_i,
+                   ks_ / kEPS,
+                   1 / kEPS)});
   }
 };
 

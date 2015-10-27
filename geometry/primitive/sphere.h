@@ -17,42 +17,38 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Sphere : public Primitive<RealType>
-{
+class Sphere : public Primitive<RealType> {
 public:
-  using primitive_type          = Primitive<RealType>;
+  using aabb_type      = typename Primitive<RealType>::aabb_type;
+  using first_ray_type = typename Primitive<RealType>::first_ray_type;
+  using hit_type       = typename Primitive<RealType>::hit_type;
+  using ray_type       = typename Primitive<RealType>::ray_type;
 
-  using aabb_type               = typename primitive_type::aabb_type;
-  using hit_type                = typename primitive_type::hit_type;
-  using initial_ray_sample_type = typename primitive_type::initial_ray_sample_type;
-  using ray_type                = typename primitive_type::ray_type;
-  using real_type               = typename primitive_type::real_type;
-
-  using vector3_type            = Vector3<real_type>;
+  using vector3_type   = Vector3<RealType>;
 
 private:
-  vector3_type m_center;
-  real_type m_radius;
+  vector3_type center_;
+  RealType radius_;
 
 public:
-  Sphere(const vector3_type& center, real_type radius)
-    : m_center(center), m_radius(radius) {}
+  Sphere(vector3_type const& center, RealType radius) noexcept
+    : center_(center), radius_(radius) {}
 
-  real_type surface_area() const noexcept {
-    return 4 * static_cast<real_type>(kPI) * m_radius * m_radius;
+  RealType surfaceArea() const noexcept {
+    return 4 * static_cast<RealType>(kPI) * radius_ * radius_;
   }
 
   aabb_type aabb() const noexcept {
-    return aabb_type(m_center - m_radius, m_center + m_radius);
+    return aabb_type(center_ - radius_, center_ + radius_);
   }
 
-  hit_type intersect(const ray_type& ray) const noexcept {
-    const real_type a = 1;
-    const auto b = -2 * dot(m_center - ray.origin, ray.direction);
-    const auto c = (m_center - ray.origin).squaredLength() - m_radius * m_radius;
+  hit_type intersect(ray_type const& ray) const noexcept {
+    auto const a = static_cast<RealType>(1);
+    auto const b = -2 * dot(center_ - ray.origin, ray.direction);
+    auto const c = (center_ - ray.origin).squaredLength() - radius_ * radius_;
 
     bool hit;
-    real_type alpha, beta;
+    RealType alpha, beta;
     std::tie(hit, alpha, beta) = solve_quadratic(a, b, c);
 
     if (!hit) {
@@ -60,34 +56,29 @@ public:
     }
 
     if (alpha > kEPS) {
-      return hit_type(
-        ray.origin + alpha * ray.direction,
-        ray.origin + alpha * ray.direction - m_center,
-        alpha
-      );
+      return hit_type(ray.origin + alpha * ray.direction,
+                      ray.origin + alpha * ray.direction - center_,
+                      alpha);
     }
 
     if (beta > kEPS) {
-      return hit_type(
-        ray.origin + beta * ray.direction,
-        ray.origin + beta * ray.direction - m_center,
-        beta
-      );
+      return hit_type(ray.origin + beta * ray.direction,
+                      ray.origin + beta * ray.direction - center_,
+                      beta);
     }
 
     return hit_type();
   }
 
-  initial_ray_sample_type sample_initial_ray(Sampler *sampler) const {
-    const auto normal = sampler->sphereSA<real_type>();
+  first_ray_type sampleFirstRay(Sampler* sampler) const {
+    auto const normal = sampler->sphereSA<RealType>();
 
     vector3_type direction_o;
     std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal);
 
-    return initial_ray_sample_type(
-      ray_type(m_center + m_radius * normal, direction_o),
-      normal
-    );
+    return first_ray_type(center_ + radius_ * normal,
+                          direction_o,
+                          normal);
   }
 };
 

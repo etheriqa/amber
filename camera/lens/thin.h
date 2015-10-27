@@ -8,10 +8,6 @@
 
 #pragma once
 
-#include <cmath>
-#include <sstream>
-
-#include "base/constant.h"
 #include "camera/aperture/aperture.h"
 #include "camera/lens/lens.h"
 
@@ -20,45 +16,44 @@ namespace camera {
 namespace lens {
 
 template <typename RealType>
-class ThinLens : public Lens<RealType>
-{
+class ThinLens : public Lens<RealType> {
 public:
-  using real_type          = RealType;
-  using lens_type          = Lens<real_type>;
+  using ray_type      = typename Lens<RealType>::ray_type;
+  using vector3_type  = typename Lens<RealType>::vector3_type;
 
-  using aperture_reference = aperture::Aperture<real_type>*;
-  using ray_type           = geometry::Ray<real_type>;
-  using vector3_type       = geometry::Vector3<real_type>;
+  using aperture_type = aperture::Aperture<RealType>;
 
 private:
-  aperture_reference m_aperture;
-  real_type          m_focal_length,
-                     m_target_distance,
-                     m_sensor_distance,
-                     m_magnifier;
+  aperture_type* aperture_;
+  RealType focal_length_, target_distance_, sensor_distance_, magnifier_;
 
 public:
-  explicit ThinLens(aperture_reference a, real_type td, real_type fl = lens_type::kFocalLength) :
-    m_aperture(a),
-    m_focal_length(fl),
-    m_target_distance(td),
-    m_sensor_distance(1 / (1 / m_focal_length - 1 / m_target_distance)),
-    m_magnifier(m_target_distance / m_sensor_distance)
-  {}
+  ThinLens(aperture_type* aperture, RealType target_distance) noexcept
+    : ThinLens(aperture, target_distance, Lens<RealType>::kFocalLength) {}
 
-  std::string to_string() const
-  {
-    std::stringstream ss;
-    ss << "Lens: ThinLens(focal_length=" << m_focal_length << ", target_distance=" << m_target_distance << ", sensor_distance=" << m_sensor_distance << ")" << std::endl;
-    ss << m_aperture->to_string();
-    return ss.str();
+  ThinLens(aperture_type* aperture,
+           RealType target_distance,
+           RealType focal_length) noexcept
+    : aperture_(aperture),
+      focal_length_(focal_length),
+      target_distance_(target_distance),
+      sensor_distance_(1 / (1 / focal_length_ - 1 / target_distance_)),
+      magnifier_(target_distance_ / sensor_distance_) {}
+
+  void write(std::ostream& os) const noexcept {
+    os
+      << "Thin(focal_length=" << focal_length_
+      << ", target_distance=" << target_distance_
+      << ", sensor_distance=" << sensor_distance_
+      << ")" << std::endl
+      << "Aperture: " << *aperture_;
   }
 
-  ray_type sample_ray(const vector3_type& sensor_point, Sampler *sampler) const
-  {
-    const auto lens_point = m_aperture->sample_point(sampler);
-    const auto focal_point = (vector3_type(0, 0, -m_sensor_distance) - sensor_point) * m_magnifier;
-
+  ray_type sampleRay(vector3_type const& sensor_point,
+                      Sampler* sampler) const {
+    const auto lens_point = aperture_->samplePoint(sampler);
+    const auto focal_point =
+      (vector3_type(0, 0, -sensor_distance_) - sensor_point) * magnifier_;
     return ray_type(lens_point, focal_point - lens_point);
   }
 };

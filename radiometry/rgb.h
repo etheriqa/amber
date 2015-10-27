@@ -10,7 +10,8 @@
 
 #include <algorithm>
 #include <array>
-#include <ostream>
+
+#include "base/writer.h"
 
 namespace amber {
 namespace radiometry {
@@ -35,6 +36,10 @@ public:
   T& b() noexcept { return values_[2]; }
   const T& b() const noexcept { return values_[2]; }
 
+  void write(std::ostream& os) const noexcept {
+    os << "RGB(" << r() << " " << g() << " " << b() << ")";
+  }
+
   T min() const noexcept { return std::min({r(), g(), b()}); }
   T max() const noexcept { return std::max({r(), g(), b()}); }
   T sum() const noexcept { return r() + g() + b(); }
@@ -52,12 +57,6 @@ public:
   template <typename U>
   RGB<T>& operator/=(const U& u) noexcept { return *this = *this / u; }
 };
-
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const RGB<T>& v) {
-  os << "(" << v.r() << " " << v.g() << " " << v.b() << ")";
-  return os;
-}
 
 template <typename T>
 RGB<T> operator+(const RGB<T>& x, const RGB<T>& y) noexcept {

@@ -30,16 +30,16 @@ public:
   explicit Gamma(hdr_value_type gamma) noexcept : gamma_(gamma) {}
 
   ldr_image_type operator()(const hdr_image_type& hdr) const {
-    const auto& width = hdr.m_width;
-    const auto& height = hdr.m_height;
+    const auto& width = hdr.width();
+    const auto& height = hdr.height();
 
     ldr_image_type ldr(width, height);
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        const auto& r = hdr.pixel(i, j).r();
-        const auto& g = hdr.pixel(i, j).g();
-        const auto& b = hdr.pixel(i, j).b();
-        ldr.pixel(i, j) = LDR(
+        const auto& r = hdr.at(i, j).r();
+        const auto& g = hdr.at(i, j).g();
+        const auto& b = hdr.at(i, j).b();
+        ldr.at(i, j) = LDR(
           std::min<hdr_value_type>(255, 255 * std::pow(r, 1 / gamma_)),
           std::min<hdr_value_type>(255, 255 * std::pow(g, 1 / gamma_)),
           std::min<hdr_value_type>(255, 255 * std::pow(b, 1 / gamma_))

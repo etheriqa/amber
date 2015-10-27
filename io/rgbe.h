@@ -23,11 +23,11 @@ void export_rgbe(const char* filename, const camera::Image<radiometry::RGB<RealT
 
   ofs << "#?RADIANCE" << std::endl;
   ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.m_height << " +X " << image.m_width << std::endl;
+  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
 
-  for (size_t j = 0; j < image.m_height; j++) {
-    for (size_t i = 0; i < image.m_width; i++) {
-      const auto& p = image.pixel(i, j);
+  for (size_t j = 0; j < image.height(); j++) {
+    for (size_t i = 0; i < image.width(); i++) {
+      const auto& p = image.at(i, j);
 
       int exponent;
       const auto significand = std::frexp(p.max(), &exponent) * 256 / p.max();

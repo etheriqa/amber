@@ -36,15 +36,15 @@ public:
   }
 
   hdr_image_type& operator()(hdr_image_type& image) const {
-    const auto& width = image.m_width;
-    const auto& height = image.m_height;
+    const auto& width = image.width();
+    const auto& height = image.height();
 
     Normalizer<HDR>(&luminance)(image);
 
     real_type log_sum_luminance = 0;
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        const auto l = luminance(image.pixel(i, j));
+        const auto l = luminance(image.at(i, j));
         log_sum_luminance += std::log(kDelta + (std::isfinite(l) ? l : 0));
       }
     }
@@ -53,7 +53,7 @@ public:
 
     for (size_t j = 0; j < height; j++) {
       for (size_t i = 0; i < width; i++) {
-        auto& p = image.pixel(i, j);
+        auto& p = image.at(i, j);
         p *= m_key / log_average_luminance;
         p /= HDR(1) + p;
       }
