@@ -51,7 +51,7 @@ void render(
     }
 
     const auto elapsed = std::chrono::system_clock::now() - progress->begin_time();
-    const auto estimated = elapsed + 1s * n_done_history.size() * (progress->n_task() - progress->n_done()) / (progress->n_done() - n_done_history.front());
+    const auto estimated = elapsed + 1s * n_done_history.size() * (progress->n_task() - progress->n_done()) / std::max<size_t>(1, progress->n_done() - n_done_history.front());
 
     std::stringstream ss;
     ss.imbue(std::locale(""));

@@ -51,8 +51,8 @@ const size_t kPTSPP            = 512;
 const size_t kBDPTSPP          = 128;
 const size_t kPMNPhoton        = 8388608;
 const size_t kPMNNearestPhoton = 16;
-const size_t kPSSMLTNSeed      = 8;
-const size_t kPSSMLTNMutation  = 64;
+const size_t kPSSMLTNSeed      = 65536;
+const size_t kPSSMLTNMutation  = 134217728;
 const double kPSSMLTPLargeStep = 0.5;
 
 }
