@@ -38,6 +38,7 @@
 namespace {
 
 enum class Algorithm {
+  none,
   pt,
   bdpt,
   pm,
@@ -82,28 +83,34 @@ public:
   Application(int argc, char **argv) : argc(argc), argv(argv) {}
 
   static void bannar() {
-    std::cerr << R"(                   __             )" << std::endl;
-    std::cerr << R"(  ____ _____ ___  / /_  ___  _____)" << std::endl;
-    std::cerr << R"( / __ `/ __ `__ \/ __ \/ _ \/ ___/)" << std::endl;
-    std::cerr << R"(/ /_/ / / / / / / /_/ /  __/ /    )" << std::endl;
-    std::cerr << R"(\__,_/_/ /_/ /_/_.___/\___/_/     )" << std::endl;
-    std::cerr << std::endl;
+    std::cerr
+      << R"(                   __             )" << std::endl
+      << R"(  ____ _____ ___  / /_  ___  _____)" << std::endl
+      << R"( / __ `/ __ `__ \/ __ \/ _ \/ ___/)" << std::endl
+      << R"(/ /_/ / / / / / / /_/ /  __/ /    )" << std::endl
+      << R"(\__,_/_/ /_/ /_/_.___/\___/_/     )" << std::endl
+      << std::endl;
   }
 
   static void help() {
-    std::cerr << std::endl;
-    std::cerr << "Usage:" << std::endl;
-    std::cerr << "    amber --algorithm <algorithm=pt> [--spp <spp>]" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Options:" << std::endl;
-    std::cerr << "    --algorithm <algorithm=pt>      rendering algorithm to use" << std::endl;
-    std::cerr << "    --spp <n>                       samples per pixel" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Algorithms:" << std::endl;
-    std::cerr << "    pt          path tracing (spp=" << kPTSPP << ")" << std::endl;
-    std::cerr << "    bdpt        bidirectional path tracing (spp=" << kBDPTSPP << ")" << std::endl;
-    std::cerr << "    pm          photon mapping (spp=" << kPMNPhoton << ")" << std::endl;
-    std::cerr << "    pssmlt      primary sample space MLT (spp=" << kPSSMLTNMutation << ")" << std::endl;
+    std::cerr
+      << std::endl
+      << "Usage:" << std::endl
+      << "    amber --algorithm <algorithm>" << std::endl
+      << std::endl
+      << "Options:" << std::endl
+      << "    --algorithm <algorithm=pt>      rendering algorithm to use" << std::endl
+      << "    --spp <n>                       samples per pixel (pt, bdpt)" << std::endl
+      << "    --photons <n>                   a number of emitting photons (pm)" << std::endl
+      << "    --k <n>                         a number of photons used for radiance estimate (pm)" << std::endl
+      << "    --mutations <n>                 a number of mutations (pssmlt)" << std::endl
+      << std::endl
+      << "Algorithms:" << std::endl
+      << "    pt          Path Tracing" << std::endl
+      << "    bdpt        Bidirectional Path Tracing" << std::endl
+      << "    pm          Photon Mapping" << std::endl
+      << "    pssmlt      Primary Sample Space MLT" << std::endl
+      << std::endl;
   }
 
   int run() {
@@ -113,12 +120,18 @@ public:
       {"help", no_argument, 0, 'h'},
       {"algorithm", required_argument, 0, 'a'},
       {"spp", required_argument, 0, 's'},
+      {"photons", required_argument, 0, 'p'},
+      {"k", required_argument, 0, 'k'},
+      {"mutations", required_argument, 0, 'm'},
       {0, 0, 0, 0},
     };
 
     bool show_help = false;
-    Algorithm algorithm = Algorithm::pt;
+    Algorithm algorithm = Algorithm::none;
     size_t spp = 0;
+    size_t n_photon = 0;
+    size_t k_nearest_photon = 0;
+    size_t n_mutation = 0;
 
     int c;
     int option_index = 0;
@@ -140,6 +153,15 @@ public:
       case 's':
         spp = std::stoi(std::string(optarg));
         break;
+      case 'p':
+        n_photon = std::stoi(std::string(optarg));
+        break;
+      case 'k':
+        k_nearest_photon = std::stoi(std::string(optarg));
+        break;
+      case 'm':
+        n_mutation = std::stoi(std::string(optarg));
+        break;
       case '?':
         help();
         return 1;
@@ -147,7 +169,7 @@ public:
       }
     }
 
-    if (show_help) {
+    if (show_help || algorithm == Algorithm::none) {
       help();
       return 0;
     }
@@ -156,6 +178,9 @@ public:
     const auto scene = scene::cornel_box<acceleration_type>();
     shader::Shader<acceleration_type> *shader;
     switch (algorithm) {
+    case Algorithm::none:
+      throw std::logic_error("invalid algorithm");
+      break;
     case Algorithm::pt:
       shader = new shader::PathTracing<acceleration_type>(
         n_thread,
@@ -170,7 +195,7 @@ public:
       break;
     case Algorithm::pm:
       shader = new shader::PhotonMapping<acceleration_type>(
-        spp > 0 ? spp : kPMNPhoton,
+        n_photon > 0 ? n_photon : kPMNPhoton,
         kPMNNearestPhoton
       );
       break;
@@ -178,7 +203,7 @@ public:
       shader = new shader::PrimarySampleSpaceMLT<acceleration_type>(
         n_thread,
         kPSSMLTNSeed,
-        (spp > 0 ? spp : kPSSMLTNMutation) / kSSAA / kSSAA,
+        (n_mutation > 0 ? n_mutation : kPSSMLTNMutation),
         kPSSMLTPLargeStep
       );
       break;
