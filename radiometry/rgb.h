@@ -17,7 +17,7 @@ namespace amber {
 namespace radiometry {
 
 template <typename T>
-class RGB {
+class RGB : public Writer {
 public:
   using value_type = T;
 
