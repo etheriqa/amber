@@ -43,9 +43,19 @@ public:
     }
     auto const cos_alpha =
       dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
-    return kd_ / kPI
-      + ks_ * (n_ + 2) / (2 * kPI)
-      * std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
+    return kd_ / kPI +
+      ks_ * (n_ + 2) / (2 * kPI) *
+      std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
+  }
+
+  radiant_value_type pdf(vector3_type const& direction_i,
+                         vector3_type const& direction_o,
+                         vector3_type const& normal) const noexcept {
+    auto const cos_alpha =
+      dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
+    return p_diffuse_ / kPI +
+      (1 - p_diffuse_) * (n_ + 1) / (2 * kPI) *
+      std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
   }
 
   scatter_type sampleScatter(Radiant const&,
@@ -55,15 +65,9 @@ public:
     auto const direction_o = sampler->uniform<radiant_value_type>() < p_diffuse_
       ? sampleDirectionFromDiffuseComponent(direction_i, normal, sampler)
       : sampleDirectionFromSpecularComponent(direction_i, normal, sampler);
-    auto const cos_alpha =
-      dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
-    auto const psa_probability =
-      p_diffuse_ / kPI
-      + (1 - p_diffuse_) * (n_ + 1) / (2 * kPI)
-      * std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
     return scatter_type(direction_o,
                         bsdf(direction_i, direction_o, normal),
-                        psa_probability);
+                        pdf(direction_i, direction_o, normal));
   }
 
 private:

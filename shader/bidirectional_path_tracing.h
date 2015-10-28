@@ -95,8 +95,7 @@ private:
       radiant_type power;
       for (size_t j = 0; j < spp_; j++) {
         power += bdpt->connect(bdpt->lightPathTracing(&sampler),
-                               bdpt->eyePathTracing(&sampler, camera, x, y),
-                               framework::PowerHeuristic<radiant_type>());
+                               bdpt->eyePathTracing(&sampler, camera, x, y));
         progress->done(1);
       }
       camera.expose(x, y, power / spp_);

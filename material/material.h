@@ -11,6 +11,7 @@
 #include <numeric>
 #include <vector>
 
+#include "base/constant.h"
 #include "base/sampler.h"
 #include "material/scatter.h"
 #include "material/surface_type.h"
@@ -21,10 +22,10 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Material {
 public:
+  using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = Scatter<Radiant, RealType>;
   using vector3_type       = geometry::Vector3<RealType>;
 
-  using radiant_value_type = typename Radiant::value_type; // TODO remove
   using radiant_type       = Radiant;                      // TODO remove
 
 public:
@@ -36,6 +37,12 @@ public:
                        vector3_type const&,
                        vector3_type const&) const noexcept {
     return Radiant();
+  }
+
+  virtual radiant_value_type pdf(vector3_type const&,
+                                 vector3_type const&,
+                                 vector3_type const&) const noexcept {
+    return radiant_value_type();
   }
 
   virtual scatter_type sampleScatter(Radiant const& radiant,

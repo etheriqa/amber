@@ -55,6 +55,10 @@ public:
   Object(primitive_type* primitive, material_type* material) noexcept
     : primitive_(primitive), material_(material) {}
 
+  operator bool() const noexcept {
+    return primitive_ != nullptr && material_ != nullptr;
+  }
+
   bool operator==(Object const& o) const noexcept {
     return primitive_ == o.primitive_ && material_ == o.material_;
   }
@@ -95,6 +99,12 @@ public:
                     vector3_type const& direction_o,
                     vector3_type const& normal) const noexcept {
     return material_->bsdf(direction_i, direction_o, normal);
+  }
+
+  radiant_value_type pdf(vector3_type const& direction_i,
+                         vector3_type const& direction_o,
+                         vector3_type const& normal) const noexcept {
+    return material_->pdf(direction_i, direction_o, normal);
   }
 
   scatter_type sampleScatter(radiant_type const& radiant,

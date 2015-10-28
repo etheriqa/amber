@@ -123,8 +123,7 @@ private:
                       bdpt->eyePathTracing(&pss_eye,
                                            camera,
                                            proposal_x,
-                                           proposal_y),
-                      framework::PowerHeuristic<radiant_type>());
+                                           proposal_y));
       const auto proposal_contribution = proposal.sum();
       const auto p_acceptance =
         std::min<radiant_value_type>(1,
@@ -182,8 +181,7 @@ private:
         std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
       const auto power =
         bdpt->connect(bdpt->lightPathTracing(&pss_light),
-                      bdpt->eyePathTracing(&pss_eye, camera, x, y),
-                      framework::PowerHeuristic<radiant_type>());
+                      bdpt->eyePathTracing(&pss_eye, camera, x, y));
       pss_light.accept();
       pss_eye.accept();
       samples.emplace_back(pss_light, pss_eye, x, y, power);
