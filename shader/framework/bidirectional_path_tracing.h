@@ -69,7 +69,7 @@ public:
     event.direction_i     = vector3_type();
     event.direction_o     = ray.direction;
     event.log_probability = std::log(area_probability);
-    event.weight          = light.emittance() / area_probability;
+    event.weight          = light.emittance() * kPI / area_probability;
 
     return pathTracing(event, psa_probability, sampler);
   }
@@ -143,7 +143,7 @@ public:
             continue;
           }
           samples.emplace_back(
-            l.object.emittance() / kPI * l.weight,
+            l.object.emittance() * l.weight,
             l.log_probability
           );
         } else if (s == 1 && t >= 2) {
@@ -162,8 +162,8 @@ public:
           }
           const auto direction_le = normalize(e.position - l.position);
           samples.emplace_back(
-            l.weight /
-              kPI *
+            l.weight *
+              (1 / kPI) *
               geometry_factor *
               e.object.bsdf(-direction_le, e.direction_i, e.normal) *
               e.weight,
