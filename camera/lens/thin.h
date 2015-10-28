@@ -16,7 +16,7 @@ namespace camera {
 namespace lens {
 
 template <typename RealType>
-class ThinLens : public Lens<RealType> {
+class Thin : public Lens<RealType> {
 public:
   using ray_type      = typename Lens<RealType>::ray_type;
   using vector3_type  = typename Lens<RealType>::vector3_type;
@@ -28,12 +28,12 @@ private:
   RealType focal_length_, target_distance_, sensor_distance_, magnifier_;
 
 public:
-  ThinLens(aperture_type* aperture, RealType target_distance) noexcept
-    : ThinLens(aperture, target_distance, Lens<RealType>::kFocalLength) {}
+  Thin(aperture_type* aperture, RealType target_distance) noexcept
+    : Thin(aperture, target_distance, Lens<RealType>::kFocalLength) {}
 
-  ThinLens(aperture_type* aperture,
-           RealType target_distance,
-           RealType focal_length) noexcept
+  Thin(aperture_type* aperture,
+       RealType target_distance,
+       RealType focal_length) noexcept
     : aperture_(aperture),
       focal_length_(focal_length),
       target_distance_(target_distance),

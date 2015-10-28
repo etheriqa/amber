@@ -208,10 +208,11 @@ public:
       );
       break;
     }
-    const auto lens   = new camera::lens::Pinhole<real_type>();
-    const auto image  = new camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor = camera::Sensor<radiant_type, real_type>(image);
-    const auto camera = camera::Camera<radiant_type, real_type>(
+    const auto aperture = new camera::aperture::Polygon<real_type>(8, 0.05);
+    const auto lens     = new camera::lens::Thin<real_type>(aperture, 4);
+    const auto image    = new camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
+    const auto sensor   = camera::Sensor<radiant_type, real_type>(image);
+    const auto camera   = camera::Camera<radiant_type, real_type>(
       sensor, lens,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 
