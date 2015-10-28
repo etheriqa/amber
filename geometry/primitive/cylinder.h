@@ -10,7 +10,7 @@
 
 #include "base/algebra.h"
 #include "base/constant.h"
-#include "geometry/primitive/circle.h"
+#include "geometry/primitive/disk.h"
 
 namespace amber {
 namespace geometry {
@@ -27,7 +27,7 @@ public:
   using vector3_type   = Vector3<RealType>;
 
 private:
-  using circle_type    = Circle<RealType>;
+  using disk_type      = Disk<RealType>;
 
   vector3_type center_, normal_;
   RealType radius_, height_;
@@ -47,8 +47,8 @@ public:
   }
 
   aabb_type aabb() const noexcept {
-    auto const bottom = circle_type(center_, normal_, radius_);
-    auto const top = circle_type(center_ + height_ * normal_, normal_, radius_);
+    auto const bottom = disk_type(center_, normal_, radius_);
+    auto const top = disk_type(center_ + height_ * normal_, normal_, radius_);
     return bottom.aabb() + top.aabb();
   }
 
