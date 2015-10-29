@@ -21,6 +21,7 @@
 #include "camera/image.h"
 #include "camera/lens/pinhole.h"
 #include "camera/lens/thin.h"
+#include "cli/option.h"
 #include "cli/render.h"
 #include "geometry/vector.h"
 #include "io/ppm.h"
@@ -34,29 +35,6 @@
 #include "shader/path_tracing.h"
 #include "shader/photon_mapping.h"
 #include "shader/primary_sample_space_mlt.h"
-
-namespace {
-
-enum class Algorithm {
-  none,
-  pt,
-  bdpt,
-  pm,
-  pssmlt,
-};
-
-const size_t kSSAA             = 2;
-const size_t kWidth            = 512;
-const size_t kHeight           = 512;
-const size_t kPTSPP            = 512;
-const size_t kBDPTSPP          = 128;
-const size_t kPMNPhoton        = 8388608;
-const size_t kPMNNearestPhoton = 16;
-const size_t kPSSMLTNSeed      = 65536;
-const size_t kPSSMLTNMutation  = 33554432;
-const double kPSSMLTPLargeStep = 0.5;
-
-}
 
 namespace amber {
 namespace cli {
@@ -100,10 +78,12 @@ public:
       << std::endl
       << "Options:" << std::endl
       << "    --algorithm <algorithm=pt>      rendering algorithm to use" << std::endl
-      << "    --spp <n>                       samples per pixel (pt, bdpt)" << std::endl
-      << "    --photons <n>                   a number of emitting photons (pm)" << std::endl
       << "    --k <n>                         a number of photons used for radiance estimate (pm)" << std::endl
       << "    --mutations <n>                 a number of mutations (pssmlt)" << std::endl
+      << "    --name <name=output>" << std::endl
+      << "    --photons <n>                   a number of emitting photons (pm)" << std::endl
+      << "    --spp <n>                       samples per pixel (pt, bdpt)" << std::endl
+      << "    --threads <n>" << std::endl
       << std::endl
       << "Algorithms:" << std::endl
       << "    pt          Path Tracing" << std::endl
@@ -118,6 +98,8 @@ public:
 
     static option options[] = {
       {"help", no_argument, 0, 'h'},
+      {"name", required_argument, 0, 'n'},
+      {"threads", required_argument, 0, 't'},
       {"algorithm", required_argument, 0, 'a'},
       {"spp", required_argument, 0, 's'},
       {"photons", required_argument, 0, 'p'},
@@ -127,11 +109,7 @@ public:
     };
 
     bool show_help = false;
-    Algorithm algorithm = Algorithm::none;
-    size_t spp = 0;
-    size_t n_photon = 0;
-    size_t k_nearest_photon = 0;
-    size_t n_mutation = 0;
+    Option option;
 
     int c;
     int option_index = 0;
@@ -144,23 +122,38 @@ public:
       case 'h':
         show_help = true;
         break;
+      case 'n':
+        option.name = std::string(optarg);
+        break;
+      case 't':
+        option.n_thread = std::stoull(std::string(optarg));
+        break;
       case 'a':
-        if (std::string(optarg) == "pt") { algorithm = Algorithm::pt; }
-        if (std::string(optarg) == "bdpt") { algorithm = Algorithm::bdpt; }
-        if (std::string(optarg) == "pm") { algorithm = Algorithm::pm; }
-        if (std::string(optarg) == "pssmlt") { algorithm = Algorithm::pssmlt; }
+        if (std::string(optarg) == "pt") {
+          option.algorithm = Algorithm::pt;
+        }
+        if (std::string(optarg) == "bdpt") {
+          option.algorithm = Algorithm::bdpt;
+        }
+        if (std::string(optarg) == "pm") {
+          option.algorithm = Algorithm::pm;
+        }
+        if (std::string(optarg) == "pssmlt") {
+          option.algorithm = Algorithm::pssmlt;
+        }
         break;
       case 's':
-        spp = std::stoull(std::string(optarg));
+        option.pt_spp = std::stoull(std::string(optarg));
+        option.bdpt_spp = std::stoull(std::string(optarg));
         break;
       case 'p':
-        n_photon = std::stoull(std::string(optarg));
+        option.pm_n_photon = std::stoull(std::string(optarg));
         break;
       case 'k':
-        k_nearest_photon = std::stoull(std::string(optarg));
+        option.pm_k_nearest_photon = std::stoull(std::string(optarg));
         break;
       case 'm':
-        n_mutation = std::stoull(std::string(optarg));
+        option.pssmlt_n_mutation = std::stoull(std::string(optarg));
         break;
       case '?':
         help();
@@ -169,50 +162,52 @@ public:
       }
     }
 
-    if (show_help || algorithm == Algorithm::none) {
+    if (show_help || option.algorithm == Algorithm::none) {
       help();
       return 0;
     }
 
-    const auto n_thread = std::thread::hardware_concurrency();
     const auto scene = scene::cornel_box<acceleration_type>();
     shader::Shader<acceleration_type> *shader;
-    switch (algorithm) {
+    switch (option.algorithm) {
     case Algorithm::none:
       throw std::logic_error("invalid algorithm");
       break;
     case Algorithm::pt:
       shader = new shader::PathTracing<acceleration_type>(
-        n_thread,
-        (spp > 0 ? spp : kPTSPP) / kSSAA / kSSAA
+        option.n_thread,
+        option.pt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::bdpt:
       shader = new shader::BidirectionalPathTracing<acceleration_type>(
-        n_thread,
-        (spp > 0 ? spp : kBDPTSPP) / kSSAA / kSSAA
+        option.n_thread,
+        option.bdpt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::pm:
       shader = new shader::PhotonMapping<acceleration_type>(
-        n_photon > 0 ? n_photon : kPMNPhoton,
-        kPMNNearestPhoton
+        option.pm_n_photon,
+        option.pm_k_nearest_photon
       );
       break;
     case Algorithm::pssmlt:
       shader = new shader::PrimarySampleSpaceMLT<acceleration_type>(
-        n_thread,
-        kPSSMLTNSeed,
-        (n_mutation > 0 ? n_mutation : kPSSMLTNMutation),
-        kPSSMLTPLargeStep
+        option.n_thread,
+        option.pssmlt_n_seed,
+        option.pssmlt_n_mutation,
+        option.pssmlt_p_large_step
       );
       break;
     }
     const auto aperture = new camera::aperture::Polygon<real_type>(8, 0.05);
-    const auto lens     = new camera::lens::Thin<real_type>(aperture, 4);
-    const auto image    = new camera::Image<radiant_type>(kWidth * kSSAA, kHeight * kSSAA);
-    const auto sensor   = camera::Sensor<radiant_type, real_type>(image);
-    const auto camera   = camera::Camera<radiant_type, real_type>(
+    const auto lens = new camera::lens::Thin<real_type>(aperture, 4);
+    const auto image = new camera::Image<radiant_type>(
+      option.width * option.ssaa,
+      option.height * option.ssaa
+    );
+    const auto sensor = camera::Sensor<radiant_type, real_type>(image);
+    const auto camera = camera::Camera<radiant_type, real_type>(
       sensor, lens,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 
@@ -220,8 +215,8 @@ public:
 
     post_process::Filmic<radiant_type> filmic;
     post_process::Gamma<radiant_type> gamma;
-    io::export_rgbe("output.hdr", image->downSample(kSSAA));
-    io::export_ppm("output.ppm", gamma(filmic(image->downSample(kSSAA))));
+    io::export_rgbe(option.name + ".hdr", image->downSample(option.ssaa));
+    io::export_ppm(option.name + ".ppm", gamma(filmic(image->downSample(option.ssaa))));
 
     return 0;
   }

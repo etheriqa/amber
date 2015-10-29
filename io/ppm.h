@@ -9,14 +9,16 @@
 #pragma once
 
 #include <fstream>
+#include <string>
+
 #include "camera/image.h"
 #include "radiometry/srgb.h"
 
 namespace amber {
 namespace io {
 
-void export_ppm(const char* filename, const camera::Image<radiometry::SRGB>& image)
-{
+void export_ppm(std::string const& filename,
+                camera::Image<radiometry::SRGB> const& image) {
   std::ofstream ofs(filename, std::ofstream::trunc);
 
   ofs << "P3" << std::endl;
@@ -25,7 +27,13 @@ void export_ppm(const char* filename, const camera::Image<radiometry::SRGB>& ima
 
   for (size_t j = 0; j < image.height(); j++) {
     for (size_t i = 0; i < image.width(); i++) {
-      ofs << static_cast<size_t>(image.at(i, j).r()) << ' ' << static_cast<size_t>(image.at(i, j).g()) << ' ' << static_cast<size_t>(image.at(i, j).b()) << std::endl;
+      ofs
+        << static_cast<size_t>(image.at(i, j).r())
+        << ' '
+        << static_cast<size_t>(image.at(i, j).g())
+        << ' '
+        << static_cast<size_t>(image.at(i, j).b())
+        << std::endl;
     }
   }
 }
