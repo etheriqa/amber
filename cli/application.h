@@ -38,6 +38,7 @@
 #include "shader/path_tracing.h"
 #include "shader/photon_mapping.h"
 #include "shader/primary_sample_space_mlt.h"
+#include "shader/progressive_photon_mapping.h"
 
 namespace amber {
 namespace cli {
@@ -82,10 +83,11 @@ public:
       << std::endl
       << "Options:" << std::endl
       << "    --algorithm <algorithm=pt>      rendering algorithm to use" << std::endl
-      << "    --k <n>                         a number of photons used for radiance estimate (pm)" << std::endl
+      << "    --iterations <n>                a number of iterations (ppm)" << std::endl
+      << "    --k <n>                         a number of photons used for radiance estimate (pm, ppm)" << std::endl
       << "    --mutations <n>                 a number of mutations (pssmlt)" << std::endl
       << "    --name <name=output>" << std::endl
-      << "    --photons <n>                   a number of emitting photons (pm)" << std::endl
+      << "    --photons <n>                   a number of emitting photons (pm, ppm)" << std::endl
       << "    --spp <n>                       samples per pixel (pt, bdpt)" << std::endl
       << "    --threads <n>" << std::endl
       << std::endl
@@ -94,6 +96,7 @@ public:
       << "    bdpt        Bidirectional Path Tracing" << std::endl
       << "    pm          Photon Mapping" << std::endl
       << "    pssmlt      Primary Sample Space MLT" << std::endl
+      << "    ppm         Progressive Photon Mapping" << std::endl
       << std::endl;
   }
 
@@ -101,14 +104,15 @@ public:
     bannar();
 
     static option options[] = {
-      {"help", no_argument, 0, 'h'},
-      {"name", required_argument, 0, 'n'},
-      {"threads", required_argument, 0, 't'},
       {"algorithm", required_argument, 0, 'a'},
-      {"spp", required_argument, 0, 's'},
-      {"photons", required_argument, 0, 'p'},
+      {"help", no_argument, 0, 'h'},
+      {"iterations", required_argument, 0, 'i'},
       {"k", required_argument, 0, 'k'},
       {"mutations", required_argument, 0, 'm'},
+      {"name", required_argument, 0, 'n'},
+      {"photons", required_argument, 0, 'p'},
+      {"spp", required_argument, 0, 's'},
+      {"threads", required_argument, 0, 't'},
       {0, 0, 0, 0},
     };
 
@@ -123,15 +127,6 @@ public:
         break;
       }
       switch (c) {
-      case 'h':
-        show_help = true;
-        break;
-      case 'n':
-        option.name = std::string(optarg);
-        break;
-      case 't':
-        option.n_thread = std::stoull(std::string(optarg));
-        break;
       case 'a':
         if (std::string(optarg) == "pt") {
           option.algorithm = Algorithm::pt;
@@ -145,19 +140,36 @@ public:
         if (std::string(optarg) == "pssmlt") {
           option.algorithm = Algorithm::pssmlt;
         }
+        if (std::string(optarg) == "ppm") {
+          option.algorithm = Algorithm::ppm;
+        }
+        break;
+      case 'h':
+        show_help = true;
+        break;
+      case 'i':
+        option.ppm_n_iteration = std::stoull(std::string(optarg));
+        break;
+      case 'k':
+        option.pm_k_nearest_photon = std::stoull(std::string(optarg));
+        option.ppm_k_nearest_photon = std::stoull(std::string(optarg));
+        break;
+      case 'm':
+        option.pssmlt_n_mutation = std::stoull(std::string(optarg));
+        break;
+      case 'n':
+        option.name = std::string(optarg);
+        break;
+      case 'p':
+        option.pm_n_photon = std::stoull(std::string(optarg));
+        option.ppm_n_photon = std::stoull(std::string(optarg));
         break;
       case 's':
         option.pt_spp = std::stoull(std::string(optarg));
         option.bdpt_spp = std::stoull(std::string(optarg));
         break;
-      case 'p':
-        option.pm_n_photon = std::stoull(std::string(optarg));
-        break;
-      case 'k':
-        option.pm_k_nearest_photon = std::stoull(std::string(optarg));
-        break;
-      case 'm':
-        option.pssmlt_n_mutation = std::stoull(std::string(optarg));
+      case 't':
+        option.n_thread = std::stoull(std::string(optarg));
         break;
       case '?':
         help();
@@ -204,6 +216,15 @@ public:
         option.pssmlt_n_seed,
         option.pssmlt_n_mutation,
         option.pssmlt_p_large_step
+      );
+      break;
+    case Algorithm::ppm:
+      shader = new shader::ProgressivePhotonMapping<scene_type>(
+        option.n_thread,
+        option.ppm_n_photon,
+        option.ppm_k_nearest_photon,
+        option.ppm_n_iteration,
+        option.ppm_alpha
       );
       break;
     }
