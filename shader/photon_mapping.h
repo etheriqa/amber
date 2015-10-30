@@ -270,7 +270,7 @@ private:
       }
 
       const auto sample =
-        object.sampleScatter(power, -ray.direction, hit.normal, sampler);
+        object.sampleScatter(-ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;
@@ -333,8 +333,7 @@ private:
       return power;
     }
 
-    const auto samples =
-      object.specularScatters(weight, -ray.direction, hit.normal);
+    const auto samples = object.specularScatters(-ray.direction, hit.normal);
     const auto accumulator =
       [](const auto& acc, const auto& s){ return acc + s.psa_probability; };
     const auto p = std::accumulate(samples.begin(),

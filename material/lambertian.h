@@ -17,8 +17,9 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Lambertian : public Material<Radiant, RealType> {
 public:
-  using scatter_type = typename Material<Radiant, RealType>::scatter_type;
-  using vector3_type = typename Material<Radiant, RealType>::vector3_type;
+  using radiant_value_type = typename Radiant::value_type;
+  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
 
 private:
   Radiant kd_;
@@ -38,8 +39,13 @@ public:
     }
   }
 
-  scatter_type sampleScatter(Radiant const&,
-                             vector3_type const& direction_i,
+  radiant_value_type pdf(vector3_type const&,
+                         vector3_type const&,
+                         vector3_type const&) const noexcept {
+    return 1 / kPI;
+  }
+
+  scatter_type sampleScatter(vector3_type const& direction_i,
                              vector3_type const& normal,
                              Sampler* sampler) const {
     auto const w = dot(direction_i, normal) > 0 ? normal : -normal;

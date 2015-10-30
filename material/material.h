@@ -11,6 +11,7 @@
 #include <numeric>
 #include <vector>
 
+#include "base/constant.h"
 #include "base/sampler.h"
 #include "material/scatter.h"
 #include "material/surface_type.h"
@@ -21,10 +22,10 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Material {
 public:
+  using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = Scatter<Radiant, RealType>;
   using vector3_type       = geometry::Vector3<RealType>;
 
-  using radiant_value_type = typename Radiant::value_type; // TODO remove
   using radiant_type       = Radiant;                      // TODO remove
 
 public:
@@ -34,15 +35,16 @@ public:
 
   virtual Radiant bsdf(vector3_type const&,
                        vector3_type const&,
-                       vector3_type const&) const noexcept {
-    return Radiant();
-  }
+                       vector3_type const&) const noexcept = 0;
 
-  virtual scatter_type sampleScatter(Radiant const& radiant,
-                                     vector3_type const& direction_i,
+  virtual radiant_value_type pdf(vector3_type const&,
+                                 vector3_type const&,
+                                 vector3_type const&) const noexcept = 0;
+
+  virtual scatter_type sampleScatter(vector3_type const& direction_i,
                                      vector3_type const& normal,
                                      Sampler* sampler) const {
-    auto const scatters = specularScatters(radiant, direction_i, normal);
+    auto const scatters = specularScatters(direction_i, normal);
     if (scatters.size() == 1) {
       return scatters.front();
     }
@@ -66,8 +68,7 @@ public:
   }
 
   virtual std::vector<scatter_type>
-  specularScatters(Radiant const&,
-                   vector3_type const&,
+  specularScatters( vector3_type const&,
                    vector3_type const&) const {
     throw std::logic_error("specularScatters is not implemented");
   }

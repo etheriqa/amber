@@ -15,6 +15,7 @@
 
 #include "shader/framework/bidirectional_path_tracing.h"
 #include "shader/framework/light_sampler.h"
+#include "shader/framework/multiple_importance_sampling.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -33,6 +34,7 @@ private:
   using progress_reference       = typename shader_type::progress_reference;
   using progress_type            = typename shader_type::progress_type;
   using radiant_type             = typename shader_type::radiant_type;
+  using radiant_value_type       = typename shader_type::radiant_value_type;
   using real_type                = typename shader_type::real_type;
 
   using bdpt_type                = framework::BidirectionalPathTracing<acceleration_type>;
@@ -94,9 +96,10 @@ private:
       auto y = pixels->at(i) / camera.imageHeight();
       radiant_type power;
       for (size_t j = 0; j < spp_; j++) {
-        power += bdpt->connect(bdpt->lightPathTracing(&sampler),
-                               bdpt->eyePathTracing(&sampler, camera, x, y),
-                               framework::PowerHeuristic<radiant_type>());
+        power +=
+          bdpt->connect(bdpt->lightPathTracing(&sampler),
+                        bdpt->eyePathTracing(&sampler, camera, x, y),
+                        framework::PowerHeuristic<radiant_value_type>());
         progress->done(1);
       }
       camera.expose(x, y, power / spp_);

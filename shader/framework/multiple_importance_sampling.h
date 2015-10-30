@@ -9,98 +9,56 @@
 #pragma once
 
 #include <algorithm>
-#include <cmath>
-#include <iterator>
 #include <numeric>
 
 namespace amber {
 namespace shader {
 namespace framework {
 
-template <typename Contribution>
-class Sample {
-private:
-  using value_type = typename Contribution::value_type;
-
-  Contribution contribution_;
-  value_type log_probability_;
-
-public:
-  Sample(const Contribution& contribution, value_type log_probability) noexcept
-    : contribution_(contribution), log_probability_(log_probability) {}
-
-  const Contribution& contribution() const noexcept {
-    return contribution_;
-  }
-
-  const value_type& log_probability() const noexcept {
-    return log_probability_;
-  }
-
-  bool operator<(const Sample& sample) const noexcept {
-    return log_probability_ < sample.log_probability_;
-  }
-};
-
-template <typename Contribution>
 class BalanceHeuristic {
-private:
-  using value_type = typename Contribution::value_type;
-
 public:
-  template <typename InputIterator>
-  Contribution operator()(InputIterator first,
-                          InputIterator last) const noexcept {
-    return std::accumulate(first, last, Contribution(),
-      [&](const auto& contribution, const auto& x){
-        return contribution + x.contribution() /
-          std::accumulate(first, last, value_type(),
-            [&](const auto& weight, const auto& y){
-              return weight +
-                std::exp(y.log_probability() - x.log_probability());
-            });
+  template <typename InputIterator, typename T>
+  T operator()(InputIterator first,
+               InputIterator last,
+               T const& log_p) const noexcept {
+    return 1 / std::accumulate(first, last, T(),
+      [&](auto const& acc, auto const& log_q){
+        return acc + std::exp2(log_q - log_p);
       });
   }
 };
 
-template <typename Contribution>
+template <typename T>
 class PowerHeuristic {
 private:
-  using value_type = typename Contribution::value_type;
-
-  value_type beta_;
+  T beta_;
 
 public:
   PowerHeuristic() noexcept : beta_(2) {}
-
-  explicit PowerHeuristic(value_type beta) noexcept : beta_(beta) {}
+  explicit PowerHeuristic(T const& beta) noexcept : beta_(beta) {}
 
   template <typename InputIterator>
-  Contribution operator()(InputIterator first,
-                          InputIterator last) const noexcept {
-    return std::accumulate(first, last, Contribution(),
-      [&](const auto& contribution, const auto& x){
-        return contribution + x.contribution() /
-          std::accumulate(first, last, value_type(),
-            [&](const auto& weight, const auto& y){
-              return weight +
-                std::pow(std::exp(y.log_probability() - x.log_probability()),
-                         beta_);
-            });
+  T operator()(InputIterator first,
+               InputIterator last,
+               T const& log_p) const noexcept {
+    return 1 / std::accumulate(first, last, T(),
+      [&](auto const& acc, auto const& log_q){
+        return acc + std::exp2(beta_ * (log_q - log_p));
       });
   }
 };
 
-template <typename Contribution>
 class MaximumHeuristic {
 public:
-  template <typename InputIterator>
-  Contribution operator()(InputIterator first,
-                          InputIterator last) const noexcept {
-    if (std::distance(first, last) == 0) {
-      return Contribution();
+  template <typename InputIterator, typename T>
+  T operator()(InputIterator first,
+               InputIterator last,
+               T const& log_p) const noexcept {
+    auto const max_log_q = std::max_element(first, last);
+    if (log_p != max_log_q) {
+      return T();
     }
-    return std::max_element(first, last)->contribution();
+    return 1 / static_cast<T>(std::count(first, last, max_log_q));
   }
 };
 

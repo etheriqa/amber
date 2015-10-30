@@ -15,6 +15,7 @@
 
 #include "shader/framework/bidirectional_path_tracing.h"
 #include "shader/framework/light_sampler.h"
+#include "shader/framework/multiple_importance_sampling.h"
 #include "shader/framework/primary_sample_space.h"
 #include "shader/shader.h"
 
@@ -124,7 +125,7 @@ private:
                                            camera,
                                            proposal_x,
                                            proposal_y),
-                      framework::PowerHeuristic<radiant_type>());
+                      framework::PowerHeuristic<radiant_value_type>());
       const auto proposal_contribution = proposal.sum();
       const auto p_acceptance =
         std::min<radiant_value_type>(1,
@@ -183,7 +184,7 @@ private:
       const auto power =
         bdpt->connect(bdpt->lightPathTracing(&pss_light),
                       bdpt->eyePathTracing(&pss_eye, camera, x, y),
-                      framework::PowerHeuristic<radiant_type>());
+                      framework::PowerHeuristic<radiant_value_type>());
       pss_light.accept();
       pss_eye.accept();
       samples.emplace_back(pss_light, pss_eye, x, y, power);

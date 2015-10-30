@@ -19,8 +19,9 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Specular : public Material<Radiant, RealType> {
 public:
-  using scatter_type = typename Material<Radiant, RealType>::scatter_type;
-  using vector3_type = typename Material<Radiant, RealType>::vector3_type;
+  using radiant_value_type = typename Radiant::value_type;
+  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
 
 private:
   Radiant ks_;
@@ -30,14 +31,29 @@ public:
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
 
+  Radiant bsdf(vector3_type const& direction_i,
+               vector3_type const& direction_o,
+               vector3_type const& normal) const noexcept {
+    if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
+      return Radiant();
+    } else {
+      return ks_ * kDiracDelta;
+    }
+  }
+
+  radiant_value_type pdf(vector3_type const&,
+                         vector3_type const&,
+                         vector3_type const&) const noexcept {
+    return kDiracDelta;
+  }
+
   std::vector<scatter_type>
-  specularScatters(Radiant const&,
-                   vector3_type const& direction_i,
+  specularScatters(vector3_type const& direction_i,
                    vector3_type const& normal) const {
     return std::vector<scatter_type>({
       scatter_type(2 * dot(direction_i, normal) * normal - direction_i,
-                   ks_ / kEPS,
-                   1 / kEPS)});
+                   ks_ * kDiracDelta,
+                   kDiracDelta)});
   }
 };
 

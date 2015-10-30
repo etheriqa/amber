@@ -17,8 +17,9 @@ namespace material {
 template <typename Radiant, typename RealType>
 class Light : public Material<Radiant, RealType> {
 public:
-  using scatter_type = typename Material<Radiant, RealType>::scatter_type;
-  using vector3_type = typename Material<Radiant, RealType>::vector3_type;
+  using radiant_value_type = typename Radiant::value_type;
+  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
 
 private:
   Radiant radiance_;
@@ -30,11 +31,22 @@ public:
   bool isEmissive() const noexcept { return true; }
   Radiant emittance() const noexcept { return radiance_; }
 
-  scatter_type sampleScatter(Radiant const&,
-                             vector3_type const&,
+  Radiant bsdf(vector3_type const&,
+               vector3_type const&,
+               vector3_type const&) const noexcept {
+    return Radiant();
+  }
+
+  radiant_value_type pdf(vector3_type const&,
+                         vector3_type const&,
+                         vector3_type const&) const noexcept {
+    return 1 / kPI;
+  }
+
+  scatter_type sampleScatter(vector3_type const&,
                              vector3_type const&,
                              Sampler*) const {
-    return scatter_type(vector3_type(), Radiant(), 1);
+    return scatter_type(vector3_type(), Radiant(), 1); // XXX
   }
 };
 
