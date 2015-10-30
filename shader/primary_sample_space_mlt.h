@@ -9,12 +9,11 @@
 #pragma once
 
 #include <algorithm>
-#include <functional>
-#include <future>
+#include <mutex>
+#include <thread>
 #include <vector>
 
 #include "shader/framework/bidirectional_path_tracing.h"
-#include "shader/framework/light_sampler.h"
 #include "shader/framework/multiple_importance_sampling.h"
 #include "shader/framework/primary_sample_space.h"
 #include "shader/shader.h"
@@ -22,28 +21,62 @@
 namespace amber {
 namespace shader {
 
-template <typename Acceleration>
-class PrimarySampleSpaceMLT : public Shader<Acceleration> {
+template <typename Scene,
+          typename Object = typename Scene::object_type>
+class PrimarySampleSpaceMLT : public Shader<Scene> {
 private:
-  using shader_type              = Shader<Acceleration>;
+  using camera_type        = typename Shader<Scene>::camera_type;
+  using image_type         = typename Shader<Scene>::image_type;
 
-  using acceleration_type        = typename shader_type::acceleration_type;
-  using camera_type              = typename shader_type::camera_type;
-  using object_buffer_type       = typename shader_type::object_buffer_type;
-  using object_type              = typename shader_type::object_type;
-  using progress_const_reference = typename shader_type::progress_const_reference;
-  using progress_reference       = typename shader_type::progress_reference;
-  using progress_type            = typename shader_type::progress_type;
-  using radiant_type             = typename shader_type::radiant_type;
-  using radiant_value_type       = typename shader_type::radiant_value_type;
-  using real_type                = typename shader_type::real_type;
+  using hit_type           = typename Object::hit_type;
+  using radiant_type       = typename Object::radiant_type;
+  using radiant_value_type = typename Object::radiant_value_type;
+  using ray_type           = typename Object::ray_type;
+  using real_type          = typename Object::real_type;
+  using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type                = framework::BidirectionalPathTracing<acceleration_type>;
-  using light_sampler_type       = framework::LightSampler<object_type>;
+  using bdpt_type          = framework::BidirectionalPathTracing<Scene>;
 
+  struct Seed {
+    framework::PrimarySampleSpace<> pss_light, pss_eye;
+    size_t x, y;
+    radiant_type power;
+    radiant_value_type contribution;
+
+    Seed(camera_type const& camera,
+         bdpt_type const& bdpt,
+         DefaultSampler<>& sampler)
+      : pss_light(sampler()),
+        pss_eye(sampler()),
+        x(std::floor(pss_eye.uniform<real_type>(camera.imageWidth()))),
+        y(std::floor(pss_eye.uniform<real_type>(camera.imageHeight()))),
+        power(bdpt.connect(bdpt.lightPathTracing(&pss_light),
+                           bdpt.eyePathTracing(&pss_eye, camera, x, y),
+                           framework::PowerHeuristic<radiant_value_type>())),
+        contribution(power.sum()) {
+      pss_light.accept();
+      pss_eye.accept();
+    }
+
+  };
+
+  struct State {
+    size_t x, y;
+    radiant_type power;
+    radiant_value_type contribution;
+    radiant_value_type weight;
+
+    explicit State(Seed const& seed) noexcept
+      : x(seed.x),
+        y(seed.y),
+        power(seed.power),
+        contribution(seed.contribution),
+        weight(0) {}
+  };
 
   size_t n_thread_, n_seed_, n_mutation_;
   real_type p_large_step_;
+  Progress progress_;
 
 public:
   PrimarySampleSpaceMLT(size_t n_thread,
@@ -53,7 +86,8 @@ public:
     : n_thread_(n_thread),
       n_seed_(n_seed),
       n_mutation_(n_mutation),
-      p_large_step_(p_large_step) {}
+      p_large_step_(p_large_step),
+      progress_(2) {}
 
   void write(std::ostream& os) const noexcept {
     os
@@ -64,147 +98,127 @@ public:
       << ")";
   }
 
-  progress_const_reference render(const object_buffer_type& objects,
-                                  const camera_type& camera) const {
-    // TODO refactor
+  Progress const& progress() const noexcept { return progress_; }
+
+  image_type operator()(Scene const& scene, camera_type const& camera) {
+    bdpt_type bdpt(scene);
     std::vector<std::thread> threads;
-    std::promise<progress_reference> promise;
-    auto future = promise.get_future().share();
-    auto n_done = std::make_shared<std::atomic<size_t>>(0);
+    std::mutex mtx;
 
-    const auto acceleration = std::make_shared<acceleration_type>(objects.begin(), objects.end());
-    const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
-    const auto bdpt = std::make_shared<bdpt_type>(acceleration, light_sampler);
+    progress_.phase = "Generate seeds";
+    progress_.current_phase = 1;
+    progress_.current_job = 0;
+    progress_.total_job = n_seed_;
 
+    std::vector<Seed> seeds;
     for (size_t i = 0; i < n_thread_; i++) {
-      using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&PrimarySampleSpaceMLT::process, this, _1, _2, _3, _4), bdpt, camera, future, n_done));
+      threads.emplace_back([&](){
+        DefaultSampler<> sampler((std::random_device()()));
+        while (progress_.current_job++ < progress_.total_job) {
+          Seed seed(camera, bdpt, sampler);
+          std::lock_guard<std::mutex> lock(mtx);
+          seeds.push_back(seed);
+        }
+      });
+    }
+    while (!threads.empty()) {
+      threads.back().join();
+      threads.pop_back();
     }
 
-    promise.set_value(std::make_shared<progress_type>(
-      n_mutation_,
-      std::move(threads)
-    ));
+    radiant_value_type b = 0;
+    for (auto const& seed : seeds) {
+      b += seed.contribution / n_seed_;
+    }
 
-    return future.get();
+    progress_.phase = "Mutation";
+    progress_.current_phase = 2;
+    progress_.current_job = 0;
+    progress_.total_job = n_mutation_;
+
+    image_type image(camera.imageWidth(), camera.imageHeight());
+    for (size_t i = 0; i < n_thread_; i++) {
+      threads.emplace_back([&](){
+        DefaultSampler<> sampler((std::random_device()()));
+        image_type buffer(camera.imageWidth(), camera.imageHeight());
+        auto seed = sampleSeed(seeds.begin(), seeds.end(), sampler);
+        auto& pss_light = seed.pss_light;
+        auto& pss_eye = seed.pss_eye;
+        State state(seed);
+        while (progress_.current_job++ < progress_.total_job) {
+          auto const large_step = sampler.canonical() < p_large_step_;
+          if (large_step) {
+            pss_light.setLargeStep();
+            pss_eye.setLargeStep();
+          }
+          auto proposal = propose(state, bdpt, camera, pss_light, pss_eye);
+          auto const p_acceptance = std::min<radiant_value_type>(
+            1,
+            proposal.contribution / state.contribution);
+          proposal.weight =
+            (p_acceptance + large_step) /
+              (proposal.contribution / b + p_large_step_) / n_mutation_;
+          state.weight +=
+            (1 - p_acceptance) /
+              (state.contribution / b + p_large_step_) / n_mutation_;
+          if (sampler.uniform<radiant_value_type>() < p_acceptance) {
+            buffer.at(state.x, state.y) += state.power * state.weight;
+            state = proposal;
+            pss_light.accept();
+            pss_eye.accept();
+          } else {
+            buffer.at(proposal.x, proposal.y) +=
+              proposal.power * proposal.weight;
+            pss_light.reject();
+            pss_eye.reject();
+          }
+        }
+        buffer.at(state.x, state.y) += state.power * state.weight;
+        std::lock_guard<std::mutex> lock(mtx);
+        for (size_t y = 0; y < camera.imageHeight(); y++) {
+          for (size_t x = 0; x < camera.imageWidth(); x++) {
+            image.at(x, y) += buffer.at(x, y);
+          }
+        }
+      });
+    }
+    while (!threads.empty()) {
+      threads.back().join();
+      threads.pop_back();
+    }
+    return image;
   }
 
 private:
-  void process(std::shared_ptr<bdpt_type> bdpt,
-               const camera_type& camera,
-               std::shared_future<progress_reference> future,
-               std::shared_ptr<std::atomic<size_t>> n_done) const {
-    // TODO refactor
-    auto progress = future.get();
-
-    DefaultSampler<> sampler((std::random_device()()));
-    framework::PrimarySampleSpace<> pss_light, pss_eye;
-    size_t current_x, current_y;
-    radiant_type current;
-    radiant_value_type b;
-    std::tie(pss_light, pss_eye, current_x, current_y, current, b) =
-      preprocess(bdpt, camera, sampler);
-    radiant_value_type current_contribution = current.sum();
-    radiant_value_type current_weight = 0;
-
-    for (size_t i = (*n_done)++; i < n_mutation_; i = (*n_done)++) {
-      const auto large_step = sampler.canonical() < p_large_step_;
-      if (large_step) {
-        pss_light.setLargeStep();
-        pss_eye.setLargeStep();
-      }
-
-      const size_t proposal_x =
-        std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
-      const size_t proposal_y =
-        std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
-
-      const auto proposal =
-        bdpt->connect(bdpt->lightPathTracing(&pss_light),
-                      bdpt->eyePathTracing(&pss_eye,
-                                           camera,
-                                           proposal_x,
-                                           proposal_y),
-                      framework::PowerHeuristic<radiant_value_type>());
-      const auto proposal_contribution = proposal.sum();
-      const auto p_acceptance =
-        std::min<radiant_value_type>(1,
-                                     proposal_contribution /
-                                       current_contribution);
-      const auto proposal_weight =
-        (p_acceptance + large_step) /
-          (proposal_contribution / b + p_large_step_) / n_mutation_;
-      current_weight +=
-        (1 - p_acceptance) /
-          (current_contribution / b + p_large_step_) / n_mutation_;
-
-      if (sampler.uniform<radiant_value_type>() < p_acceptance) {
-        camera.expose(current_x, current_y, current * current_weight);
-        current_x = proposal_x;
-        current_y = proposal_y;
-        current = proposal;
-        current_contribution = proposal_contribution;
-        current_weight = proposal_weight;
-        pss_light.accept();
-        pss_eye.accept();
-      } else {
-        camera.expose(proposal_x, proposal_y, proposal * proposal_weight);
-        pss_light.reject();
-        pss_eye.reject();
-      }
-
-      progress->done(1);
-    }
-
-    camera.expose(current_x, current_y, current * current_weight);
-    progress->end();
+  template <typename InputIterator>
+  Seed sampleSeed(InputIterator first,
+                  InputIterator last,
+                  DefaultSampler<>& sampler) const {
+    radiant_value_type c = 0;
+    std::vector<radiant_value_type> cs;
+    std::for_each(first, last, [&](auto const& seed){
+      c += seed.contribution;
+      cs.push_back(c);
+    });
+    auto const it = std::lower_bound(cs.begin(), cs.end(), sampler.uniform(c));
+    return *std::next(first, std::distance(cs.begin(), it));
   }
 
-  std::tuple<framework::PrimarySampleSpace<>,
-             framework::PrimarySampleSpace<>,
-             size_t,
-             size_t,
-             radiant_type,
-             radiant_value_type>
-  preprocess(std::shared_ptr<bdpt_type> const& bdpt,
-             camera_type const& camera,
-             DefaultSampler<>& sampler) const {
-    std::vector<std::tuple<framework::PrimarySampleSpace<>,
-                           framework::PrimarySampleSpace<>,
-                           size_t,
-                           size_t,
-                           radiant_type>> samples;
-    for (size_t i = 0; i < n_seed_; i++) {
-      framework::PrimarySampleSpace<> pss_light(sampler()),
-                                      pss_eye(sampler());
-      const size_t x =
-        std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
-      const size_t y =
-        std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
-      const auto power =
-        bdpt->connect(bdpt->lightPathTracing(&pss_light),
-                      bdpt->eyePathTracing(&pss_eye, camera, x, y),
-                      framework::PowerHeuristic<radiant_value_type>());
-      pss_light.accept();
-      pss_eye.accept();
-      samples.emplace_back(pss_light, pss_eye, x, y, power);
-    }
-
-    radiant_value_type contribution = 0;
-    std::vector<radiant_value_type> contributions;
-    for (const auto& sample : samples) {
-      const auto& power = std::get<4>(sample);
-      contribution += power.sum();
-      contributions.push_back(contribution);
-    }
-
-    const auto pos =
-      std::distance(contributions.begin(),
-                    std::lower_bound(contributions.begin(),
-                                     contributions.end(),
-                                     sampler.uniform(contribution)));
-    return std::tuple_cat(samples.at(pos),
-                          std::make_tuple(contribution / n_seed_));
+  State propose(State state,
+                bdpt_type const& bdpt,
+                camera_type const& camera,
+                framework::PrimarySampleSpace<>& pss_light,
+                framework::PrimarySampleSpace<>& pss_eye) const {
+    state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
+    state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
+    state.power = bdpt.connect(bdpt.lightPathTracing(&pss_light),
+                               bdpt.eyePathTracing(&pss_eye,
+                                                   camera,
+                                                   state.x,
+                                                   state.y),
+                               framework::PowerHeuristic<radiant_value_type>());
+    state.contribution = state.power.sum();
+    return state;
   }
 };
 

@@ -8,35 +8,26 @@
 
 #pragma once
 
-#include <memory>
-
 #include "base/writer.h"
 #include "camera/camera.h"
-#include "cli/shading_progress.h"
+#include "camera/image.h"
+#include "shader/progress.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Acceleration>
-struct Shader : public Writer {
-  using shader_type              = Shader<Acceleration>;
-  using acceleration_type        = Acceleration;
+template <typename Scene>
+class Shader : public Writer {
+public:
+  using scene_type  = Scene;
 
-  using object_buffer_type       = std::vector<typename acceleration_type::object_type>;
-  using object_type              = typename acceleration_type::object_type;
+  using camera_type = camera::Camera<typename Scene::object_type::radiant_type,
+                                     typename Scene::object_type::real_type>;
+  using image_type  = camera::Image<typename Scene::object_type::radiant_type>;
+  using object_type = typename Scene::object_type;
 
-  using hit_type                 = typename object_type::hit_type;
-  using radiant_type             = typename object_type::radiant_type;
-  using radiant_value_type       = typename object_type::radiant_value_type;
-  using ray_type                 = typename object_type::ray_type;
-  using real_type                = typename object_type::real_type;
-
-  using camera_type              = camera::Camera<radiant_type, real_type>;
-  using progress_const_reference = std::shared_ptr<cli::ShadingProgress const>;
-  using progress_reference       = std::shared_ptr<cli::ShadingProgress>;
-  using progress_type            = cli::ShadingProgress;
-
-  virtual progress_const_reference render(const object_buffer_type&, const camera_type&) const = 0;
+  virtual Progress const& progress() const noexcept = 0;
+  virtual image_type operator()(Scene const&, camera_type const&) = 0;
 };
 
 }

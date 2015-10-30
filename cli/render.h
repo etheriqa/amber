@@ -9,6 +9,7 @@
 #pragma once
 
 #include <chrono>
+#include <future>
 #include <iomanip>
 #include <iostream>
 #include <list>
@@ -21,81 +22,56 @@
 namespace amber {
 namespace cli {
 
-template <typename Acceleration,
-          typename Object = typename Acceleration::object_type>
-void render(
-  shader::Shader<Acceleration>* shader,
-  std::vector<Object> const& objects,
-  const typename shader::Shader<Acceleration>::camera_type& camera
-)
-{
+template <typename Scene,
+          typename Shader = typename shader::Shader<Scene>,
+          typename Object = typename Shader::object_type,
+          typename Camera = typename Shader::camera_type,
+          typename Image = typename Shader::image_type>
+Image render(Shader* shader,
+             std::vector<Object> const& objects,
+             Camera const& camera) {
   {
     std::vector<Object> dummy_objects;
     std::cerr
       << "Shader: " << *shader << std::endl
-      << "Acceleration: " << Acceleration(dummy_objects.begin(), dummy_objects.end()) << std::endl
+      //<< "Acceleration: " << Acceleration(dummy_objects.begin(), dummy_objects.end()) << std::endl
       << "Objects: " << objects.size() << std::endl
       << "Camera: " << camera << std::endl
       << std::endl;
   }
 
-  const auto progress = shader->render(objects, camera);
-  std::list<size_t> n_done_history({0});
+  Scene const scene(objects.begin(), objects.end());
 
-  do {
-    using namespace std::literals;
-    std::this_thread::sleep_for(1s);
+  auto image =
+    std::async(std::launch::async, [&](){ return (*shader)(scene, camera); });
 
-    n_done_history.push_back(progress->n_done());
-    while (n_done_history.size() > 10) {
-      n_done_history.pop_front();
+  size_t phase = 0;
+  while (image.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
+    auto const& progress = shader->progress();
+    if (progress.current_phase.load() > phase) {
+      std::cerr << std::endl;
     }
-
-    const auto elapsed = std::chrono::system_clock::now() - progress->begin_time();
-    const auto estimated = elapsed + 1s * n_done_history.size() * (progress->n_task() - progress->n_done()) / std::max<size_t>(1, progress->n_done() - n_done_history.front());
-
-    std::stringstream ss;
-    ss.imbue(std::locale(""));
-    ss << std::fixed << std::setprecision(2)
-      << "\r"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::hours>(elapsed).count()
-      << ":"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::minutes>(elapsed).count() % 60
-      << ":"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() % 60
-      << "/"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::hours>(estimated).count()
-      << ":"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::minutes>(estimated).count() % 60
-      << ":"
-      << std::setw(2) << std::setfill('0')
-      << std::chrono::duration_cast<std::chrono::seconds>(estimated).count() % 60
-      << "\t"
-      << progress->n_done() << "/" << progress->n_task()
-      << "\t"
-      << std::setprecision(2)
-      << 100.0 * progress->n_done() / progress->n_task() << "%";
-    std::cerr << ss.str() << std::flush;
-  } while (!progress->is_done());
-
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(progress->duration());
-
-  std::cerr << std::endl << std::endl;
-
-  {
+    phase = progress.current_phase.load();
     std::stringstream ss;
     ss.imbue(std::locale(""));
     ss
-      << std::setprecision(3)
-      << duration.count() / 1000.0 << "s" << std::endl
-      << progress->n_task() * 1000 / duration.count() << " samples/sec" << std::endl;
+      << "\r"
+      << "[" << progress.current_phase
+      << "/" << progress.total_phase
+      << "] " << progress.phase;
+    if (progress.total_job > 0) {
+      ss
+        << " " << progress.current_job
+        << "/" << progress.total_job
+        << " " << std::fixed << std::setprecision(2)
+        << 100. * progress.current_job / progress.total_job << "%";
+    }
     std::cerr << ss.str() << std::flush;
   }
+
+  std::cerr << std::endl;
+
+  return image.get();
 }
 
 }

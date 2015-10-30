@@ -42,11 +42,11 @@ public:
   }
 
   size_t const& imageWidth() const noexcept {
-    return sensor_.image()->width();
+    return sensor_.width();
   }
 
   size_t const& imageHeight() const noexcept {
-    return sensor_.image()->height();
+    return sensor_.height();
   }
 
   size_t imageSize() const noexcept {

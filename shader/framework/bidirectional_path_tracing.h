@@ -23,13 +23,10 @@ namespace amber {
 namespace shader {
 namespace framework {
 
-template <typename Acceleration,
-          typename Object = typename Acceleration::object_type>
+template <typename Scene,
+          typename Object = typename Scene::object_type>
 class BidirectionalPathTracing {
 private:
-  using acceleration_ptr   = std::shared_ptr<Acceleration>;
-  using light_sampler_ptr  = std::shared_ptr<LightSampler<Object>>;
-
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
   using radiant_value_type = typename Object::radiant_type::value_type;
@@ -47,16 +44,14 @@ private:
     radiant_type weight;
   };
 
-  acceleration_ptr acceleration_;
-  light_sampler_ptr light_sampler_;
+  Scene scene_;
 
 public:
-  BidirectionalPathTracing(acceleration_ptr const& acceleration,
-                           light_sampler_ptr const& light_sampler) noexcept
-   : acceleration_(acceleration), light_sampler_(light_sampler) {}
+  BidirectionalPathTracing(Scene const& scene) noexcept
+    : scene_(scene) {}
 
   std::vector<Event> lightPathTracing(Sampler* sampler) const {
-    auto const light = (*light_sampler_)(sampler);
+    auto const light = (*scene_.light_sampler())(sampler);
     auto const ray = light.sampleFirstRay(sampler);
     auto const p_area = lightPDFArea(light);
     auto const p_psa = static_cast<radiant_value_type>(1 / kPI);
@@ -120,7 +115,9 @@ public:
 
 private:
   radiant_value_type lightPDFArea(Object const& light) const noexcept {
-    return light.emittance().sum() * kPI / light_sampler_->total_power().sum();
+    return
+      light.emittance().sum() * kPI /
+      scene_.light_sampler()->total_power().sum();
   }
 
   radiant_value_type eyePDFArea() const noexcept {
@@ -155,7 +152,7 @@ private:
     Object object;
 
     for (;;) {
-      std::tie(hit, object) = acceleration_->cast(ray);
+      std::tie(hit, object) = scene_.acceleration()->cast(ray);
       if (!hit) {
         break;
       }
@@ -205,7 +202,7 @@ private:
         return radiant_type();
       }
       ray_type const ray(l.position, e.position - l.position);
-      if (!acceleration_->test_visibility(ray, e.object)) {
+      if (!scene_.acceleration()->test_visibility(ray, e.object)) {
         return radiant_type();
       }
       auto const direction_le = normalize(e.position - l.position);
@@ -237,7 +234,7 @@ private:
         return radiant_type();
       }
       ray_type const ray(l.position, e.position - l.position);
-      if (!acceleration_->test_visibility(ray, e.object)) {
+      if (!scene_.acceleration()->test_visibility(ray, e.object)) {
         return radiant_type();
       }
       auto const direction_le = normalize(e.position - l.position);

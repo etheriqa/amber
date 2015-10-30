@@ -21,7 +21,6 @@
 #include "camera/aperture/circle.h"
 #include "camera/aperture/polygon.h"
 #include "camera/camera.h"
-#include "camera/image.h"
 #include "camera/lens/pinhole.h"
 #include "camera/lens/thin.h"
 #include "cli/option.h"
@@ -34,6 +33,7 @@
 #include "post_process/gamma.h"
 #include "radiometry/rgb.h"
 #include "scene/cornel_box.h"
+#include "scene/scene.h"
 #include "shader/bidirectional_path_tracing.h"
 #include "shader/path_tracing.h"
 #include "shader/photon_mapping.h"
@@ -54,7 +54,9 @@ private:
   using material_type      = material::Material<radiant_type, real_type>;
   using object_type        = object::Object<primitive_type, material_type>;
 
-  using acceleration_type  = amber::acceleration::KDTree<object_type>;
+  using acceleration_type  = acceleration::KDTree<object_type>;
+
+  using scene_type         = scene::Scene<acceleration_type>;
 
   int argc;
   char **argv;
@@ -169,33 +171,35 @@ public:
       return 0;
     }
 
-    std::vector<object_type> scene;
-    scene::cornel_box(std::back_inserter(scene));
-    shader::Shader<acceleration_type> *shader;
+    std::vector<object_type> objects;
+    scene::cornel_box(std::back_inserter(objects));
+
+    shader::Shader<scene_type> *shader;
     switch (option.algorithm) {
     case Algorithm::none:
       throw std::logic_error("invalid algorithm");
       break;
     case Algorithm::pt:
-      shader = new shader::PathTracing<acceleration_type>(
+      shader = new shader::PathTracing<scene_type>(
         option.n_thread,
         option.pt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::bdpt:
-      shader = new shader::BidirectionalPathTracing<acceleration_type>(
+      shader = new shader::BidirectionalPathTracing<scene_type>(
         option.n_thread,
         option.bdpt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::pm:
-      shader = new shader::PhotonMapping<acceleration_type>(
+      shader = new shader::PhotonMapping<scene_type>(
+        option.n_thread,
         option.pm_n_photon,
         option.pm_k_nearest_photon
       );
       break;
     case Algorithm::pssmlt:
-      shader = new shader::PrimarySampleSpaceMLT<acceleration_type>(
+      shader = new shader::PrimarySampleSpaceMLT<scene_type>(
         option.n_thread,
         option.pssmlt_n_seed,
         option.pssmlt_n_mutation,
@@ -205,21 +209,20 @@ public:
     }
     const auto aperture = new camera::aperture::Polygon<real_type>(8, 0.05);
     const auto lens = new camera::lens::Thin<real_type>(aperture, 4);
-    const auto image = new camera::Image<radiant_type>(
+    const auto sensor = camera::Sensor<radiant_type, real_type>(
       option.width * option.ssaa,
       option.height * option.ssaa
     );
-    const auto sensor = camera::Sensor<radiant_type, real_type>(image);
     const auto camera = camera::Camera<radiant_type, real_type>(
       sensor, lens,
       vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
 
-    render(shader, scene, camera);
+    auto const image = render<scene_type>(shader, objects, camera);
 
     post_process::Filmic<radiant_type> filmic;
     post_process::Gamma<radiant_type> gamma;
-    io::export_rgbe(option.name + ".hdr", image->downSample(option.ssaa));
-    io::export_ppm(option.name + ".ppm", gamma(filmic(image->downSample(option.ssaa))));
+    io::export_rgbe(option.name + ".hdr", image.downSample(option.ssaa));
+    io::export_ppm(option.name + ".ppm", gamma(filmic(image.downSample(option.ssaa))));
 
     return 0;
   }

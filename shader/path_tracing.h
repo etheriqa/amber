@@ -9,117 +9,97 @@
 #pragma once
 
 #include <algorithm>
-#include <functional>
-#include <future>
+#include <mutex>
+#include <thread>
 #include <vector>
 
-#include "base/sampler.h"
 #include "shader/shader.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Acceleration>
-class PathTracing : public Shader<Acceleration> {
-public:
-  using shader_type              = Shader<Acceleration>;
-
-  using acceleration_type        = typename shader_type::acceleration_type;
-  using camera_type              = typename shader_type::camera_type;
-  using hit_type                 = typename shader_type::hit_type;
-  using object_buffer_type       = typename shader_type::object_buffer_type;
-  using object_type              = typename shader_type::object_type;
-  using progress_const_reference = typename shader_type::progress_const_reference;
-  using progress_reference       = typename shader_type::progress_reference;
-  using progress_type            = typename shader_type::progress_type;
-  using radiant_type             = typename shader_type::radiant_type;
-  using ray_type                 = typename shader_type::ray_type;
-  using real_type                = typename shader_type::real_type;
-
+template <typename Scene,
+          typename Object = typename Scene::object_type>
+class PathTracing : public Shader<Scene> {
 private:
-  const size_t m_n_thread, m_spp;
+  using camera_type        = typename Shader<Scene>::camera_type;
+  using image_type         = typename Shader<Scene>::image_type;
+
+  using hit_type           = typename Object::hit_type;
+  using radiant_type       = typename Object::radiant_type;
+  using radiant_value_type = typename Object::radiant_value_type;
+  using ray_type           = typename Object::ray_type;
+  using real_type          = typename Object::real_type;
+  using vector3_type       = typename Object::vector3_type;
+
+  size_t n_thread_, spp_;
+  Progress progress_;
 
 public:
-  PathTracing(size_t n_thread, size_t spp) :
-    m_n_thread(n_thread),
-    m_spp(spp)
-  {}
+  PathTracing(size_t n_thread, size_t spp) noexcept
+    : n_thread_(n_thread),
+      spp_(spp),
+      progress_(1) {}
 
   void write(std::ostream& os) const noexcept {
     os
-      << "PathTracing(n_thread=" << m_n_thread
-      << ", spp=" << m_spp
+      << "PathTracing(n_thread=" << n_thread_
+      << ", spp=" << spp_
       << ")";
   }
 
-  progress_const_reference render(const object_buffer_type& objects, const camera_type& camera) const
-  {
-    // TODO refactor
+  Progress const& progress() const noexcept { return progress_; }
+
+  image_type operator()(Scene const& scene, camera_type const& camera) {
+    progress_.phase = "Path Tracing";
+    progress_.current_phase = 1;
+    progress_.current_job = 0;
+    progress_.total_job = spp_;
+
     std::vector<std::thread> threads;
-    std::promise<progress_reference> promise;
-    auto future = promise.get_future().share();
-    auto current = std::make_shared<std::atomic<size_t>>(0);
-    auto pixels = std::make_shared<std::vector<size_t>>(camera.imageSize());
-    std::iota(pixels->begin(), pixels->end(), 0);
-    std::shuffle(pixels->begin(), pixels->end(), std::random_device());
-
-    const auto acceleration = std::make_shared<acceleration_type>(objects.begin(), objects.end());
-
-    for (size_t i = 0; i < m_n_thread; i++) {
-      using namespace std::placeholders;
-      threads.push_back(std::thread(std::bind(&PathTracing::process, this, _1, _2, _3, _4, _5), acceleration, camera, future, current, pixels));
+    std::mutex mtx;
+    image_type image(camera.imageWidth(), camera.imageHeight());
+    for (size_t i = 0; i < n_thread_; i++) {
+      threads.emplace_back([&](){
+        DefaultSampler<> sampler((std::random_device()()));
+        image_type buffer(camera.imageWidth(), camera.imageHeight());
+        while (progress_.current_job++ < progress_.total_job) {
+          for (size_t y = 0; y < camera.imageHeight(); y++) {
+            for (size_t x = 0; x < camera.imageWidth(); x++) {
+              buffer.at(x, y) +=
+                samplePixel(scene, camera, x, y, sampler) /
+                spp_;
+            }
+          }
+        }
+        std::lock_guard<std::mutex> lock(mtx);
+        for (size_t y = 0; y < camera.imageHeight(); y++) {
+          for (size_t x = 0; x < camera.imageWidth(); x++) {
+            image.at(x, y) += buffer.at(x, y);
+          }
+        }
+      });
     }
-
-    promise.set_value(std::make_shared<progress_type>(
-      m_spp * camera.imageSize(),
-      std::move(threads)
-    ));
-
-    return future.get();
+    while (!threads.empty()) {
+      threads.back().join();
+      threads.pop_back();
+    }
+    return image;
   }
 
 private:
-  void process(
-    std::shared_ptr<acceleration_type> scene,
-    const camera_type& camera,
-    std::shared_future<progress_reference> future,
-    std::shared_ptr<std::atomic<size_t>> current,
-    std::shared_ptr<std::vector<size_t>> pixels
-  ) const
-  {
-    // TODO refactor
-    auto progress = future.get();
-    DefaultSampler<> sampler;
-
-    for (size_t i = (*current)++; i < camera.imageSize(); i = (*current)++) {
-      auto x = pixels->at(i) % camera.imageWidth();
-      auto y = pixels->at(i) / camera.imageHeight();
-      radiant_type power;
-      for (size_t j = 0; j < m_spp; j++) {
-        power += sample_pixel(scene, camera, x, y, &sampler);
-        progress->done(1);
-      }
-      camera.expose(x, y, power / m_spp);
-    }
-
-    progress->end();
-  }
-
-  radiant_type sample_pixel(
-    const std::shared_ptr<acceleration_type>& scene,
-    const camera_type& camera,
-    size_t x,
-    size_t y,
-    Sampler *sampler
-  ) const
-  {
+  radiant_type samplePixel(Scene const& scene,
+                           camera_type const& camera,
+                           size_t x,
+                           size_t y,
+                           DefaultSampler<>& sampler) const {
     radiant_type power, weight(1);
-    ray_type ray = camera.sampleFirstRay(x, y, sampler);
+    ray_type ray = camera.sampleFirstRay(x, y, &sampler);
     hit_type hit;
-    object_type object;
+    Object object;
 
     for (;;) {
-      std::tie(hit, object) = scene->cast(ray);
+      std::tie(hit, object) = scene.acceleration()->cast(ray);
       if (!hit) {
         break;
       }
@@ -128,13 +108,14 @@ private:
         power += weight * object.emittance();
       }
 
-      const auto sample = object.sampleScatter(-ray.direction, hit.normal, sampler);
+      auto const sample =
+        object.sampleScatter(-ray.direction, hit.normal, &sampler);
       ray = ray_type(hit.position, sample.direction_o);
-      const auto reflectance = sample.bsdf / sample.psa_probability;
+      auto const reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;
 
-      const auto p_russian_roulette = reflectance.max();
-      if (sampler->uniform<real_type>() >= p_russian_roulette) {
+      auto const p_russian_roulette = reflectance.max();
+      if (sampler.uniform<real_type>() >= p_russian_roulette) {
         break;
       }
       weight /= std::min<real_type>(1, p_russian_roulette);
