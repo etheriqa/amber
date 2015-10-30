@@ -19,96 +19,97 @@
 namespace amber {
 namespace scene {
 
-template <typename Acceleration>
-typename Acceleration::object_buffer_type cornel_box()
-{
-  using RealType      = typename Acceleration::object_type::primitive_type::real_type;
+template <typename OutputIterator,
+          typename Object = typename OutputIterator::container_type::value_type>
+void cornel_box(OutputIterator output) {
+  using radiant_type  = typename Object::radiant_type;
+  using real_type     = typename Object::real_type;
+  using vector3_type  = typename Object::vector3_type;
 
-  using Vector3       = geometry::Vector3<RealType>;
+  using ConvexPolygon = geometry::primitive::ConvexPolygon<real_type>;
+  using Sphere        = geometry::primitive::Sphere<real_type>;
 
-  using ConvexPolygon = geometry::primitive::ConvexPolygon<RealType>;
-  using Sphere        = geometry::primitive::Sphere<RealType>;
-
-  using RGB           = typename Acceleration::object_type::radiant_type;
-
-  using Lambertian    = material::Lambertian<RGB, RealType>;
-  using Light         = material::Light<RGB, RealType>;
-  using Phong         = material::Phong<RGB, RealType>;
-  using Refraction    = material::Refraction<RGB, RealType>;
-  using Specular      = material::Specular<RGB, RealType>;
-
-  using ObjectBuffer  = typename Acceleration::object_buffer_type;
-
-  ObjectBuffer objects;
+  using Lambertian    = material::Lambertian<radiant_type, real_type>;
+  using Light         = material::Light<radiant_type, real_type>;
+  using Phong         = material::Phong<radiant_type, real_type>;
+  using Refraction    = material::Refraction<radiant_type, real_type>;
+  using Specular      = material::Specular<radiant_type, real_type>;
 
   // light source
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3( 0.25, 0.99,  0.25),
-      Vector3(-0.25, 0.99,  0.25),
-      Vector3(-0.25, 0.99, -0.25),
-      Vector3( 0.25, 0.99, -0.25),
+      vector3_type( 0.25, 0.99,  0.25),
+      vector3_type(-0.25, 0.99,  0.25),
+      vector3_type(-0.25, 0.99, -0.25),
+      vector3_type( 0.25, 0.99, -0.25),
     }),
-    new Light(RGB(10, 10, 10))
+    new Light(radiant_type(10, 10, 10))
   );
   // left
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3(-1,  1,  1),
-      Vector3(-1, -1,  1),
-      Vector3(-1, -1, -1),
-      Vector3(-1,  1, -1),
+      vector3_type(-1,  1,  1),
+      vector3_type(-1, -1,  1),
+      vector3_type(-1, -1, -1),
+      vector3_type(-1,  1, -1),
     }),
-    new Lambertian(RGB(.5, .0, .0))
+    new Lambertian(radiant_type(.5, .0, .0))
   );
   // right
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3(1,  1,  1),
-      Vector3(1,  1, -1),
-      Vector3(1, -1, -1),
-      Vector3(1, -1,  1),
+      vector3_type(1,  1,  1),
+      vector3_type(1,  1, -1),
+      vector3_type(1, -1, -1),
+      vector3_type(1, -1,  1),
     }),
-    new Lambertian(RGB(.0, .5, .0))
+    new Lambertian(radiant_type(.0, .5, .0))
   );
   // back
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3( 1,  1, -1),
-      Vector3(-1,  1, -1),
-      Vector3(-1, -1, -1),
-      Vector3( 1, -1, -1),
+      vector3_type( 1,  1, -1),
+      vector3_type(-1,  1, -1),
+      vector3_type(-1, -1, -1),
+      vector3_type( 1, -1, -1),
     }),
-    new Lambertian(RGB(.5, .5, .5))
+    new Lambertian(radiant_type(.5, .5, .5))
   );
   // floor
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3( 1, -1,  1),
-      Vector3( 1, -1, -1),
-      Vector3(-1, -1, -1),
-      Vector3(-1, -1,  1),
+      vector3_type( 1, -1,  1),
+      vector3_type( 1, -1, -1),
+      vector3_type(-1, -1, -1),
+      vector3_type(-1, -1,  1),
     }),
-    new Phong(RGB(.1, .1, .1), RGB(.5, .5, .5), 100)
+    new Phong(radiant_type(.1, .1, .1), radiant_type(.5, .5, .5), 100)
   );
   // ceiling
-  objects.emplace_back(
+  output = Object(
     new ConvexPolygon({
-      Vector3( 1, 1,  1),
-      Vector3(-1, 1,  1),
-      Vector3(-1, 1, -1),
-      Vector3( 1, 1, -1),
+      vector3_type( 1, 1,  1),
+      vector3_type(-1, 1,  1),
+      vector3_type(-1, 1, -1),
+      vector3_type( 1, 1, -1),
     }),
-    new Lambertian(RGB(.5, .5, .5))
+    new Lambertian(radiant_type(.5, .5, .5))
   );
   // diffuse sphere
-  objects.emplace_back(new Sphere(Vector3( 0.4, -0.6, -0.5), 0.4), new Lambertian(RGB(.5, .5, .5)));
+  output = Object(
+    new Sphere(vector3_type( 0.4, -0.6, -0.5), 0.4),
+    new Lambertian(radiant_type(.5, .5, .5))
+  );
   // specular sphere
-  objects.emplace_back(new Sphere(Vector3(-0.4, -0.7,  0.1), 0.3), new Specular(RGB(.95, .95, .95)));
+  output = Object(
+    new Sphere(vector3_type(-0.4, -0.7,  0.1), 0.3),
+    new Specular(radiant_type(.95, .95, .95))
+  );
   // refraction sphere
-  objects.emplace_back(new Sphere(Vector3( 0.1, -0.8,  0.6), 0.2), new Refraction(1.5));
-
-  return objects;
+  output = Object(
+    new Sphere(vector3_type( 0.1, -0.8,  0.6), 0.2),
+    new Refraction(1.5)
+  );
 }
 
 }

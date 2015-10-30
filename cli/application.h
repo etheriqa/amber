@@ -167,7 +167,8 @@ public:
       return 0;
     }
 
-    const auto scene = scene::cornel_box<acceleration_type>();
+    typename acceleration_type::object_buffer_type scene;
+    scene::cornel_box(std::back_inserter(scene));
     shader::Shader<acceleration_type> *shader;
     switch (option.algorithm) {
     case Algorithm::none:
