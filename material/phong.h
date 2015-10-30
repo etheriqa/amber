@@ -58,8 +58,7 @@ public:
       std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
   }
 
-  scatter_type sampleScatter(Radiant const&,
-                             vector3_type const& direction_i,
+  scatter_type sampleScatter(vector3_type const& direction_i,
                              vector3_type const& normal,
                              Sampler* sampler) const {
     auto const direction_o = sampler->uniform<radiant_value_type>() < p_diffuse_

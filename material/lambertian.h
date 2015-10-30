@@ -39,18 +39,13 @@ public:
     }
   }
 
-  radiant_value_type pdf(vector3_type const& direction_i,
-                         vector3_type const& direction_o,
-                         vector3_type const& normal) const noexcept {
-    if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
-      return radiant_value_type();
-    } else {
-      return 1 / kPI;
-    }
+  radiant_value_type pdf(vector3_type const&,
+                         vector3_type const&,
+                         vector3_type const&) const noexcept {
+    return 1 / kPI;
   }
 
-  scatter_type sampleScatter(Radiant const&,
-                             vector3_type const& direction_i,
+  scatter_type sampleScatter(vector3_type const& direction_i,
                              vector3_type const& normal,
                              Sampler* sampler) const {
     auto const w = dot(direction_i, normal) > 0 ? normal : -normal;

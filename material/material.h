@@ -35,21 +35,16 @@ public:
 
   virtual Radiant bsdf(vector3_type const&,
                        vector3_type const&,
-                       vector3_type const&) const noexcept {
-    return Radiant();
-  }
+                       vector3_type const&) const noexcept = 0;
 
   virtual radiant_value_type pdf(vector3_type const&,
                                  vector3_type const&,
-                                 vector3_type const&) const noexcept {
-    return radiant_value_type();
-  }
+                                 vector3_type const&) const noexcept = 0;
 
-  virtual scatter_type sampleScatter(Radiant const& radiant,
-                                     vector3_type const& direction_i,
+  virtual scatter_type sampleScatter(vector3_type const& direction_i,
                                      vector3_type const& normal,
                                      Sampler* sampler) const {
-    auto const scatters = specularScatters(radiant, direction_i, normal);
+    auto const scatters = specularScatters(direction_i, normal);
     if (scatters.size() == 1) {
       return scatters.front();
     }
@@ -73,8 +68,7 @@ public:
   }
 
   virtual std::vector<scatter_type>
-  specularScatters(Radiant const&,
-                   vector3_type const&,
+  specularScatters( vector3_type const&,
                    vector3_type const&) const {
     throw std::logic_error("specularScatters is not implemented");
   }

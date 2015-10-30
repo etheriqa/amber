@@ -107,18 +107,16 @@ public:
     return material_->pdf(direction_i, direction_o, normal);
   }
 
-  scatter_type sampleScatter(radiant_type const& radiant,
-                                          vector3_type const& direction_i,
-                                          vector3_type const& normal,
-                                          Sampler* sampler) const {
-    return material_->sampleScatter(radiant, direction_i, normal, sampler);
+  scatter_type sampleScatter(vector3_type const& direction_i,
+                             vector3_type const& normal,
+                             Sampler* sampler) const {
+    return material_->sampleScatter(direction_i, normal, sampler);
   }
 
   std::vector<scatter_type>
-  specularScatters(radiant_type const& radiant,
-                       vector3_type const& direction_i,
-                       vector3_type const& normal) const {
-    return material_->specularScatters(radiant, direction_i, normal);
+  specularScatters(vector3_type const& direction_i,
+                   vector3_type const& normal) const {
+    return material_->specularScatters(direction_i, normal);
   }
 
   radiant_type power() const noexcept {

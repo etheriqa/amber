@@ -128,7 +128,7 @@ private:
         power += weight * object.emittance();
       }
 
-      const auto sample = object.sampleScatter(weight, -ray.direction, hit.normal, sampler);
+      const auto sample = object.sampleScatter(-ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       const auto reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;
