@@ -22,7 +22,7 @@ struct Shader : public Writer {
   using shader_type              = Shader<Acceleration>;
   using acceleration_type        = Acceleration;
 
-  using object_buffer_type       = typename acceleration_type::object_buffer_type;
+  using object_buffer_type       = std::vector<typename acceleration_type::object_type>;
   using object_type              = typename acceleration_type::object_type;
 
   using hit_type                 = typename object_type::hit_type;

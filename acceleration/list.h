@@ -16,32 +16,34 @@
 namespace amber {
 namespace acceleration {
 
-template <typename Object, typename ObjectBuffer = std::vector<Object>>
-class List : public Acceleration<Object>
-{
+template <typename Object>
+class List : public Acceleration<Object> {
 public:
-  using acceleration_type  = Acceleration<Object>;
-  using object_buffer_type = ObjectBuffer;
+  using object_type = Object;
 
-  using hit_type           = typename acceleration_type::hit_type;
-  using object_type        = typename acceleration_type::object_type;
-  using ray_type           = typename acceleration_type::ray_type;
+  using hit_type    = typename Object::hit_type;
+  using ray_type    = typename Object::ray_type;
 
 private:
-  using real_type = typename object_type::real_type;
+  using real_type   = typename Object::real_type;
 
-  ObjectBuffer m_objects;
+  std::vector<Object> objects_;
 
 public:
-  explicit List(const object_buffer_type& objects) : m_objects(objects) {}
+  template <typename InputIterator>
+  List(InputIterator first, InputIterator last) : objects_(first, last) {}
 
   void write(std::ostream& os) const noexcept {
     os << "List()";
   }
 
-  std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
-  {
-    return acceleration_type::traverse(m_objects.begin(), m_objects.end(), ray, std::numeric_limits<real_type>::max());
+  std::tuple<hit_type, Object>
+  cast(const ray_type& ray) const noexcept {
+    return
+      Acceleration<Object>::traverse(objects_.begin(),
+                                     objects_.end(),
+                                     ray,
+                                     std::numeric_limits<real_type>::max());
   }
 };
 

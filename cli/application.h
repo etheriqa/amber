@@ -14,7 +14,10 @@
 
 #include "getopt.h"
 
+#include "acceleration/bsp.h"
+#include "acceleration/bvh.h"
 #include "acceleration/kdtree.h"
+#include "acceleration/list.h"
 #include "camera/aperture/circle.h"
 #include "camera/aperture/polygon.h"
 #include "camera/camera.h"
@@ -39,8 +42,7 @@
 namespace amber {
 namespace cli {
 
-class Application
-{
+class Application {
 private:
   using real_type          = std::double_t;
   using vector3_type       = geometry::Vector3<real_type>;
@@ -167,7 +169,7 @@ public:
       return 0;
     }
 
-    typename acceleration_type::object_buffer_type scene;
+    std::vector<object_type> scene;
     scene::cornel_box(std::back_inserter(scene));
     shader::Shader<acceleration_type> *shader;
     switch (option.algorithm) {

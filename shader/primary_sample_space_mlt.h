@@ -72,7 +72,7 @@ public:
     auto future = promise.get_future().share();
     auto n_done = std::make_shared<std::atomic<size_t>>(0);
 
-    const auto acceleration = std::make_shared<acceleration_type>(objects);
+    const auto acceleration = std::make_shared<acceleration_type>(objects.begin(), objects.end());
     const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
     const auto bdpt = std::make_shared<bdpt_type>(acceleration, light_sampler);
 

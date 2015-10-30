@@ -21,18 +21,19 @@
 namespace amber {
 namespace cli {
 
-template <typename Acceleration>
+template <typename Acceleration,
+          typename Object = typename Acceleration::object_type>
 void render(
   shader::Shader<Acceleration>* shader,
-  const typename Acceleration::object_buffer_type& objects,
+  std::vector<Object> const& objects,
   const typename shader::Shader<Acceleration>::camera_type& camera
 )
 {
   {
-    typename Acceleration::object_buffer_type dummy_objects;
+    std::vector<Object> dummy_objects;
     std::cerr
       << "Shader: " << *shader << std::endl
-      << "Acceleration: " << Acceleration(dummy_objects) << std::endl
+      << "Acceleration: " << Acceleration(dummy_objects.begin(), dummy_objects.end()) << std::endl
       << "Objects: " << objects.size() << std::endl
       << "Camera: " << camera << std::endl
       << std::endl;

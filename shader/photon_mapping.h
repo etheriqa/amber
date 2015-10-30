@@ -202,7 +202,7 @@ public:
   progress_const_reference
   render(const object_buffer_type& objects, const camera_type& camera) const {
     DefaultSampler<> sampler;
-    const acceleration_type acceleration(objects);
+    const acceleration_type acceleration(objects.begin(), objects.end());
     const light_sampler_type light_sampler(objects.begin(), objects.end());
 
     std::cerr << "(1/3) Photon tracing ... ";

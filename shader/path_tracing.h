@@ -63,7 +63,7 @@ public:
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
-    const auto acceleration = std::make_shared<acceleration_type>(objects);
+    const auto acceleration = std::make_shared<acceleration_type>(objects.begin(), objects.end());
 
     for (size_t i = 0; i < m_n_thread; i++) {
       using namespace std::placeholders;

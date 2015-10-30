@@ -64,7 +64,7 @@ public:
     std::iota(pixels->begin(), pixels->end(), 0);
     std::shuffle(pixels->begin(), pixels->end(), std::random_device());
 
-    const auto acceleration = std::make_shared<acceleration_type>(objects);
+    const auto acceleration = std::make_shared<acceleration_type>(objects.begin(), objects.end());
     const auto light_sampler = std::make_shared<light_sampler_type>(objects.begin(), objects.end());
     const auto bdpt = std::make_shared<bdpt_type>(acceleration, light_sampler);
 
