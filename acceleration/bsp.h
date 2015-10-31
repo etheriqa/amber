@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <iterator>
 #include <limits>
 #include <vector>
 
@@ -16,53 +18,54 @@
 namespace amber {
 namespace acceleration {
 
-template <typename Object, size_t LeafCapacity = 16, size_t MaxDepth = 24>
-class BSP : public Acceleration<Object>
-{
+template <typename Object,
+          size_t LeafCapacity = 16,
+          size_t MaxDepth = 24>
+class BSP : public Acceleration<Object> {
 public:
-  using acceleration_type  = Acceleration<Object>;
+  using object_type = Object;
 
-  using hit_type           = typename acceleration_type::hit_type;
-  using object_type        = typename acceleration_type::object_type;
-  using ray_type           = typename acceleration_type::ray_type;
-  using real_type          = typename acceleration_type::object_type::real_type;
-
-  using object_buffer_type = std::vector<Object>;
+  using hit_type    = typename Object::hit_type;
+  using ray_type    = typename Object::ray_type;
 
 private:
-  enum struct Axis
-  {
+  using real_type   = typename Object::real_type;
+
+  enum struct Axis {
     X = 0,
     Y = 1,
     Z = 2,
   };
 
-  struct Node
-  {
-    using aabb_type = typename object_type::aabb_type;
+  struct Node {
+    using aabb_type        = typename Object::aabb_type;
+    using object_list_type = std::vector<Object>;
 
     Node *m_left, *m_right;
-    object_buffer_type *m_objects;
+    object_list_type *m_objects;
     aabb_type m_voxel;
 
-    explicit Node(const object_buffer_type& objects) :
-      Node(objects, aabb(objects), Axis::X, 1)
-    {}
+    template <typename InputIterator>
+    Node(InputIterator first, InputIterator last)
+      : Node(first, last, aabb(first, last), Axis::X, 1) {}
 
-    Node(const object_buffer_type& objects, const aabb_type& voxel, Axis axis, size_t depth) :
-      m_left(nullptr),
-      m_right(nullptr),
-      m_objects(nullptr),
-      m_voxel(voxel)
-    {
-      if (objects.size() <= LeafCapacity || depth > MaxDepth) {
-        m_objects = new object_buffer_type(objects);
+    template <typename InputIterator>
+    Node(InputIterator first,
+         InputIterator last,
+         aabb_type const& voxel, Axis axis, size_t depth)
+      : m_left(nullptr),
+        m_right(nullptr),
+        m_objects(nullptr),
+        m_voxel(voxel) {
+      if (static_cast<size_t>(std::distance(first, last)) <= LeafCapacity ||
+          depth > MaxDepth) {
+        m_objects = new object_list_type(first, last);
         return;
       }
 
       auto left_voxel = voxel;
       auto right_voxel = voxel;
-      const auto i = static_cast<size_t>(axis);
+      auto const i = static_cast<size_t>(axis);
       left_voxel.max[i] = (voxel.min[i] + voxel.max[i]) / 2;
       right_voxel.min[i] = (voxel.min[i] + voxel.max[i]) / 2;
       switch (axis) {
@@ -77,52 +80,64 @@ private:
         break;
       }
 
-      object_buffer_type left_objects, right_objects;
-      for (const auto& object : objects) {
-        const auto object_voxel = object.aabb();
-        if (left_voxel * object_voxel) {
-          left_objects.push_back(object);
-        }
-        if (right_voxel * object_voxel) {
-          right_objects.push_back(object);
-        }
+      {
+        std::vector<Object> objects;
+        std::copy_if(first, last, std::back_inserter(objects),
+          [&](auto const& object){ return left_voxel * object.aabb(); });
+        m_left = new Node(objects.begin(),
+                          objects.end(),
+                          left_voxel,
+                          axis,
+                          depth + 1);
       }
 
-      m_left = new Node(left_objects, left_voxel, axis, depth + 1);
-      m_right = new Node(right_objects, right_voxel, axis, depth + 1);
+      {
+        std::vector<Object> objects;
+        std::copy_if(first, last, std::back_inserter(objects),
+          [&](auto const& object){ return right_voxel * object.aabb(); });
+        m_right = new Node(objects.begin(),
+                           objects.end(),
+                           right_voxel,
+                           axis,
+                           depth + 1);
+      }
     }
 
-    ~Node()
-    {
+    ~Node() {
       delete m_objects;
       delete m_left;
       delete m_right;
     }
 
-    std::tuple<hit_type, object_type> cast(const ray_type& ray, real_type t_max) const noexcept
-    {
+    std::tuple<hit_type, Object>
+    cast(ray_type const& ray, real_type t_max) const noexcept {
       if (m_objects != nullptr) {
-        return acceleration_type::traverse(m_objects->begin(), m_objects->end(), ray, t_max);
+        return Acceleration<Object>::traverse(m_objects->begin(),
+                                              m_objects->end(),
+                                              ray,
+                                              t_max);
       }
 
       bool left_hit, right_hit;
       real_type t_left, t_right;
-      std::tie(left_hit, t_left, std::ignore) = m_left->m_voxel.intersect(ray, t_max);
-      std::tie(right_hit, t_right, std::ignore) = m_right->m_voxel.intersect(ray, t_max);
+      std::tie(left_hit, t_left, std::ignore) =
+        m_left->m_voxel.intersect(ray, t_max);
+      std::tie(right_hit, t_right, std::ignore) =
+        m_right->m_voxel.intersect(ray, t_max);
 
       if (!left_hit && !right_hit) {
-        return std::make_tuple(hit_type(), object_type());
+        return std::make_tuple(hit_type(), Object());
       } else if (left_hit && !right_hit) {
         return m_left->cast(ray, t_max);
       } else if (!left_hit && right_hit) {
         return m_right->cast(ray, t_max);
       }
 
-      const auto& near = t_left < t_right ? m_left : m_right;
-      const auto& far = t_left < t_right ? m_right : m_left;
+      auto const& near = t_left < t_right ? m_left : m_right;
+      auto const& far = t_left < t_right ? m_right : m_left;
 
       hit_type near_hit;
-      object_type near_object;
+      Object near_object;
       std::tie(near_hit, near_object) = near->cast(ray, t_max);
       if (!near_hit) {
         return far->cast(ray, t_max);
@@ -131,7 +146,7 @@ private:
       }
 
       hit_type far_hit;
-      object_type far_object;
+      Object far_object;
       std::tie(far_hit, far_object) = far->cast(ray, near_hit.distance);
       if (far_hit) {
         return std::make_tuple(far_hit, far_object);
@@ -140,25 +155,23 @@ private:
       }
     }
 
-    static aabb_type aabb(const object_buffer_type& objects) noexcept
-    {
+    template <typename InputIterator>
+    static aabb_type
+    aabb(InputIterator first, InputIterator last) noexcept {
       aabb_type aabb;
-      for (const auto& object : objects) {
+      std::for_each(first, last, [&](auto const& object){
         aabb += object.aabb();
-      }
+      });
       return aabb;
     }
+
   };
 
-  Node *m_root;
+  Node root_;
 
 public:
-  explicit BSP(const object_buffer_type& objects) : m_root(new Node(objects)) {}
-
-  ~BSP()
-  {
-    delete m_root;
-  }
+  template <typename InputIterator>
+  BSP(InputIterator first, InputIterator last) : root_(first, last) {}
 
   void write(std::ostream& os) const noexcept{
     os
@@ -167,9 +180,9 @@ public:
       << ")";
   }
 
-  std::tuple<hit_type, object_type> cast(const ray_type& ray) const noexcept
-  {
-    return m_root->cast(ray, std::numeric_limits<real_type>::max());
+  std::tuple<hit_type, Object>
+  cast(const ray_type& ray) const noexcept {
+    return root_.cast(ray, std::numeric_limits<real_type>::max());
   }
 };
 

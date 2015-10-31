@@ -17,29 +17,33 @@ namespace camera {
 template <typename Radiant, typename RealType>
 class Sensor {
 public:
-  using image_type   = Image<Radiant>;
   using vector3_type = geometry::Vector3<RealType>;
 
   RealType static constexpr kFilmSize = 0.036;
 
 private:
-  image_type* image_;
-  RealType width_, height_;
+  size_t resolution_width_, resolution_height_;
+  RealType sensor_width_, sensor_height_;
 
 public:
-  explicit Sensor(image_type* image) noexcept : Sensor(image, kFilmSize) {}
+  Sensor(size_t width, size_t height) noexcept
+    : Sensor(width, height, kFilmSize) {}
 
-  Sensor(image_type* image, RealType film_size) noexcept
-    : image_(image),
-      width_(film_size),
-      height_(film_size / image_->width() * image_->height()) {}
+  Sensor(size_t width, size_t height, RealType film_size) noexcept
+    : resolution_width_(width),
+      resolution_height_(height),
+      sensor_width_(film_size),
+      sensor_height_(film_size / width * height) {}
 
-  image_type* const& image() const noexcept { return image_; }
+  size_t const& width() const noexcept { return resolution_width_; }
+  size_t const& height() const noexcept { return resolution_height_; }
 
   vector3_type samplePoint(size_t x, size_t y) const noexcept {
     return vector3_type(
-      - ((x + RealType(0.5)) / image_->width() - RealType(0.5)) * width_,
-      ((y + RealType(0.5)) / image_->height() - RealType(0.5)) * height_,
+      - ((x + RealType(0.5)) / resolution_width_ - RealType(0.5)) *
+        sensor_width_,
+      ((y + RealType(0.5)) / resolution_height_ - RealType(0.5)) *
+        sensor_height_,
       0
     );
   }
