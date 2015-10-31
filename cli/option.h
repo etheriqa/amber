@@ -34,13 +34,13 @@ struct Option {
 
   size_t pt_spp              = 512;
 
-  size_t bdpt_spp            = 128;
+  size_t bdpt_spp            = 64;
 
   size_t pm_n_photon         = 8388608;
   size_t pm_k_nearest_photon = 16;
 
   size_t pssmlt_n_seed       = 65536;
-  size_t pssmlt_n_mutation   = 33554432;
+  size_t pssmlt_n_mutation   = 16777216;
   double pssmlt_p_large_step = 0.5;
 };
 
