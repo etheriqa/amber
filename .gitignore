@@ -1,6 +1,1 @@
-*.d
-*.hdr
-*.o
-*.png
-*.ppm
-/amber
+/build
