@@ -16,6 +16,7 @@ Features
     - Bidirectional path tracing
     - Photon mapping
     - Primary sample space Metropolis light transport
+    - Progressive photon mapping
 - Geometric primitives
     - Triangle
     - Disk
