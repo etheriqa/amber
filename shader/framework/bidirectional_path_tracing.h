@@ -47,7 +47,7 @@ private:
   Scene scene_;
 
 public:
-  BidirectionalPathTracing(Scene const& scene) noexcept
+  explicit BidirectionalPathTracing(Scene const& scene) noexcept
     : scene_(scene) {}
 
   std::vector<Event> lightPathTracing(Sampler* sampler) const {

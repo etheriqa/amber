@@ -14,6 +14,7 @@
 #include <thread>
 #include <vector>
 
+#include "shader/framework/photon_mapping.h"
 #include "shader/shader.h"
 
 namespace amber {
@@ -23,162 +24,20 @@ template <typename Scene,
           typename Object = typename Scene::object_type>
 class PhotonMapping : public Shader<Scene> {
 private:
-  using camera_type         = typename Shader<Scene>::camera_type;
-  using image_type          = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Scene>::camera_type;
+  using image_type         = typename Shader<Scene>::image_type;
 
-  using hit_type            = typename Object::hit_type;
-  using radiant_type        = typename Object::radiant_type;
-  using radiant_value_type  = typename Object::radiant_value_type;
-  using ray_type            = typename Object::ray_type;
-  using real_type           = typename Object::real_type;
-  using vector3_type        = typename Object::vector3_type;
+  using hit_type           = typename Object::hit_type;
+  using radiant_type       = typename Object::radiant_type;
+  using radiant_value_type = typename Object::radiant_value_type;
+  using ray_type           = typename Object::ray_type;
+  using real_type          = typename Object::real_type;
+  using vector3_type       = typename Object::vector3_type;
 
-  using photon_real_type    = std::float_t;
-  using photon_aabb_type    = geometry::AABB<photon_real_type>;
-  using photon_vector3_type = geometry::Vector3<photon_real_type>;
+  using pm_type            = typename framework::PhotonMapping<Scene>;
 
-  enum struct Axis {
-    x,
-    y,
-    z,
-  };
-
-  struct Photon {
-    photon_vector3_type position;
-    photon_vector3_type direction;
-    radiant_type power;
-    Axis axis;
-  };
-
-  struct PhotonComparator {
-    photon_vector3_type point;
-
-    explicit PhotonComparator(vector3_type const& point) noexcept
-      : point(point.template cast<photon_real_type>()) {}
-
-    explicit PhotonComparator(photon_vector3_type const& point) noexcept
-      : point(point) {}
-
-    bool operator()(Photon const& a, Photon const& b) const noexcept {
-      return
-        (a.position - point).squaredLength()
-        < (b.position - point).squaredLength();
-    }
-  };
-
-  struct PhotonMap {
-    std::vector<Photon> photons_;
-
-    explicit PhotonMap(std::vector<Photon> photons) noexcept
-      : photons_(photons.size()) {
-      buildPhotonMap(photons.begin(), photons.end(), 0);
-    }
-
-    template <typename RandomAccessIterator>
-    void buildPhotonMap(RandomAccessIterator first,
-                        RandomAccessIterator last,
-                        size_t pos) {
-      if (pos >= photons_.size()) {
-        return;
-      }
-      photon_aabb_type aabb;
-      std::for_each(first, last, [&](auto const& photon){
-        aabb += photon_aabb_type(photon.position);
-      });
-      auto const x = aabb.max.x() - aabb.min.x();
-      auto const y = aabb.max.y() - aabb.min.y();
-      auto const z = aabb.max.z() - aabb.min.z();
-      Axis axis;
-      if (x > y && x > z) {
-        axis = Axis::x;
-      } else if (y > z) {
-        axis = Axis::y;
-      } else {
-        axis = Axis::z;
-      }
-      std::sort(first, last, [&](auto const& a, auto const& b){
-          switch (axis) {
-          case Axis::x:
-            return a.position.x() < b.position.x();
-          case Axis::y:
-            return a.position.y() < b.position.y();
-          case Axis::z:
-            return a.position.z() < b.position.z();
-          }
-      });
-      const size_t size = std::distance(first, last);
-      size_t left_size = 0, right_size = 0;
-      while (left_size + right_size + 1 < size) {
-        left_size = std::min(size - 1 - right_size, (left_size << 1) + 1);
-        right_size = std::min(size - 1 - left_size, (right_size << 1) + 1);
-      }
-      auto const middle = first + left_size;
-      photons_[pos] = *middle;
-      photons_[pos].axis = axis;
-      buildPhotonMap(first, middle, pos * 2 + 1);
-      buildPhotonMap(middle + 1, last, pos * 2 + 2);
-    }
-
-    std::vector<Photon> kNearestNeighbours(vector3_type const& point,
-                                           real_type radius,
-                                           size_t k) const {
-      std::vector<Photon> heap;
-      heap.reserve(k + 1);
-      kNearestNeighbours(heap,
-                         0,
-                         point.template cast<photon_real_type>(),
-                         radius * radius,
-                         k);
-      std::sort_heap(heap.begin(), heap.end(), PhotonComparator(point));
-      return heap;
-    }
-
-    void kNearestNeighbours(std::vector<Photon>& heap,
-                            size_t pos,
-                            photon_vector3_type const& point,
-                            photon_real_type squared_radius,
-                            size_t k) const {
-      if (pos >= photons_.size()) {
-        return;
-      }
-      auto const& photon = photons_[pos];
-      real_type plane_distance;
-      switch (photon.axis) {
-      case Axis::x:
-        plane_distance = point.x() - photon.position.x();
-        break;
-      case Axis::y:
-        plane_distance = point.y() - photon.position.y();
-        break;
-      case Axis::z:
-        plane_distance = point.z() - photon.position.z();
-        break;
-      }
-      size_t near, far;
-      if (plane_distance < 0) {
-        near = pos * 2 + 1;
-        far = pos * 2 + 2;
-      } else {
-        near = pos * 2 + 2;
-        far = pos * 2 + 1;
-      }
-      kNearestNeighbours(heap, near, point, squared_radius, k);
-      if (heap.size() >= k) {
-        squared_radius = (heap.front().position - point).squaredLength();
-      }
-      if (plane_distance * plane_distance < squared_radius) {
-        kNearestNeighbours(heap, far, point, squared_radius, k);
-      }
-      if ((photon.position - point).squaredLength() < squared_radius) {
-        heap.push_back(photon);
-        std::push_heap(heap.begin(), heap.end(), PhotonComparator(point));
-      }
-      while (heap.size() > k) {
-        std::pop_heap(heap.begin(), heap.end(), PhotonComparator(point));
-        heap.pop_back();
-      }
-    }
-  };
+  using photon_map_type    = typename pm_type::photon_map_type;
+  using photon_type        = typename pm_type::photon_type;
 
   size_t n_thread_, n_photon_, k_nearest_photon_;
   Progress progress_;
@@ -201,6 +60,7 @@ public:
   Progress const& progress() const noexcept { return progress_; }
 
   image_type operator()(Scene const& scene, camera_type const& camera) {
+    pm_type pm(scene);
     std::vector<std::thread> threads;
     std::mutex mtx;
 
@@ -209,13 +69,13 @@ public:
     progress_.current_job = 0;
     progress_.total_job = n_photon_;
 
-    std::vector<Photon> photons;
+    std::vector<photon_type> photons;
     for (size_t i = 0; i < n_thread_; i++) {
       threads.emplace_back([&](){
-        std::vector<Photon> buffer;
+        std::vector<photon_type> buffer;
         DefaultSampler<> sampler((std::random_device()()));
         while (progress_.current_job++ < progress_.total_job) {
-          photonTracing(scene, std::back_inserter(buffer), sampler);
+          pm.photonTracing(n_photon_, std::back_inserter(buffer), &sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
         std::move(buffer.begin(), buffer.end(), std::back_inserter(photons));
@@ -226,12 +86,12 @@ public:
       threads.pop_back();
     }
 
-    progress_.phase = "Construct Photon Maps";
+    progress_.phase = "Photon Map Building";
     progress_.current_phase = 2;
     progress_.current_job = 0;
     progress_.total_job = 0;
 
-    PhotonMap const photon_map(std::move(photons));
+    auto const photon_map = pm.buildPhotonMap(photons.begin(), photons.end());
 
     progress_.phase = "Distributed Ray Tracing";
     progress_.current_phase = 3;
@@ -266,52 +126,10 @@ public:
   }
 
 private:
-  template <typename OutputIterator>
-  void photonTracing(Scene const& scene,
-                     OutputIterator output,
-                     DefaultSampler<>& sampler) const {
-    auto const light = (*scene.light_sampler())(&sampler);
-    auto power = scene.light_sampler()->total_power() / n_photon_;
-    ray_type ray = light.sampleFirstRay(&sampler);
-    hit_type hit;
-    Object object;
-
-    for (;;) {
-      std::tie(hit, object) = scene.acceleration()->cast(ray);
-      if (!hit) {
-        break;
-      }
-
-      if (object.surfaceType() == material::SurfaceType::diffuse) {
-        Photon photon;
-        photon.position = hit.position.template cast<photon_real_type>();
-        photon.direction = -ray.direction.template cast<photon_real_type>();
-        photon.power = power;
-        output = photon;
-      }
-
-      auto const sample =
-        object.sampleScatter(-ray.direction, hit.normal, &sampler);
-      ray = ray_type(hit.position, sample.direction_o);
-      auto const reflectance = sample.bsdf / sample.psa_probability;
-      power *= reflectance;
-
-      if (object.surfaceType() == material::SurfaceType::specular) {
-        continue;
-      }
-
-      auto const p_russian_roulette = reflectance.max();
-      if (sampler.uniform<real_type>() >= p_russian_roulette) {
-        break;
-      }
-      power /= std::min<real_type>(1, p_russian_roulette);
-    }
-  }
-
   radiant_type
   rendering(Scene const& scene,
             camera_type const& camera,
-            PhotonMap const& photon_map,
+            photon_map_type const& photon_map,
             size_t x, size_t y,
             DefaultSampler<>& sampler) const {
     return estimatePower(scene,
@@ -323,7 +141,7 @@ private:
 
   radiant_type
   estimatePower(Scene const& scene,
-                PhotonMap const& photon_map,
+                photon_map_type const& photon_map,
                 ray_type const& ray,
                 radiant_type const& weight,
                 DefaultSampler<>& sampler,
@@ -343,12 +161,14 @@ private:
 
     if (object.surfaceType() == material::SurfaceType::diffuse) {
       auto const photons =
-        photon_map.kNearestNeighbours(hit.position, 1, k_nearest_photon_);
+        photon_map.kNearestNeighbours(hit.position,
+                                      static_cast<real_type>(1),
+                                      k_nearest_photon_);
       return
         power + weight * gaussianFilter(photons, hit, object, -ray.direction);
     }
 
-    if (depth > 10) { // FIXME inconsistently; need to rewrite with Russian roulette
+    if (depth > 10) { // FIXME rewrite with Russian roulette
       return power;
     }
 
@@ -372,7 +192,7 @@ private:
   }
 
   radiant_type
-  gaussianFilter(std::vector<Photon> const& photons,
+  gaussianFilter(std::vector<photon_type> const& photons,
                  hit_type const& hit,
                  Object const& object,
                  vector3_type const& direction_o) const {

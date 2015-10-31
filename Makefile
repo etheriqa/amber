@@ -30,6 +30,10 @@ pssmlt: $(TARGET)
 	$(TARGET) --algorithm pssmlt --name pssmlt
 	@$(MAKE) pssmlt.png
 
+ppm: $(TARGET)
+	$(TARGET) --algorithm ppm --name ppm
+	@$(MAKE) ppm.png
+
 .ppm.png:
 	convert $< $@
 	open $@
