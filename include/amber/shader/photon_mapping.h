@@ -172,7 +172,8 @@ private:
       return power;
     }
 
-    auto const samples = object.specularScatters(-ray.direction, hit.normal);
+    auto const samples =
+      object.specularImportanceScatters(-ray.direction, hit.normal);
     auto const accumulator =
       [](auto const& acc, auto const& s){ return acc + s.psa_probability; };
     auto const p = std::accumulate(samples.begin(),

@@ -50,7 +50,7 @@ public:
   explicit BidirectionalPathTracing(Scene const& scene) noexcept
     : scene_(scene) {}
 
-  std::vector<Event> lightPathTracing(Sampler* sampler) const {
+  std::vector<Event> lightTracing(Sampler* sampler) const {
     auto const light = (*scene_.light_sampler())(sampler);
     auto const ray = light.sampleFirstRay(sampler);
     auto const p_area = lightPDFArea(light);
@@ -66,14 +66,20 @@ public:
     event.log_p_area         = std::log2(p_area);
     event.weight             = light.emittance() * kPI / p_area;
 
-    return pathTracing(event, p_psa, sampler);
+    return pathTracing(event, p_psa, sampler,
+      [](auto const& object,
+         auto const& direction_i,
+         auto const& normal,
+         auto& sampler){
+        return object.sampleLightScatter(direction_i, normal, sampler);
+      });
   }
 
   template <typename Camera>
-  std::vector<Event> eyePathTracing(Sampler* sampler,
-                                    Camera const& camera,
-                                    size_t x,
-                                    size_t y) const {
+  std::vector<Event> importanceTracing(Sampler* sampler,
+                                       Camera const& camera,
+                                       size_t x,
+                                       size_t y) const {
     auto const importance = radiant_type(kDiracDelta); // TODO make eye diffuse
     auto const ray = camera.sampleFirstRay(x, y, sampler);
     auto const p_area = eyePDFArea();
@@ -89,7 +95,13 @@ public:
     event.log_p_area         = std::log2(p_area);
     event.weight             = importance / p_area;
 
-    return pathTracing(event, p_psa, sampler);
+    return pathTracing(event, p_psa, sampler,
+      [](auto const& object,
+         auto const& direction_i,
+         auto const& normal,
+         auto& sampler){
+        return object.sampleImportanceScatter(direction_i, normal, sampler);
+      });
   }
 
   template <typename MIS>
@@ -139,9 +151,11 @@ private:
                     (y.position - x.position).squaredLength());
   }
 
+  template <typename Scatter>
   std::vector<Event> pathTracing(Event event,
                                  radiant_value_type p_psa,
-                                 Sampler* sampler) const {
+                                 Sampler* sampler,
+                                 Scatter const& scatter) const {
     std::vector<Event> events;
     events.reserve(16);
     events.push_back(event);
@@ -158,7 +172,7 @@ private:
       }
 
       auto const sample =
-        object.sampleScatter(-ray.direction, hit.normal, sampler);
+        scatter(object, -ray.direction, hit.normal, sampler);
       auto const geometry_factor =
         std::abs(dot(ray.direction, event.normal) *
                  dot(ray.direction, hit.normal)) /
@@ -299,9 +313,9 @@ private:
           auto const bsdf = event.object.bsdf(event.direction_i,
                                               event.direction_o,
                                               event.normal);
-          auto const pdf = event.object.pdf(event.direction_i,
-                                            event.direction_o,
-                                            event.normal);
+          auto const pdf = event.object.lightScatterPDF(event.direction_i,
+                                                        event.direction_o,
+                                                        event.normal);
           auto const geometry_factor =
             geometryFactor(event, events.at(i - 1));
           log_p_light +=
@@ -325,9 +339,9 @@ private:
           auto const bsdf = event.object.bsdf(event.direction_o,
                                               event.direction_i,
                                               event.normal);
-          auto const pdf = event.object.pdf(event.direction_o,
-                                            event.direction_i,
-                                            event.normal);
+          auto const pdf = event.object.importanceScatterPDF(event.direction_o,
+                                                             event.direction_i,
+                                                             event.normal);
           auto const geometry_factor =
             geometryFactor(event, events.at(i));
           log_p_eye +=
