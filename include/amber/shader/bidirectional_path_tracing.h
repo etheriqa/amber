@@ -72,8 +72,8 @@ public:
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
               buffer.at(x, y) +=
-                bdpt.connect(bdpt.lightPathTracing(&sampler),
-                             bdpt.eyePathTracing(&sampler, camera, x, y),
+                bdpt.connect(bdpt.lightTracing(&sampler),
+                             bdpt.importanceTracing(&sampler, camera, x, y),
                              framework::PowerHeuristic<radiant_value_type>()) /
                 spp_;
             }

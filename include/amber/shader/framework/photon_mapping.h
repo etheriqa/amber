@@ -205,7 +205,7 @@ public:
       }
 
       auto const sample =
-        object.sampleScatter(-ray.direction, hit.normal, sampler);
+        object.sampleLightScatter(-ray.direction, hit.normal, sampler);
       ray = ray_type(hit.position, sample.direction_o);
       auto const reflectance = sample.bsdf / sample.psa_probability;
       power *= reflectance;

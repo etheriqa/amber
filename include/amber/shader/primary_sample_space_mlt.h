@@ -50,8 +50,8 @@ private:
         pss_eye(sampler()),
         x(std::floor(pss_eye.uniform<real_type>(camera.imageWidth()))),
         y(std::floor(pss_eye.uniform<real_type>(camera.imageHeight()))),
-        power(bdpt.connect(bdpt.lightPathTracing(&pss_light),
-                           bdpt.eyePathTracing(&pss_eye, camera, x, y),
+        power(bdpt.connect(bdpt.lightTracing(&pss_light),
+                           bdpt.importanceTracing(&pss_eye, camera, x, y),
                            framework::PowerHeuristic<radiant_value_type>())),
         contribution(power.sum()) {
       pss_light.accept();
@@ -211,11 +211,11 @@ private:
                 framework::PrimarySampleSpace<>& pss_eye) const {
     state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
     state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
-    state.power = bdpt.connect(bdpt.lightPathTracing(&pss_light),
-                               bdpt.eyePathTracing(&pss_eye,
-                                                   camera,
-                                                   state.x,
-                                                   state.y),
+    state.power = bdpt.connect(bdpt.lightTracing(&pss_light),
+                               bdpt.importanceTracing(&pss_eye,
+                                                      camera,
+                                                      state.x,
+                                                      state.y),
                                framework::PowerHeuristic<radiant_value_type>());
     state.contribution = state.power.sum();
     return state;

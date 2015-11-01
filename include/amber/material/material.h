@@ -8,10 +8,8 @@
 
 #pragma once
 
-#include <numeric>
 #include <vector>
 
-#include "base/constant.h"
 #include "base/sampler.h"
 #include "material/scatter.h"
 #include "material/surface_type.h"
@@ -30,47 +28,44 @@ public:
 
 public:
   virtual SurfaceType surfaceType() const noexcept = 0;
-  virtual bool isEmissive() const noexcept { return false; }
-  virtual Radiant emittance() const noexcept { return Radiant(); }
+  virtual bool isEmissive() const noexcept = 0;
+  virtual Radiant emittance() const noexcept = 0;
 
-  virtual Radiant bsdf(vector3_type const&,
+  virtual Radiant
+  bsdf(vector3_type const&,
+       vector3_type const&,
+       vector3_type const&) const noexcept = 0;
+
+  virtual radiant_value_type
+  lightScatterPDF(vector3_type const&,
+                  vector3_type const&,
+                  vector3_type const&) const noexcept = 0;
+
+  virtual radiant_value_type
+  importanceScatterPDF(vector3_type const&,
                        vector3_type const&,
                        vector3_type const&) const noexcept = 0;
 
-  virtual radiant_value_type pdf(vector3_type const&,
-                                 vector3_type const&,
-                                 vector3_type const&) const noexcept = 0;
+  virtual scatter_type
+  sampleLightScatter(vector3_type const&,
+                     vector3_type const&,
+                     Sampler*) const = 0;
 
-  virtual scatter_type sampleScatter(vector3_type const& direction_i,
-                                     vector3_type const& normal,
-                                     Sampler* sampler) const {
-    auto const scatters = specularScatters(direction_i, normal);
-    if (scatters.size() == 1) {
-      return scatters.front();
-    }
+  virtual scatter_type
+  sampleImportanceScatter(vector3_type const&,
+                          vector3_type const&,
+                          Sampler*) const = 0;
 
-    auto const accumulator = [](auto const& acc, auto const& scatter){
-      return acc + scatter.psa_probability;
-    };
-    auto const r =
-      sampler->uniform(std::accumulate(scatters.begin(),
-                                       scatters.end(),
-                                       static_cast<radiant_value_type>(0),
-                                       accumulator));
-    radiant_value_type p = 0;
-    for (auto const& scatter : scatters) {
-      p += scatter.psa_probability;
-      if (r < p) {
-        return scatter;
-      }
-    }
-    return scatters.back();
+  virtual std::vector<scatter_type>
+  specularLightScatters(vector3_type const&,
+                        vector3_type const&) const {
+    throw std::logic_error("specularLightScatters it not implemented");
   }
 
   virtual std::vector<scatter_type>
-  specularScatters( vector3_type const&,
-                   vector3_type const&) const {
-    throw std::logic_error("specularScatters is not implemented");
+  specularImportanceScatters(vector3_type const&,
+                             vector3_type const&) const {
+    throw std::logic_error("specularImportanceScatters it not implemented");
   }
 };
 

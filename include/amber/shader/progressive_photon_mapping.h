@@ -208,7 +208,8 @@ private:
       return;
     }
 
-    auto const scatters = object.specularScatters(-ray.direction, hit.normal);
+    auto const scatters =
+      object.specularImportanceScatters(-ray.direction, hit.normal);
     radiant_value_type p = 0;
     for (auto const& scatter : scatters) {
       p += scatter.psa_probability;

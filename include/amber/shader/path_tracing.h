@@ -109,7 +109,7 @@ private:
       }
 
       auto const sample =
-        object.sampleScatter(-ray.direction, hit.normal, &sampler);
+        object.sampleImportanceScatter(-ray.direction, hit.normal, &sampler);
       ray = ray_type(hit.position, sample.direction_o);
       auto const reflectance = sample.bsdf / sample.psa_probability;
       weight *= reflectance;

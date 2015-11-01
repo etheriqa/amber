@@ -11,13 +11,13 @@
 #include <cmath>
 
 #include "base/constant.h"
-#include "material/material.h"
+#include "material/symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Specular : public Material<Radiant, RealType> {
+class Specular : public SymmetricBSDF<Radiant, RealType> {
 public:
   using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
@@ -30,10 +30,13 @@ public:
   explicit Specular(Radiant const& ks) noexcept : ks_(ks) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
+  bool isEmissive() const noexcept { return false; }
+  Radiant emittance() const noexcept { return Radiant(); }
 
-  Radiant bsdf(vector3_type const& direction_i,
-               vector3_type const& direction_o,
-               vector3_type const& normal) const noexcept {
+  Radiant
+  bsdf(vector3_type const& direction_i,
+       vector3_type const& direction_o,
+       vector3_type const& normal) const noexcept {
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
       return Radiant();
     } else {
@@ -41,19 +44,28 @@ public:
     }
   }
 
-  radiant_value_type pdf(vector3_type const&,
-                         vector3_type const&,
-                         vector3_type const&) const noexcept {
+  radiant_value_type
+  scatterPDF(vector3_type const&,
+             vector3_type const&,
+             vector3_type const&) const noexcept {
     return kDiracDelta;
+  }
+
+  scatter_type
+  sampleScatter(vector3_type const& direction_i,
+                vector3_type const& normal,
+                Sampler*) const {
+    return specularScatters(direction_i, normal).front();
   }
 
   std::vector<scatter_type>
   specularScatters(vector3_type const& direction_i,
                    vector3_type const& normal) const {
-    return std::vector<scatter_type>({
+    return {
       scatter_type(2 * dot(direction_i, normal) * normal - direction_i,
                    ks_ * kDiracDelta,
-                   kDiracDelta)});
+                   kDiracDelta),
+    };
   }
 };
 

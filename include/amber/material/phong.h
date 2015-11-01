@@ -11,13 +11,13 @@
 #include <cmath>
 
 #include "base/constant.h"
-#include "material/material.h"
+#include "material/symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Phong : public Material<Radiant, RealType> {
+class Phong : public SymmetricBSDF<Radiant, RealType> {
 public:
   using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
@@ -34,10 +34,13 @@ public:
     : kd_(kd), ks_(ks), n_(n), p_diffuse_(kd.sum() / (kd.sum() + ks.sum())) {}
 
   SurfaceType surfaceType() const noexcept { return SurfaceType::diffuse; }
+  bool isEmissive() const noexcept { return false; }
+  Radiant emittance() const noexcept { return Radiant(); }
 
-  Radiant bsdf(vector3_type const& direction_i,
-               vector3_type const& direction_o,
-               vector3_type const& normal) const noexcept {
+  Radiant
+  bsdf(vector3_type const& direction_i,
+       vector3_type const& direction_o,
+       vector3_type const& normal) const noexcept {
     if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
       return Radiant();
     }
@@ -48,9 +51,10 @@ public:
       std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
   }
 
-  radiant_value_type pdf(vector3_type const& direction_i,
-                         vector3_type const& direction_o,
-                         vector3_type const& normal) const noexcept {
+  radiant_value_type
+  scatterPDF(vector3_type const& direction_i,
+             vector3_type const& direction_o,
+             vector3_type const& normal) const noexcept {
     auto const cos_alpha =
       dot(direction_o, 2 * dot(direction_i, normal) * normal - direction_i);
     return p_diffuse_ / kPI +
@@ -58,15 +62,16 @@ public:
       std::pow(std::max<radiant_value_type>(0, cos_alpha), n_);
   }
 
-  scatter_type sampleScatter(vector3_type const& direction_i,
-                             vector3_type const& normal,
-                             Sampler* sampler) const {
+  scatter_type
+  sampleScatter(vector3_type const& direction_i,
+                vector3_type const& normal,
+                Sampler* sampler) const {
     auto const direction_o = sampler->uniform<radiant_value_type>() < p_diffuse_
       ? sampleDirectionFromDiffuseComponent(direction_i, normal, sampler)
       : sampleDirectionFromSpecularComponent(direction_i, normal, sampler);
     return scatter_type(direction_o,
                         bsdf(direction_i, direction_o, normal),
-                        pdf(direction_i, direction_o, normal));
+                        scatterPDF(direction_i, direction_o, normal));
   }
 
 private:
