@@ -3,10 +3,7 @@ amber
 
 [![Build Status](https://travis-ci.org/etheriqa/amber.svg?branch=master)](https://travis-ci.org/etheriqa/amber)
 
-**amber** is a global illumination renderer for studying.
-
-![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/0cb4dfee766e84562bcd8cfdde8e4ce423bac403/pt65536spp.png)
-![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/4e672b6e4f5f37af1eeda9f764b61715e0d73eec/pm16m256spp.png)
+**amber** is a global illumination renderer for the purpose of learning.
 
 Features
 --------
