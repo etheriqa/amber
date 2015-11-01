@@ -183,9 +183,9 @@ private:
       power += estimatePower(scene,
                              photon_map,
                              ray_type(hit.position, sample.direction_o),
-                             weight * sample.bsdf / sample.psa_probability,
+                             weight * sample.bsdf / p,
                              sampler,
-                             depth + 1) * sample.psa_probability / p;
+                             depth + 1);
     }
 
     return power;
