@@ -29,7 +29,7 @@ struct Option {
 
   size_t width                = 512;
   size_t height               = 512;
-  size_t ssaa                 = 2;
+  size_t ssaa                 = 1;
 
   Algorithm algorithm         = Algorithm::none;
 
