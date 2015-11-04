@@ -240,6 +240,8 @@ public:
 
     auto const image = render<scene_type>(shader, objects, camera);
 
+    std::cerr << "Total Power = " << image.totalPower() << std::endl;
+
     post_process::Filmic<radiant_type> filmic;
     post_process::Gamma<radiant_type> gamma;
     io::export_rgbe(option.name + ".hdr", image.downSample(option.ssaa));

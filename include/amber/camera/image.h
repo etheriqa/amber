@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <numeric>
 #include <vector>
 
 namespace amber {
@@ -38,6 +39,10 @@ public:
       throw std::out_of_range("amber::camera::Image::at: invalid coordinates");
     }
     return pixels_.at(x + y * width_);
+  }
+
+  Radiant const totalPower() const noexcept {
+    return std::accumulate(pixels_.begin(), pixels_.end(), Radiant());
   }
 
   Image<Radiant> downSample(size_t n) const {
