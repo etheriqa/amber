@@ -25,7 +25,7 @@ Features
     - Cylinder
 - Materials
     - Lambertian
-    - Phong
+    - ~~Phong~~
     - Refraction
     - ~~Spectral refraction~~
     - Specular
