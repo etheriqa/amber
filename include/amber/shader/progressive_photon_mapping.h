@@ -209,14 +209,10 @@ private:
     }
 
     auto const scatters =
-      object.specularImportanceScatters(-ray.direction, hit.normal);
-    radiant_value_type p = 0;
+      object.distributionImportance(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
-      p += scatter.psa_probability;
-    }
-    for (auto const& scatter : scatters) {
-      auto const new_ray = ray_type(hit.position, scatter.direction_o);
-      auto const new_weight = weight * scatter.bsdf / p;
+      auto const new_ray = ray_type(hit.position, scatter.direction);
+      auto const new_weight = weight * scatter.weight;
       rayTracing(scene, x, y, new_ray, new_weight, depth + 1, output, sampler);
     }
   }

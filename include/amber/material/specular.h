@@ -34,37 +34,40 @@ public:
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant
-  bsdf(vector3_type const& direction_i,
-       vector3_type const& direction_o,
-       vector3_type const& normal) const noexcept {
-    if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
+  bsdf(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    auto const signed_cos_i = dot(direction_i, normal);
+    auto const signed_cos_o = dot(direction_o, normal);
+
+    if (signed_cos_i * signed_cos_o <= 0) {
       return Radiant();
     } else {
-      return ks_ * kDiracDelta;
+      return ks_ * kDiracDelta / std::abs(signed_cos_i);
     }
   }
 
   radiant_value_type
-  scatterPDF(vector3_type const&,
-             vector3_type const&,
-             vector3_type const&) const noexcept {
+  pdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
     return kDiracDelta;
   }
 
-  scatter_type
-  sampleScatter(vector3_type const& direction_i,
-                vector3_type const& normal,
-                Sampler*) const {
-    return specularScatters(direction_i, normal).front();
-  }
-
   std::vector<scatter_type>
-  specularScatters(vector3_type const& direction_i,
-                   vector3_type const& normal) const {
+  distribution(
+    vector3_type const& direction_i,
+    vector3_type const& normal
+  ) const
+  {
     return {
-      scatter_type(2 * dot(direction_i, normal) * normal - direction_i,
-                   ks_ * kDiracDelta,
-                   kDiracDelta),
+      scatter_type(2 * dot(direction_i, normal) * normal - direction_i, ks_),
     };
   }
 };

@@ -127,25 +127,33 @@ public:
 
 private:
   radiant_type
-  rendering(Scene const& scene,
-            camera_type const& camera,
-            photon_map_type const& photon_map,
-            size_t x, size_t y,
-            DefaultSampler<>& sampler) const {
-    return estimatePower(scene,
-                         photon_map,
-                         camera.sampleFirstRay(x, y, &sampler),
-                         radiant_type(1),
-                         sampler);
+  rendering(
+    Scene const& scene,
+    camera_type const& camera,
+    photon_map_type const& photon_map,
+    size_t x, size_t y,
+    DefaultSampler<>& sampler
+  ) const
+  {
+    return estimatePower(
+      scene,
+      photon_map,
+      camera.sampleFirstRay(x, y, &sampler),
+      radiant_type(1),
+      sampler
+    );
   }
 
   radiant_type
-  estimatePower(Scene const& scene,
-                photon_map_type const& photon_map,
-                ray_type const& ray,
-                radiant_type const& weight,
-                DefaultSampler<>& sampler,
-                size_t depth = 0) const {
+  estimatePower(
+    Scene const& scene,
+    photon_map_type const& photon_map,
+    ray_type const& ray,
+    radiant_type const& weight,
+    DefaultSampler<>& sampler,
+    size_t depth = 0
+  ) const
+  {
     radiant_type power;
     hit_type hit;
     Object object;
@@ -165,60 +173,49 @@ private:
                                       static_cast<real_type>(1),
                                       k_nearest_photon_);
       return
-        power + weight * gaussianFilter(photons, hit, object, -ray.direction);
+        power + weight * filter(photons, hit, object, -ray.direction);
     }
 
     if (depth > 10) { // FIXME rewrite with Russian roulette
       return power;
     }
 
-    auto const samples =
-      object.specularImportanceScatters(-ray.direction, hit.normal);
-    auto const accumulator =
-      [](auto const& acc, auto const& s){ return acc + s.psa_probability; };
-    auto const p = std::accumulate(samples.begin(),
-                                   samples.end(),
-                                   static_cast<radiant_value_type>(0),
-                                   accumulator);
-    for (auto const& sample : samples) {
-      power += estimatePower(scene,
-                             photon_map,
-                             ray_type(hit.position, sample.direction_o),
-                             weight * sample.bsdf / p,
-                             sampler,
-                             depth + 1);
+    auto const scatters =
+      object.distributionLight(-ray.direction, hit.normal);
+    for (auto const& scatter : scatters) {
+      power += estimatePower(
+        scene,
+        photon_map,
+        ray_type(hit.position, scatter.direction),
+        weight * scatter.weight,
+        sampler,
+        depth + 1
+      );
     }
 
     return power;
   }
 
   radiant_type
-  gaussianFilter(std::vector<photon_type> const& photons,
-                 hit_type const& hit,
-                 Object const& object,
-                 vector3_type const& direction_o) const {
-    const real_type alpha = 0.918;
-    const real_type beta = 1.953;
-
+  filter(
+    std::vector<photon_type> const& photons,
+    hit_type const& hit,
+    Object const& object,
+    vector3_type const& direction_o
+  ) const
+  {
+    // TODO sum up simply for now
     auto const squared_max_distance =
       (photons.back().position.template cast<real_type>() - hit.position)
       .squaredLength();
 
     radiant_type power;
     for (auto const& photon : photons) {
-      auto const squared_distance =
-        (photon.position.template cast<real_type>() - hit.position)
-        .squaredLength();
-      auto const weight = 1 -
-        (1 - std::exp(-beta * squared_distance / 2 / squared_max_distance)) /
-        (1 - std::exp(-beta));
-      auto const bsdf =
-        object.bsdf(photon.direction.template cast<real_type>(),
-                    direction_o,
-                    hit.normal);
-      power += bsdf * photon.power * weight;
+      auto const direction_i = photon.direction.template cast<real_type>();
+      auto const bsdf = object.bsdf(direction_i, direction_o, hit.normal);
+      power += bsdf * photon.power;
     }
-    return power * alpha / kPI / squared_max_distance;
+    return power / kPI / squared_max_distance;
   }
 };
 

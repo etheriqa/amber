@@ -204,21 +204,17 @@ public:
         output = photon;
       }
 
-      auto const sample =
-        object.sampleLightScatter(-ray.direction, hit.normal, sampler);
-      ray = ray_type(hit.position, sample.direction_o);
-      auto const reflectance = sample.bsdf / sample.psa_probability;
-      power *= reflectance;
+      auto const scatter =
+        object.sampleImportance(-ray.direction, hit.normal, sampler);
+      auto const p_russian_roulette =
+        std::min<radiant_value_type>(1, scatter.weight.max());
 
-      if (object.surfaceType() == material::SurfaceType::specular) {
-        continue;
-      }
-
-      auto const p_russian_roulette = reflectance.max();
       if (sampler->uniform<radiant_value_type>() >= p_russian_roulette) {
         break;
       }
-      power /= std::min<radiant_value_type>(1, p_russian_roulette);
+
+      ray = ray_type(hit.position, scatter.direction);
+      power *= scatter.weight / p_russian_roulette;
     }
   }
 

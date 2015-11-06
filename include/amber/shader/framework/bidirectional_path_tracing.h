@@ -50,7 +50,10 @@ public:
   explicit BidirectionalPathTracing(Scene const& scene) noexcept
     : scene_(scene) {}
 
-  std::vector<Event> lightTracing(Sampler* sampler) const {
+  std::vector<Event> lightTracing(
+    Sampler* sampler
+  ) const
+  {
     auto const light = (*scene_.light_sampler())(sampler);
     auto const ray = light.sampleFirstRay(sampler);
     auto const p_area = lightPDFArea(light);
@@ -66,20 +69,37 @@ public:
     event.log_p_area         = std::log2(p_area);
     event.weight             = light.emittance() * kPI / p_area;
 
-    return pathTracing(event, p_psa, sampler,
-      [](auto const& object,
-         auto const& direction_i,
-         auto const& normal,
-         auto& sampler){
-        return object.sampleLightScatter(direction_i, normal, sampler);
-      });
+    return tracing(
+      event, p_psa, sampler,
+      [](
+        auto const& object,
+        auto const& direction_i,
+        auto const& normal,
+        auto& sampler
+      )
+      {
+        return object.sampleImportance(direction_i, normal, sampler);
+      },
+      [](
+        auto const& object,
+        auto const& direction_i,
+        auto const& direction_o,
+        auto const& normal
+      )
+      {
+        return object.pdfImportance(direction_i, direction_o, normal);
+      }
+    );
   }
 
   template <typename Camera>
-  std::vector<Event> importanceTracing(Sampler* sampler,
-                                       Camera const& camera,
-                                       size_t x,
-                                       size_t y) const {
+  std::vector<Event> rayTracing(
+    Sampler* sampler,
+    Camera const& camera,
+    size_t x,
+    size_t y
+  ) const
+  {
     auto const importance = radiant_type(kDiracDelta); // TODO make eye diffuse
     auto const ray = camera.sampleFirstRay(x, y, sampler);
     auto const p_area = eyePDFArea();
@@ -95,13 +115,27 @@ public:
     event.log_p_area         = std::log2(p_area);
     event.weight             = importance / p_area;
 
-    return pathTracing(event, p_psa, sampler,
-      [](auto const& object,
-         auto const& direction_i,
-         auto const& normal,
-         auto& sampler){
-        return object.sampleImportanceScatter(direction_i, normal, sampler);
-      });
+    return tracing(
+      event, p_psa, sampler,
+      [](
+        auto const& object,
+        auto const& direction_o,
+        auto const& normal,
+        auto& sampler
+      )
+      {
+        return object.sampleLight(direction_o, normal, sampler);
+      },
+      [](
+        auto const& object,
+        auto const& direction_o,
+        auto const& direction_i,
+        auto const& normal
+      )
+      {
+        return object.pdfLight(direction_i, direction_o, normal);
+      }
+    );
   }
 
   template <typename MIS>
@@ -151,17 +185,21 @@ private:
                     (y.position - x.position).squaredLength());
   }
 
-  template <typename Scatter>
-  std::vector<Event> pathTracing(Event event,
-                                 radiant_value_type p_psa,
-                                 Sampler* sampler,
-                                 Scatter const& scatter) const {
+  template <typename Sample, typename PDF>
+  std::vector<Event> tracing(
+    Event event,
+    radiant_value_type p_psa,
+    Sampler* sampler,
+    Sample const& sample,
+    PDF const& pdf
+  ) const
+  {
     std::vector<Event> events;
     events.reserve(16);
     events.push_back(event);
 
     ray_type ray(event.position, event.direction_o);
-    radiant_type bsdf(p_psa);
+    radiant_type weight(1);
     hit_type hit;
     Object object;
 
@@ -171,32 +209,34 @@ private:
         break;
       }
 
-      auto const sample =
-        scatter(object, -ray.direction, hit.normal, sampler);
+      auto const scatter =
+        sample(object, -ray.direction, hit.normal, sampler);
       auto const geometry_factor =
         std::abs(dot(ray.direction, event.normal) *
                  dot(ray.direction, hit.normal)) /
         (hit.distance * hit.distance);
       auto const p_russian_roulette =
-        std::min(static_cast<radiant_value_type>(1),
-                 (sample.bsdf / sample.psa_probability).max());
+        std::min<radiant_value_type>(1, scatter.weight.max());
 
       event.object              = object;
       event.position            = hit.position;
       event.normal              = hit.normal;
       event.direction_i         = -ray.direction;
-      event.direction_o         = sample.direction_o;
+      event.direction_o         = scatter.direction;
       event.p_russian_roulette  = p_russian_roulette;
       event.log_p_area         += std::log2(p_psa * geometry_factor);
-      event.weight             *= bsdf / p_psa;
+      event.weight             *= weight;
       events.push_back(event);
 
-      ray = ray_type(hit.position, sample.direction_o);
-      bsdf = sample.bsdf;
-      p_psa = sample.psa_probability * p_russian_roulette;
       if (sampler->uniform<radiant_value_type>() >= p_russian_roulette) {
         break;
       }
+
+      ray = ray_type(hit.position, scatter.direction);
+      weight = scatter.weight / p_russian_roulette;
+      p_psa =
+        pdf(event.object, event.direction_i, event.direction_o, event.normal) *
+        p_russian_roulette;
     }
 
     return events;
@@ -310,12 +350,16 @@ private:
           log_p_light += std::log2(lightPDFArea(events.front().object));
         } else {
           auto& event = events.at(i - 2);
-          auto const bsdf = event.object.bsdf(event.direction_i,
-                                              event.direction_o,
-                                              event.normal);
-          auto const pdf = event.object.lightScatterPDF(event.direction_i,
-                                                        event.direction_o,
-                                                        event.normal);
+          auto const bsdf = event.object.bsdf(
+            event.direction_i,
+            event.direction_o,
+            event.normal
+          );
+          auto const pdf = event.object.pdfLight(
+            event.direction_i,
+            event.direction_o,
+            event.normal
+          );
           auto const geometry_factor =
             geometryFactor(event, events.at(i - 1));
           log_p_light +=
@@ -336,12 +380,16 @@ private:
           log_p_eye += std::log2(eyePDFArea());
         } else {
           auto& event = events.at(i + 1);
-          auto const bsdf = event.object.bsdf(event.direction_o,
-                                              event.direction_i,
-                                              event.normal);
-          auto const pdf = event.object.importanceScatterPDF(event.direction_o,
-                                                             event.direction_i,
-                                                             event.normal);
+          auto const bsdf = event.object.bsdf(
+            event.direction_i,
+            event.direction_o,
+            event.normal
+          );
+          auto const pdf = event.object.pdfImportance(
+            event.direction_i,
+            event.direction_o,
+            event.normal
+          );
           auto const geometry_factor =
             geometryFactor(event, events.at(i));
           log_p_eye +=

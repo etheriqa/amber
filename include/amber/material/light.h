@@ -32,27 +32,36 @@ public:
   Radiant emittance() const noexcept { return radiance_; }
 
   Radiant
-  bsdf(vector3_type const&,
-       vector3_type const&,
-       vector3_type const&) const noexcept {
+  bsdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
     return Radiant();
   }
 
   radiant_value_type
-  scatterPDF(vector3_type const&,
-             vector3_type const&,
-             vector3_type const&) const noexcept {
+  pdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
     return 1 / kPI;
   }
 
   scatter_type
-  sampleScatter(vector3_type const& direction_i,
-                vector3_type const& normal,
-                Sampler* sampler) const {
+  sample(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
     auto const w = dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
     std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
-    return scatter_type(direction_o, Radiant(), 1 / kPI);
+    return scatter_type(direction_o, Radiant(0));
   }
 };
 

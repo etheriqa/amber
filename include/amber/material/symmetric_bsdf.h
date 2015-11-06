@@ -21,58 +21,89 @@ public:
   using vector3_type       = geometry::Vector3<RealType>;
 
   radiant_value_type
-  lightScatterPDF(vector3_type const& direction_i,
-                  vector3_type const& direction_o,
-                  vector3_type const& normal) const noexcept {
-    return scatterPDF(direction_i, direction_o, normal);
+  pdfLight(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return pdf(direction_i, direction_o, normal);
   }
 
   radiant_value_type
-  importanceScatterPDF(vector3_type const& direction_i,
-                       vector3_type const& direction_o,
-                       vector3_type const& normal) const noexcept {
-    return scatterPDF(direction_i, direction_o, normal);
-  }
-
-  virtual radiant_value_type
-  scatterPDF(vector3_type const&,
-             vector3_type const&,
-             vector3_type const&) const noexcept = 0;
-
-  scatter_type
-  sampleLightScatter(vector3_type const& direction_i,
-                     vector3_type const& normal,
-                     Sampler* sampler) const {
-    return sampleScatter(direction_i, normal, sampler);
+  pdfImportance(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return pdf(direction_i, direction_o, normal);
   }
 
   scatter_type
-  sampleImportanceScatter(vector3_type const& direction_i,
-                          vector3_type const& normal,
-                          Sampler* sampler) const {
-    return sampleScatter(direction_i, normal, sampler);
+  sampleLight(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
+    return sample(direction_i, normal, sampler);
   }
 
-  virtual scatter_type
-  sampleScatter(vector3_type const&,
-                vector3_type const&,
-                Sampler*) const = 0;
+  scatter_type
+  sampleImportance(
+    vector3_type const& direction_o,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const {
+    return sample(direction_o, normal, sampler);
+  }
 
   std::vector<scatter_type>
-  specularLightScatters(vector3_type const& direction_i,
-                        vector3_type const& normal) const {
-    return specularScatters(direction_i, normal);
+  distributionLight(
+    vector3_type const& direction_i,
+    vector3_type const& normal
+  ) const
+  {
+    return distribution(direction_i, normal);
   }
 
   std::vector<scatter_type>
-  specularImportanceScatters(vector3_type const& direction_i,
-                             vector3_type const& normal) const {
-    return specularScatters(direction_i, normal);
+  distributionImportance(
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const
+  {
+    return distribution(direction_o, normal);
   }
 
-  virtual std::vector<scatter_type>
-  specularScatters(vector3_type const&,
-                   vector3_type const&) const {
+protected:
+  virtual
+  radiant_value_type
+  pdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept = 0;
+
+  virtual
+  scatter_type
+  sample(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
+    return this->sampleScatter(distribution(direction_i, normal), sampler);
+  }
+
+  virtual
+  std::vector<scatter_type>
+  distribution(
+    vector3_type const&,
+    vector3_type const&
+  ) const
+  {
     throw std::logic_error("specularScatters is not implemented");
   }
 };
