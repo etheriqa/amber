@@ -108,17 +108,17 @@ private:
         power += weight * object.emittance();
       }
 
-      auto const sample =
-        object.sampleImportanceScatter(-ray.direction, hit.normal, &sampler);
-      ray = ray_type(hit.position, sample.direction_o);
-      auto const reflectance = sample.bsdf / sample.psa_probability;
-      weight *= reflectance;
+      auto const scatter =
+        object.sampleLight(-ray.direction, hit.normal, &sampler);
+      auto const p_russian_roulette =
+        std::min<radiant_value_type>(1, scatter.weight.max());
 
-      auto const p_russian_roulette = reflectance.max();
-      if (sampler.uniform<real_type>() >= p_russian_roulette) {
+      if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
         break;
       }
-      weight /= std::min<real_type>(1, p_russian_roulette);
+
+      ray = ray_type(hit.position, scatter.direction);
+      weight *= scatter.weight / p_russian_roulette;
     }
 
     return power;

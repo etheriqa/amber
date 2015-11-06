@@ -96,50 +96,71 @@ public:
   }
 
   radiant_type
-  bsdf(vector3_type const& direction_i,
-       vector3_type const& direction_o,
-       vector3_type const& normal) const noexcept {
+  bsdf(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
     return material_->bsdf(direction_i, direction_o, normal);
   }
 
   radiant_value_type
-  lightScatterPDF(vector3_type const& direction_i,
-                  vector3_type const& direction_o,
-                  vector3_type const& normal) const noexcept {
-    return material_->lightScatterPDF(direction_i, direction_o, normal);
+  pdfLight(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return material_->pdfLight(direction_i, direction_o, normal);
   }
 
   radiant_value_type
-  importanceScatterPDF(vector3_type const& direction_i,
-                       vector3_type const& direction_o,
-                       vector3_type const& normal) const noexcept {
-    return material_->importanceScatterPDF(direction_i, direction_o, normal);
+  pdfImportance(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return material_->pdfImportance(direction_i, direction_o, normal);
   }
 
   scatter_type
-  sampleLightScatter(vector3_type const& direction_i,
-                     vector3_type const& normal,
-                     Sampler* sampler) const {
-    return material_->sampleLightScatter(direction_i, normal, sampler);
+  sampleLight(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
+    return material_->sampleLight(direction_i, normal, sampler);
   }
 
   scatter_type
-  sampleImportanceScatter(vector3_type const& direction_i,
-                          vector3_type const& normal,
-                          Sampler* sampler) const {
-    return material_->sampleImportanceScatter(direction_i, normal, sampler);
+  sampleImportance(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
+    return material_->sampleImportance(direction_i, normal, sampler);
   }
 
   std::vector<scatter_type>
-  specularLightScatters(vector3_type const& direction_i,
-                        vector3_type const& normal) const {
-    return material_->specularLightScatters(direction_i, normal);
+  distributionLight(
+    vector3_type const& direction_i,
+    vector3_type const& normal
+  ) const
+  {
+    return material_->distributionLight(direction_i, normal);
   }
 
   std::vector<scatter_type>
-  specularImportanceScatters(vector3_type const& direction_i,
-                             vector3_type const& normal) const {
-    return material_->specularImportanceScatters(direction_i, normal);
+  distributionImportance(
+    vector3_type const& direction_i,
+    vector3_type const& normal
+  ) const
+  {
+    return material_->distributionImportance(direction_i, normal);
   }
 
   radiant_type power() const noexcept {

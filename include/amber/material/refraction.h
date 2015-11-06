@@ -15,6 +15,13 @@
 #include "base/constant.h"
 #include "material/material.h"
 
+namespace {
+
+double const kReflectance = 0.95;
+double const kTransmittance = 0.95;
+
+}
+
 namespace amber {
 namespace material {
 
@@ -37,208 +44,182 @@ public:
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant
-  bsdf(vector3_type const& direction_i,
-       vector3_type const& direction_o,
-       vector3_type const& normal) const noexcept {
+  bsdf(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
     auto const signed_cos_alpha = dot(direction_i, normal);
+    auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
 
     if (squared_cos_beta < 0) {
-      // Full reflection
-      return Radiant(kDiracDelta);
+      // total reflection
+      return Radiant(kReflectance * kDiracDelta / cos_alpha);
     }
 
     auto const signed_cos_o = dot(direction_o, normal);
-    auto const p_reflection = schlick(r0_, std::abs(signed_cos_alpha));
-    auto const p_refraction = 1 - p_reflection;
+    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_t = 1 - rho_r;
 
     if (signed_cos_alpha * signed_cos_o > 0) {
-      // Partial reflection
-      return Radiant(p_reflection * kDiracDelta);
+      // partial reflection
+      return Radiant(rho_r * kReflectance * kDiracDelta / cos_alpha);
     } else {
-      // Refraction
-      return Radiant(p_refraction * kDiracDelta);
+      // refraction
+      return Radiant(rho_t * kTransmittance * kDiracDelta / cos_alpha);
     }
   }
 
   radiant_value_type
-  lightScatterPDF(vector3_type const& direction_i,
-                  vector3_type const& direction_o,
-                  vector3_type const& normal) const noexcept {
-    auto const signed_cos_alpha = dot(direction_i, normal);
+  pdfLight(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    auto const signed_cos_alpha = dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
 
     if (squared_cos_beta < 0) {
-      // Full reflection
+      // total reflection
       return kDiracDelta;
     }
 
-    auto const signed_cos_o = dot(direction_o, normal);
-    auto const p_reflection = schlick(r0_, std::abs(signed_cos_alpha));
-    auto const p_refraction = 1 - p_reflection;
+    // transmittance is needed to scale by relative IOR
+    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_t = (1 - rho_r) / (ior * ior);
+    auto const rho = rho_r + rho_t;
 
-    if (signed_cos_alpha * signed_cos_o > 0) {
-      // Partial reflection
-      return p_reflection * kDiracDelta;
+    auto const signed_cos_i = dot(direction_i, normal);
+
+    if (signed_cos_alpha * signed_cos_i > 0) {
+      // partial reflection
+      return rho_r / rho * kDiracDelta;
     } else {
-      // Refraction
-      return p_refraction * kDiracDelta;
+      // refraction
+      return rho_t / rho * kDiracDelta;
     }
   }
 
   radiant_value_type
-  importanceScatterPDF(vector3_type const& direction_i,
-                       vector3_type const& direction_o,
-                       vector3_type const& normal) const noexcept {
+  pdfImportance(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
     auto const signed_cos_alpha = dot(direction_i, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
 
     if (squared_cos_beta < 0) {
-      // Full reflection
+      // total reflection
       return kDiracDelta;
     }
 
+    // no scaling is required unlike light transport
+    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_t = 1 - rho_r;
+
     auto const signed_cos_o = dot(direction_o, normal);
-    auto const p_reflection = schlick(r0_, std::abs(signed_cos_alpha));
-    auto const p_refraction = (1 - p_reflection) * ior * ior;
-    auto const p_sum = p_reflection + p_refraction;
 
     if (signed_cos_alpha * signed_cos_o > 0) {
-      // Partial reflection
-      return p_reflection / p_sum * kDiracDelta;
+      // partial reflection
+      return rho_r * kDiracDelta;
     } else {
-      // Refraction
-      return p_refraction / p_sum * kDiracDelta;
+      // refraction
+      return rho_t * kDiracDelta;
     }
-  }
-
-  scatter_type
-  sampleLightScatter(vector3_type const& direction_i,
-                     vector3_type const& normal,
-                     Sampler* sampler) const {
-    auto const scatters = specularLightScatters(direction_i, normal);
-    auto const p = sampler->uniform(
-      std::accumulate(scatters.begin(), scatters.end(), radiant_value_type(),
-        [](auto const& acc, auto const& scatter){
-          return acc + scatter.psa_probability;
-        }));
-    radiant_value_type sum_p = 0;
-    return *std::find_if(scatters.begin(), scatters.end(),
-      [&](auto const& scatter){
-        sum_p += scatter.psa_probability;
-        return p < sum_p;
-      });
-  }
-
-  scatter_type
-  sampleImportanceScatter(vector3_type const& direction_i,
-                          vector3_type const& normal,
-                          Sampler* sampler) const {
-
-    auto const scatters = specularImportanceScatters(direction_i, normal);
-    auto const p = sampler->uniform(
-      std::accumulate(scatters.begin(), scatters.end(), radiant_value_type(),
-        [](auto const& acc, auto const& scatter){
-          return acc + scatter.psa_probability;
-        }));
-    radiant_value_type sum_p = 0;
-    return *std::find_if(scatters.begin(), scatters.end(),
-      [&](auto const& scatter){
-        sum_p += scatter.psa_probability;
-        return p < sum_p;
-      });
   }
 
   std::vector<scatter_type>
-  specularLightScatters(vector3_type const& direction_i,
-                        vector3_type const& normal) const {
-    auto const signed_cos_alpha = dot(direction_i, normal);
+  distributionLight(
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const
+  {
+    auto const signed_cos_alpha = dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
-    auto const reflection_direction =
-      2 * signed_cos_alpha * normal - direction_i;
+    auto const direction_r =
+      2 * signed_cos_alpha * normal - direction_o;
 
     if (squared_cos_beta < 0) {
       return {
-        // Full reflection
-        scatter_type(reflection_direction,
-                     Radiant(kDiracDelta),
-                     kDiracDelta),
+        // total reflection
+        scatter_type(direction_r, Radiant(kReflectance)),
       };
     }
 
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const cos_beta = std::sqrt(squared_cos_beta);
-    auto const refraction_direction =
-      -ior * direction_i +
+    auto const direction_t =
+      -ior * direction_o +
       ((signed_cos_alpha < 0 ? 1 : -1) * cos_beta + ior * signed_cos_alpha) *
       normal;
-    auto const p_reflection = schlick(r0_, cos_alpha);
-    auto const p_refraction = 1 - p_reflection;
+
+    // transmittance is needed to scale by relative IOR
+    auto const rho_r = schlick(r0_, cos_alpha);
+    auto const rho_t = (1 - rho_r) / (ior * ior);
 
     return {
-      // Partial reflection
-      scatter_type(reflection_direction,
-                   Radiant(p_reflection * kDiracDelta),
-                   p_reflection * kDiracDelta),
-      // Refraction
-      scatter_type(refraction_direction,
-                   Radiant(p_refraction * kDiracDelta),
-                   p_refraction * kDiracDelta),
+      // partial reflection
+      scatter_type(direction_r, Radiant(rho_r * kReflectance)),
+      // refraction
+      scatter_type(direction_t, Radiant(rho_t * kTransmittance)),
     };
   }
 
   std::vector<scatter_type>
-  specularImportanceScatters(vector3_type const& direction_i,
-                             vector3_type const& normal) const {
+  distributionImportance(
+    vector3_type const& direction_i,
+    vector3_type const& normal
+  ) const
+  {
     auto const signed_cos_alpha = dot(direction_i, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
-    auto const reflection_direction =
+    auto const direction_r =
       2 * signed_cos_alpha * normal - direction_i;
 
     if (squared_cos_beta < 0) {
       return {
-        // Full reflection
-        scatter_type(reflection_direction,
-                     Radiant(kDiracDelta),
-                     kDiracDelta),
+        // total reflection
+        scatter_type(direction_r, Radiant(kReflectance)),
       };
     }
 
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const cos_beta = std::sqrt(squared_cos_beta);
-    auto const refraction_direction =
+    auto const direction_t =
       -ior * direction_i +
       ((signed_cos_alpha < 0 ? 1 : -1) * cos_beta + ior * signed_cos_alpha) *
       normal;
-    auto const p_reflection = schlick(r0_, cos_alpha);
-    auto const p_refraction = (1 - p_reflection) * ior * ior;
-    auto const p_sum = p_reflection + p_refraction;
+
+    // no scaling is required unlike light transport
+    auto const rho_r = schlick(r0_, cos_alpha);
+    auto const rho_t = 1 - rho_r;
 
     return {
-      // Partial reflection
-      scatter_type(reflection_direction,
-                   Radiant(p_reflection * kDiracDelta),
-                   p_reflection / p_sum * kDiracDelta),
-      // Refraction
-      scatter_type(refraction_direction,
-                   Radiant(p_refraction * kDiracDelta),
-                   p_refraction / p_sum * kDiracDelta),
+      // partial reflection
+      scatter_type(direction_r, Radiant(rho_r * kReflectance)),
+      // refraction
+      scatter_type(direction_t, Radiant(rho_t * kTransmittance)),
     };
   }
 
 private:
   static RealType fresnel(RealType ior) noexcept {
-    return std::pow((1 - ior) / (1 + ior), 2);
+    return std::pow((ior - 1) / (ior + 1), 2);
   }
 
   static RealType schlick(RealType r0, RealType cos_theta) noexcept {

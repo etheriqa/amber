@@ -32,10 +32,16 @@ public:
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant
-  bsdf(vector3_type const& direction_i,
-       vector3_type const& direction_o,
-       vector3_type const& normal) const noexcept {
-    if (dot(direction_i, normal) * dot(direction_o, normal) <= 0) {
+  bsdf(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    auto const signed_cos_i = dot(direction_i, normal);
+    auto const signed_cos_o = dot(direction_o, normal);
+
+    if (signed_cos_i * signed_cos_o <= 0) {
       return Radiant();
     } else {
       return kd_ / kPI;
@@ -43,20 +49,26 @@ public:
   }
 
   radiant_value_type
-  scatterPDF(vector3_type const&,
-             vector3_type const&,
-             vector3_type const&) const noexcept {
+  pdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
     return 1 / kPI;
   }
 
   scatter_type
-  sampleScatter(vector3_type const& direction_i,
-                vector3_type const& normal,
-                Sampler* sampler) const {
+  sample(
+    vector3_type const& direction_i,
+    vector3_type const& normal,
+    Sampler* sampler
+  ) const
+  {
     auto const w = dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
     std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
-    return scatter_type(direction_o, kd_ / kPI, 1 / kPI);
+    return scatter_type(direction_o, kd_);
   }
 };
 
