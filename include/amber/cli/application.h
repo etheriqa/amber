@@ -40,6 +40,7 @@
 #include "shader/photon_mapping.h"
 #include "shader/primary_sample_space_mlt.h"
 #include "shader/progressive_photon_mapping.h"
+#include "shader/stochastic_progressive_photon_mapping.h"
 
 namespace amber {
 namespace cli {
@@ -98,6 +99,7 @@ public:
       << "    pm          Photon Mapping" << std::endl
       << "    pssmlt      Primary Sample Space MLT" << std::endl
       << "    ppm         Progressive Photon Mapping" << std::endl
+      << "    sppm        Stochastic Progressive Photon Mapping" << std::endl
       << std::endl;
   }
 
@@ -144,16 +146,21 @@ public:
         if (std::string(optarg) == "ppm") {
           option.algorithm = Algorithm::ppm;
         }
+        if (std::string(optarg) == "sppm") {
+          option.algorithm = Algorithm::sppm;
+        }
         break;
       case 'h':
         show_help = true;
         break;
       case 'i':
         option.ppm_n_iteration = std::stoull(std::string(optarg));
+        option.sppm_n_passes = std::stoull(std::string(optarg));
         break;
       case 'k':
         option.pm_k_nearest_photon = std::stoull(std::string(optarg));
         option.ppm_k_nearest_photon = std::stoull(std::string(optarg));
+        option.sppm_k_nearest_photons = std::stoull(std::string(optarg));
         break;
       case 'm':
         option.pssmlt_n_mutation = std::stoull(std::string(optarg));
@@ -164,6 +171,7 @@ public:
       case 'p':
         option.pm_n_photon = std::stoull(std::string(optarg));
         option.ppm_n_photon = std::stoull(std::string(optarg));
+        option.sppm_n_photons = std::stoull(std::string(optarg));
         break;
       case 's':
         option.pt_spp = std::stoull(std::string(optarg));
@@ -240,7 +248,21 @@ public:
         option.ppm_n_photon,
         option.ppm_k_nearest_photon,
         option.ppm_n_iteration,
+        option.ppm_initial_radius,
         option.ppm_alpha
+      );
+      break;
+    case Algorithm::sppm:
+      if (option.name.empty()) {
+        option.name = "sppm";
+      }
+      shader = new shader::StochasticProgressivePhotonMapping<scene_type>(
+        option.n_thread,
+        option.sppm_n_photons,
+        option.sppm_k_nearest_photons,
+        option.sppm_n_passes,
+        option.sppm_initial_radius,
+        option.sppm_alpha
       );
       break;
     }
