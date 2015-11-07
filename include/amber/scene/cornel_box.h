@@ -73,7 +73,7 @@ void cornel_box(OutputIterator output) {
       vector3_type(-1, -1, -1),
       vector3_type( 1, -1, -1),
     }),
-    new Phong(radiant_type(.1), radiant_type(.5), 16)
+    new Phong(radiant_type(.1), radiant_type(.5), 256)
   );
   // floor
   output = Object(
