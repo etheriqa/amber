@@ -33,6 +33,7 @@
 #include "post_process/gamma.h"
 #include "radiometry/rgb.h"
 #include "scene/cornel_box.h"
+#include "scene/cornel_box_complex.h"
 #include "scene/scene.h"
 #include "shader/bidirectional_path_tracing.h"
 #include "shader/path_tracing.h"
