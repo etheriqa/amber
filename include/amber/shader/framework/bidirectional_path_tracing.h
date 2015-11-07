@@ -318,6 +318,8 @@ private:
                       size_t s,
                       size_t t) const {
     std::vector<Event> events;
+    // reorder pairs of directions (direction_i and direction_o) by actual light
+    // flow
     std::transform(light.begin(), light.begin() + s, std::back_inserter(events),
       [](auto event){
         std::swap(event.direction_i, event.direction_o);
