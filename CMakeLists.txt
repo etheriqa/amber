@@ -15,7 +15,7 @@ add_executable(amber src/main.cc)
 target_link_libraries(amber pthread)
 
 add_custom_target(pt
-    COMMAND ./amber --algorithm pt --spp 16
+    COMMAND ./amber --algorithm pt --spp 512
     COMMAND convert pt.ppm pt.png
     COMMAND open pt.png
     DEPENDS amber
