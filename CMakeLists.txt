@@ -15,35 +15,35 @@ add_executable(amber src/main.cc)
 target_link_libraries(amber pthread)
 
 add_custom_target(pt
-    COMMAND ./amber --algorithm pt --name pt --spp 512
+    COMMAND ./amber --algorithm pt --spp 16
     COMMAND convert pt.ppm pt.png
     COMMAND open pt.png
     DEPENDS amber
 )
 
 add_custom_target(bdpt
-    COMMAND ./amber --algorithm bdpt --name bdpt --spp 64
+    COMMAND ./amber --algorithm bdpt --spp 64
     COMMAND convert bdpt.ppm bdpt.png
     COMMAND open bdpt.png
     DEPENDS amber
 )
 
 add_custom_target(pm
-    COMMAND ./amber --algorithm pm --name pm --photons 8388608
+    COMMAND ./amber --algorithm pm --photons 8388608
     COMMAND convert pm.ppm pm.png
     COMMAND open pm.png
     DEPENDS amber
 )
 
 add_custom_target(pssmlt
-    COMMAND ./amber --algorithm pssmlt --name pssmlt --mutations 16777216
+    COMMAND ./amber --algorithm pssmlt --mutations 16777216
     COMMAND convert pssmlt.ppm pssmlt.png
     COMMAND open pssmlt.png
     DEPENDS amber
 )
 
 add_custom_target(ppm
-    COMMAND ./amber --algorithm ppm --name ppm --photons 1048576 --iterations 16
+    COMMAND ./amber --algorithm ppm --photons 1048576 --iterations 16
     COMMAND convert ppm.ppm ppm.png
     COMMAND open ppm.png
     DEPENDS amber

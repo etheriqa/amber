@@ -23,7 +23,7 @@ enum class Algorithm {
 };
 
 struct Option {
-  std::string name            = "output";
+  std::string name            = "";
 
   size_t n_thread             = std::thread::hardware_concurrency();
 

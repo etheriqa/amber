@@ -192,18 +192,27 @@ public:
       throw std::logic_error("invalid algorithm");
       break;
     case Algorithm::pt:
+      if (option.name.empty()) {
+        option.name = "pt";
+      }
       shader = new shader::PathTracing<scene_type>(
         option.n_thread,
         option.pt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::bdpt:
+      if (option.name.empty()) {
+        option.name = "bdpt";
+      }
       shader = new shader::BidirectionalPathTracing<scene_type>(
         option.n_thread,
         option.bdpt_spp / option.ssaa / option.ssaa
       );
       break;
     case Algorithm::pm:
+      if (option.name.empty()) {
+        option.name = "pm";
+      }
       shader = new shader::PhotonMapping<scene_type>(
         option.n_thread,
         option.pm_n_photon,
@@ -211,6 +220,9 @@ public:
       );
       break;
     case Algorithm::pssmlt:
+      if (option.name.empty()) {
+        option.name = "pssmlt";
+      }
       shader = new shader::PrimarySampleSpaceMLT<scene_type>(
         option.n_thread,
         option.pssmlt_n_seed,
@@ -219,6 +231,9 @@ public:
       );
       break;
     case Algorithm::ppm:
+      if (option.name.empty()) {
+        option.name = "ppm";
+      }
       shader = new shader::ProgressivePhotonMapping<scene_type>(
         option.n_thread,
         option.ppm_n_photon,
