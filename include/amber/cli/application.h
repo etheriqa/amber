@@ -228,7 +228,7 @@ public:
       );
       break;
     }
-    const auto aperture = new camera::aperture::Polygon<real_type>(8, 0.05);
+    const auto aperture = new camera::aperture::Polygon<real_type>(6, 0.05);
     const auto lens = new camera::lens::Thin<real_type>(aperture, 4);
     const auto sensor = camera::Sensor<radiant_type, real_type>(
       option.width * option.ssaa,

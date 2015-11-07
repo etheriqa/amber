@@ -42,12 +42,12 @@ public:
 
   scatter_type
   sampleLight(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    return sample(direction_i, normal, sampler);
+    return sample(direction_o, normal, sampler);
   }
 
   scatter_type
@@ -61,11 +61,11 @@ public:
 
   std::vector<scatter_type>
   distributionLight(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
-    return distribution(direction_i, normal);
+    return distribution(direction_o, normal);
   }
 
   std::vector<scatter_type>
@@ -89,12 +89,12 @@ protected:
   virtual
   scatter_type
   sample(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    return this->sampleScatter(distribution(direction_i, normal), sampler);
+    return this->sampleScatter(distribution(direction_o, normal), sampler);
   }
 
   virtual

@@ -60,15 +60,15 @@ public:
 
   scatter_type
   sample(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    auto const w = dot(direction_i, normal) > 0 ? normal : -normal;
-    vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
-    return scatter_type(direction_o, kd_);
+    auto const w = dot(direction_o, normal) > 0 ? normal : -normal;
+    vector3_type direction_i;
+    std::tie(direction_i, std::ignore) = sampler->hemispherePSA(w);
+    return scatter_type(direction_i, kd_);
   }
 };
 

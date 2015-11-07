@@ -71,12 +71,12 @@ public:
   virtual
   scatter_type
   sampleImportance(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    return sampleScatter(distributionImportance(direction_i, normal), sampler);
+    return sampleScatter(distributionImportance(direction_o, normal), sampler);
   }
 
   virtual
