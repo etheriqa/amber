@@ -114,7 +114,7 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_alpha = dot(direction_i, normal);
+    auto const signed_cos_alpha = dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
@@ -128,9 +128,9 @@ public:
     auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
     auto const rho_t = 1 - rho_r;
 
-    auto const signed_cos_o = dot(direction_o, normal);
+    auto const signed_cos_i = dot(direction_i, normal);
 
-    if (signed_cos_alpha * signed_cos_o > 0) {
+    if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
       return rho_r * kDiracDelta;
     } else {
@@ -180,16 +180,16 @@ public:
 
   std::vector<scatter_type>
   distributionImportance(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
-    auto const signed_cos_alpha = dot(direction_i, normal);
+    auto const signed_cos_alpha = dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
     auto const direction_r =
-      2 * signed_cos_alpha * normal - direction_i;
+      2 * signed_cos_alpha * normal - direction_o;
 
     if (squared_cos_beta < 0) {
       return {
@@ -201,7 +201,7 @@ public:
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const cos_beta = std::sqrt(squared_cos_beta);
     auto const direction_t =
-      -ior * direction_i +
+      -ior * direction_o +
       ((signed_cos_alpha < 0 ? 1 : -1) * cos_beta + ior * signed_cos_alpha) *
       normal;
 

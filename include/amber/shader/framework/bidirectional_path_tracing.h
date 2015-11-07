@@ -63,8 +63,8 @@ public:
     event.object             = light;
     event.position           = ray.origin;
     event.normal             = ray.normal;
-    event.direction_i        = vector3_type();
-    event.direction_o        = ray.direction;
+    event.direction_i        = ray.direction;
+    event.direction_o        = vector3_type();
     event.p_russian_roulette = 1;
     event.log_p_area         = std::log2(p_area);
     event.weight             = light.emittance() * kPI / p_area;
@@ -73,12 +73,12 @@ public:
       event, p_psa, sampler,
       [](
         auto const& object,
-        auto const& direction_i,
+        auto const& direction_o,
         auto const& normal,
         auto& sampler
       )
       {
-        return object.sampleImportance(direction_i, normal, sampler);
+        return object.sampleImportance(direction_o, normal, sampler);
       },
       [](
         auto const& object,
@@ -109,8 +109,8 @@ public:
     event.object             = Object();
     event.position           = ray.origin;
     event.normal             = ray.normal;
-    event.direction_i        = vector3_type();
-    event.direction_o        = ray.direction;
+    event.direction_i        = ray.direction;
+    event.direction_o        = vector3_type();
     event.p_russian_roulette = 1;
     event.log_p_area         = std::log2(p_area);
     event.weight             = importance / p_area;
@@ -128,8 +128,8 @@ public:
       },
       [](
         auto const& object,
-        auto const& direction_o,
         auto const& direction_i,
+        auto const& direction_o,
         auto const& normal
       )
       {
@@ -198,7 +198,7 @@ private:
     events.reserve(16);
     events.push_back(event);
 
-    ray_type ray(event.position, event.direction_o);
+    ray_type ray(event.position, event.direction_i);
     radiant_type weight(1);
     hit_type hit;
     Object object;
@@ -221,8 +221,8 @@ private:
       event.object              = object;
       event.position            = hit.position;
       event.normal              = hit.normal;
-      event.direction_i         = -ray.direction;
-      event.direction_o         = scatter.direction;
+      event.direction_i         = scatter.direction;
+      event.direction_o         = -ray.direction;
       event.p_russian_roulette  = p_russian_roulette;
       event.log_p_area         += std::log2(p_psa * geometry_factor);
       event.weight             *= weight;
@@ -262,7 +262,7 @@ private:
       auto const direction_le = normalize(e.position - l.position);
       return
         l.weight *
-        l.object.bsdf(l.direction_i, direction_le, l.normal) *
+        l.object.bsdf(l.direction_o, direction_le, l.normal) *
         geometryFactor(l, e, direction_le) *
         e.object.bsdf(-direction_le, e.direction_o, e.normal) *
         e.weight;
@@ -318,12 +318,12 @@ private:
                       size_t s,
                       size_t t) const {
     std::vector<Event> events;
-    std::copy(light.begin(), light.begin() + s, std::back_inserter(events));
-    std::transform(eye.rend() - t, eye.rend(), std::back_inserter(events),
+    std::transform(light.begin(), light.begin() + s, std::back_inserter(events),
       [](auto event){
         std::swap(event.direction_i, event.direction_o);
         return event;
       });
+    std::copy(eye.rend() - t, eye.rend(), std::back_inserter(events));
 
     if (s > 0 && t > 0) {
       auto const direction =
@@ -355,9 +355,9 @@ private:
             event.direction_o,
             event.normal
           );
-          auto const pdf = event.object.pdfLight(
-            event.direction_i,
+          auto const pdf = event.object.pdfImportance(
             event.direction_o,
+            event.direction_i,
             event.normal
           );
           auto const geometry_factor =
@@ -385,7 +385,7 @@ private:
             event.direction_o,
             event.normal
           );
-          auto const pdf = event.object.pdfImportance(
+          auto const pdf = event.object.pdfLight(
             event.direction_i,
             event.direction_o,
             event.normal

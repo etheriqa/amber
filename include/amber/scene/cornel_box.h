@@ -12,6 +12,7 @@
 #include "geometry/primitive/sphere.h"
 #include "material/lambertian.h"
 #include "material/light.h"
+#include "material/phong.h"
 #include "material/refraction.h"
 #include "material/specular.h"
 
@@ -30,6 +31,7 @@ void cornel_box(OutputIterator output) {
 
   using Lambertian    = material::Lambertian<radiant_type, real_type>;
   using Light         = material::Light<radiant_type, real_type>;
+  using Phong         = material::Phong<radiant_type, real_type>;
   using Refraction    = material::Refraction<radiant_type, real_type>;
   using Specular      = material::Specular<radiant_type, real_type>;
 
@@ -71,7 +73,7 @@ void cornel_box(OutputIterator output) {
       vector3_type(-1, -1, -1),
       vector3_type( 1, -1, -1),
     }),
-    new Lambertian(radiant_type(.5, .5, .5))
+    new Phong(radiant_type(.1), radiant_type(.5), 16)
   );
   // floor
   output = Object(

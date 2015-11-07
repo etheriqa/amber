@@ -62,12 +62,12 @@ public:
 
   std::vector<scatter_type>
   distribution(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
     return {
-      scatter_type(2 * dot(direction_i, normal) * normal - direction_i, ks_),
+      scatter_type(2 * dot(direction_o, normal) * normal - direction_o, ks_),
     };
   }
 };
