@@ -48,3 +48,10 @@ add_custom_target(ppm
     COMMAND open ppm.png
     DEPENDS amber
 )
+
+add_custom_target(sppm
+    COMMAND ./amber --algorithm sppm --photons 1048576 --iterations 16
+    COMMAND convert sppm.ppm sppm.png
+    COMMAND open sppm.png
+    DEPENDS amber
+)

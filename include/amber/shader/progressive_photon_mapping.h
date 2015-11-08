@@ -47,7 +47,7 @@ private:
   };
 
   size_t n_thread_, n_photon_, k_nearest_photon_, n_iteration_;
-  double alpha_;
+  double initial_radius_, alpha_;
   Progress progress_;
 
 public:
@@ -55,11 +55,13 @@ public:
                            size_t n_photon,
                            size_t k_nearest_photon,
                            size_t n_iteration,
+                           double initial_radius,
                            double alpha)
     : n_thread_(n_thread),
       n_photon_(n_photon),
       k_nearest_photon_(k_nearest_photon),
       n_iteration_(n_iteration),
+      initial_radius_(initial_radius),
       alpha_(alpha),
       progress_(3) {}
 
@@ -69,6 +71,8 @@ public:
       << ", n_photon=" << n_photon_
       << ", k_nearest_photon=" << k_nearest_photon_
       << ", n_iteration=" << n_iteration_
+      << ", initial_radius=" << initial_radius_
+      << ", alpha=" << alpha_
       << ")";
   }
 
@@ -197,7 +201,7 @@ private:
       hit_point.weight    = weight;
       hit_point.x         = x;
       hit_point.y         = y;
-      hit_point.radius    = 0.01; // TODO
+      hit_point.radius    = initial_radius_;
       hit_point.n_photon  = 0;
       hit_point.flux      = radiant_type();
       output = hit_point;

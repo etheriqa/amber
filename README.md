@@ -22,6 +22,7 @@ Features
     - Photon mapping
     - Primary sample space Metropolis light transport
     - Progressive photon mapping
+    - Stochastic progressive photon mapping
 - Geometric primitives
     - Triangle
     - Disk
@@ -42,6 +43,7 @@ References
 ----------
 
 - Filmic Tonemapping Operators, http://filmicgames.com/archives/75.
+- T. Hachisuka, and H. W. Jensen, Stochastic Progressive Photon Mapping, *ACM Transactions on Graphics* **28** (5), 2009.
 - T. Hachisuka, S. Ogaki, and H. W. Jensen, Progressive Photon Mapping, *ACM Transactions on Graphics* **27** (5), 2008.
 - V. Havran, *Heuristic Ray Shooting Algorithms*, Ph.D. Dissertation, Czech Technical University, 2000.
 - H. W. Jensen, and P. Christensen, High Quality Rendering using Ray Tracing and Photon Mapping, *ACM SIGGRAPH 2007* Course 8, 2007.
