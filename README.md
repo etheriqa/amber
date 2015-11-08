@@ -11,7 +11,7 @@ amber
 
 ![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/66fadef1a572b12e66b208445636e2d931f3a3f0/pssmlt4g.png)
 
-(PSSMLT with 4Gi mutations, rendered in 2.6 hours on same machine as above)
+(PSSMLT with 4Gi mutations, rendered in 2.6 hours on the same machine as above)
 
 Features
 --------
@@ -32,7 +32,6 @@ Features
     - Lambertian
     - Phong
     - Refraction
-    - ~~Spectral refraction~~
     - Specular
 - Depth of Field
 - Tonemapping
