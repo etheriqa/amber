@@ -179,7 +179,7 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         for (size_t y = 0; y < camera.imageHeight(); y++) {
           for (size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y);
+            image.at(x, y) += buffer.at(x, y) * camera.imageSize();
           }
         }
       });
