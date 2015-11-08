@@ -45,10 +45,15 @@ private:
   };
 
   Scene scene_;
+  std::vector<Event> event_buffer_;
+  std::vector<radiant_value_type> probability_buffer_;
 
 public:
   explicit BidirectionalPathTracing(Scene const& scene) noexcept
-    : scene_(scene) {}
+  : scene_(scene),
+    event_buffer_(),
+    probability_buffer_()
+  {}
 
   std::vector<Event> lightTracing(
     Sampler* sampler
@@ -139,9 +144,12 @@ public:
   }
 
   template <typename MIS>
-  radiant_type connect(std::vector<Event> const& light,
-                       std::vector<Event> const& eye,
-                       MIS const& mis) const {
+  radiant_type connect(
+    std::vector<Event> const& light,
+    std::vector<Event> const& eye,
+    MIS const& mis
+  )
+  {
     radiant_type power;
 
     for (size_t s = 0; s <= light.size(); s++) {
@@ -150,8 +158,12 @@ public:
         if (contribution.max() == 0) {
           continue;
         }
-        auto const log_ps = misLogProbabilities(light, eye, s, t);
-        auto const weight = mis(log_ps.begin(), log_ps.end(), log_ps.at(s));
+        calculateLogProbabilities(light, eye, s, t);
+        auto const weight = mis(
+          probability_buffer_.begin(),
+          probability_buffer_.end(),
+          probability_buffer_.at(s)
+        );
         power += contribution * weight;
       }
     }
@@ -160,26 +172,34 @@ public:
   }
 
 private:
-  radiant_value_type lightPDFArea(Object const& light) const noexcept {
+  radiant_value_type lightPDFArea(Object const& light) const noexcept
+  {
     return
       light.emittance().sum() * kPI /
       scene_.light_sampler()->total_power().sum();
   }
 
-  radiant_value_type eyePDFArea() const noexcept {
+  radiant_value_type eyePDFArea() const noexcept
+  {
     return kDiracDelta; // TODO make eye diffuse
   }
 
   radiant_value_type
-  geometryFactor(Event const& x,
-                 Event const& y) const noexcept {
+  geometryFactor(
+    Event const& x,
+    Event const& y
+  ) const noexcept
+  {
     return geometryFactor(x, y, normalize(y.position - x.position));
   }
 
   radiant_value_type
-  geometryFactor(Event const& x,
-                 Event const& y,
-                 vector3_type const& direction) const noexcept {
+  geometryFactor(
+    Event const& x,
+    Event const& y,
+    vector3_type const& direction
+  ) const noexcept
+  {
     return std::abs(dot(direction, x.normal) *
                     dot(direction, y.normal) /
                     (y.position - x.position).squaredLength());
@@ -242,10 +262,13 @@ private:
     return events;
   }
 
-  radiant_type unweightedContribution(std::vector<Event> const& light,
-                                      std::vector<Event> const& eye,
-                                      size_t s,
-                                      size_t t) const {
+  radiant_type unweightedContribution(
+    std::vector<Event> const& light,
+    std::vector<Event> const& eye,
+    size_t s,
+    size_t t
+  ) const
+  {
     if (s >= 2 && t >= 2) {
       auto const& l = light.at(s - 1);
       auto const& e = eye.at(t - 1);
@@ -312,46 +335,57 @@ private:
     return radiant_type();
   }
 
-  std::vector<radiant_value_type>
-  misLogProbabilities(std::vector<Event> const& light,
-                      std::vector<Event> const& eye,
-                      size_t s,
-                      size_t t) const {
-    std::vector<Event> events;
+  // caution: this function is not thread-safe
+  void calculateLogProbabilities(
+    std::vector<Event> const& light,
+    std::vector<Event> const& eye,
+    size_t s,
+    size_t t
+  )
+  {
+    event_buffer_.clear();
+    probability_buffer_.clear();
+
     // reorder pairs of directions (direction_i and direction_o) by actual light
     // flow
-    std::transform(light.begin(), light.begin() + s, std::back_inserter(events),
+    std::transform(
+      light.begin(),
+      light.begin() + s,
+      std::back_inserter(event_buffer_),
       [](auto event){
         std::swap(event.direction_i, event.direction_o);
         return event;
       });
-    std::copy(eye.rend() - t, eye.rend(), std::back_inserter(events));
+    std::copy(eye.rend() - t, eye.rend(), std::back_inserter(event_buffer_));
 
     if (s > 0 && t > 0) {
-      auto const direction =
-        normalize(events.at(s).position - events.at(s - 1).position);
-      events.at(s - 1).direction_o = direction;
-      events.at(s).direction_i = direction;
+      auto const direction = normalize(
+        event_buffer_.at(s).position - event_buffer_.at(s - 1).position
+      );
+      event_buffer_.at(s - 1).direction_o = direction;
+      event_buffer_.at(s).direction_i = direction;
     }
 
     size_t const n_technique = s + t + 1;
-    std::vector<radiant_value_type> ps(n_technique);
+    probability_buffer_.resize(n_technique);
     for (size_t i = 1; s > 0 && i < n_technique; i++) {
-      ps.at(i) += events.at(std::min(i, s) - 1).log_p_area;
+      probability_buffer_.at(i) +=
+        event_buffer_.at(std::min(i, s) - 1).log_p_area;
     }
     for (size_t i = 0; t > 0 && i < n_technique - 1; i++) {
-      ps.at(i) += events.at(std::max(i, s)).log_p_area;
+      probability_buffer_.at(i) +=
+        event_buffer_.at(std::max(i, s)).log_p_area;
     }
     {
       // extend light subpath
       radiant_value_type log_p_light = 0;
       auto p_russian_roulette =
-        s == 0 ? 1 : events.at(s - 1).p_russian_roulette;
+        s == 0 ? 1 : event_buffer_.at(s - 1).p_russian_roulette;
       for (size_t i = s + 1; i < n_technique; i++) {
         if (s == 0) {
-          log_p_light += std::log2(lightPDFArea(events.front().object));
+          log_p_light += std::log2(lightPDFArea(event_buffer_.front().object));
         } else {
-          auto& event = events.at(i - 2);
+          auto& event = event_buffer_.at(i - 2);
           auto const bsdf = event.object.bsdf(
             event.direction_i,
             event.direction_o,
@@ -363,25 +397,25 @@ private:
             event.normal
           );
           auto const geometry_factor =
-            geometryFactor(event, events.at(i - 1));
+            geometryFactor(event, event_buffer_.at(i - 1));
           log_p_light +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
             std::min<radiant_value_type>(1, (bsdf / pdf).max());
         }
-        ps.at(i) += log_p_light;
+        probability_buffer_.at(i) += log_p_light;
       }
     }
     {
       // extend eye subpath
       radiant_value_type log_p_eye = 0;
       auto p_russian_roulette =
-        t == 0 ? 1 : events.at(s).p_russian_roulette;
+        t == 0 ? 1 : event_buffer_.at(s).p_russian_roulette;
       for (size_t i = s - 1; i < n_technique; i--) {
         if (t == 0) {
           log_p_eye += std::log2(eyePDFArea());
         } else {
-          auto& event = events.at(i + 1);
+          auto& event = event_buffer_.at(i + 1);
           auto const bsdf = event.object.bsdf(
             event.direction_i,
             event.direction_o,
@@ -393,29 +427,29 @@ private:
             event.normal
           );
           auto const geometry_factor =
-            geometryFactor(event, events.at(i));
+            geometryFactor(event, event_buffer_.at(i));
           log_p_eye +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
             std::min<radiant_value_type>(1, (bsdf / pdf).max());
         }
-        ps.at(i) += log_p_eye;
+        probability_buffer_.at(i) += log_p_eye;
       }
     }
     {
       // ignore contributions by a connection with specular surfaces
       for (size_t i = 0; i < s + t; i++) {
-        auto const& object = events.at(i).object;
+        auto const& object = event_buffer_.at(i).object;
         if (object &&
             object.surfaceType() == material::SurfaceType::diffuse) {
           continue;
         }
-        ps.at(i)     = -std::numeric_limits<radiant_value_type>::infinity();
-        ps.at(i + 1) = -std::numeric_limits<radiant_value_type>::infinity();
+        probability_buffer_.at(i) =
+          -std::numeric_limits<radiant_value_type>::infinity();
+        probability_buffer_.at(i + 1) =
+          -std::numeric_limits<radiant_value_type>::infinity();
       }
     }
-
-    return ps;
   }
 };
 

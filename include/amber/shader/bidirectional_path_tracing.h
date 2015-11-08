@@ -60,22 +60,22 @@ public:
     progress_.current_job = 0;
     progress_.total_job = spp_;
 
-    bdpt_type bdpt(scene);
     std::vector<std::thread> threads;
     std::mutex mtx;
     image_type image(camera.imageWidth(), camera.imageHeight());
     for (size_t i = 0; i < n_thread_; i++) {
       threads.emplace_back([&](){
+        bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
         image_type buffer(camera.imageWidth(), camera.imageHeight());
         while (progress_.current_job++ < progress_.total_job) {
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
-              buffer.at(x, y) +=
-                bdpt.connect(bdpt.lightTracing(&sampler),
-                             bdpt.rayTracing(&sampler, camera, x, y),
-                             framework::PowerHeuristic<radiant_value_type>()) /
-                spp_;
+              buffer.at(x, y) += bdpt.connect(
+                bdpt.lightTracing(&sampler),
+                bdpt.rayTracing(&sampler, camera, x, y),
+                framework::PowerHeuristic<radiant_value_type>()
+                ) / spp_;
             }
           }
         }

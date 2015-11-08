@@ -44,15 +44,16 @@ private:
     radiant_value_type contribution;
 
     Seed(camera_type const& camera,
-         bdpt_type const& bdpt,
+         bdpt_type& bdpt,
          DefaultSampler<>& sampler)
       : pss_light(sampler()),
         pss_eye(sampler()),
         x(std::floor(pss_eye.uniform<real_type>(camera.imageWidth()))),
         y(std::floor(pss_eye.uniform<real_type>(camera.imageHeight()))),
-        power(bdpt.connect(bdpt.lightTracing(&pss_light),
-                           bdpt.rayTracing(&pss_eye, camera, x, y),
-                           framework::PowerHeuristic<radiant_value_type>())),
+        power(bdpt.connect(
+          bdpt.lightTracing(&pss_light),
+          bdpt.rayTracing(&pss_eye, camera, x, y),
+          framework::PowerHeuristic<radiant_value_type>())),
         contribution(power.sum()) {
       pss_light.accept();
       pss_eye.accept();
@@ -101,7 +102,6 @@ public:
   Progress const& progress() const noexcept { return progress_; }
 
   image_type operator()(Scene const& scene, camera_type const& camera) {
-    bdpt_type bdpt(scene);
     std::vector<std::thread> threads;
     std::mutex mtx;
 
@@ -113,6 +113,7 @@ public:
     std::vector<Seed> seeds;
     for (size_t i = 0; i < n_thread_; i++) {
       threads.emplace_back([&](){
+        bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
         while (progress_.current_job++ < progress_.total_job) {
           Seed seed(camera, bdpt, sampler);
@@ -139,6 +140,7 @@ public:
     image_type image(camera.imageWidth(), camera.imageHeight());
     for (size_t i = 0; i < n_thread_; i++) {
       threads.emplace_back([&](){
+        bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
         image_type buffer(camera.imageWidth(), camera.imageHeight());
         auto seed = sampleSeed(seeds.begin(), seeds.end(), sampler);
@@ -205,16 +207,17 @@ private:
   }
 
   State propose(State state,
-                bdpt_type const& bdpt,
+                bdpt_type& bdpt,
                 camera_type const& camera,
                 framework::PrimarySampleSpace<>& pss_light,
                 framework::PrimarySampleSpace<>& pss_eye) const {
     state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
     state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
-    state.power =
-      bdpt.connect(bdpt.lightTracing(&pss_light),
-                   bdpt.rayTracing(&pss_eye, camera, state.x, state.y),
-                   framework::PowerHeuristic<radiant_value_type>());
+    state.power = bdpt.connect(
+      bdpt.lightTracing(&pss_light),
+      bdpt.rayTracing(&pss_eye, camera, state.x, state.y),
+      framework::PowerHeuristic<radiant_value_type>()
+    );
     state.contribution = state.power.sum();
     return state;
   }
