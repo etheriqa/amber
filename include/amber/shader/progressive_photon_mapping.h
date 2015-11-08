@@ -44,6 +44,23 @@ private:
     real_type radius;
     size_t n_photon;
     radiant_type flux;
+    std::atomic<bool> locked;
+
+    HitPoint() noexcept {}
+
+    explicit HitPoint(HitPoint const& hp) noexcept
+    : object(hp.object),
+      position(hp.position),
+      normal(hp.normal),
+      direction(hp.direction),
+      weight(hp.weight),
+      x(hp.x),
+      y(hp.y),
+      radius(hp.radius),
+      n_photon(hp.n_photon),
+      flux(hp.flux),
+      locked(hp.locked.load())
+    {}
   };
 
   size_t n_thread_, n_photon_, k_nearest_photon_, n_iteration_;
@@ -81,36 +98,27 @@ public:
   image_type operator()(Scene const& scene, camera_type const& camera) {
     pm_type pm(scene);
     std::vector<std::thread> threads;
-    std::mutex mtx;
 
     progress_.phase = "Distributed Ray Tracing";
     progress_.current_phase = 1;
     progress_.current_job = 0;
     progress_.total_job = camera.imageSize();
 
-    std::vector<size_t> pixels(camera.imageSize());
-    std::iota(pixels.begin(), pixels.end(), 0);
-    std::shuffle(pixels.begin(), pixels.end(), std::random_device());
-
     std::vector<HitPoint> hit_points;
-    for (size_t i = 0; i < n_thread_; i++) {
-      threads.emplace_back([&](){
-        std::vector<HitPoint> buffer;
-        DefaultSampler<> sampler((std::random_device()()));
-        for (size_t j = progress_.current_job++;
-             j < progress_.total_job;
-             j = progress_.current_job++) {
-          auto const x = pixels.at(j) % camera.imageWidth();
-          auto const y = pixels.at(j) / camera.imageWidth();
-          rayTracing(scene, camera, x, y, std::back_inserter(buffer), sampler);
+    {
+      DefaultSampler<> sampler((std::random_device()()));
+      for (size_t y = 0; y < camera.imageHeight(); y++) {
+        for (size_t x = 0; x < camera.imageWidth(); x++) {
+          rayTracing(
+            scene,
+            camera,
+            x,
+            y,
+            std::back_inserter(hit_points),
+            sampler
+          );
         }
-        std::lock_guard<std::mutex> lock(mtx);
-        std::move(buffer.begin(), buffer.end(), std::back_inserter(hit_points));
-      });
-    }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
+      }
     }
 
     progress_.phase = "Photon Tracing";
@@ -127,12 +135,11 @@ public:
           for (size_t i = 0; i < n_photon_; i++) {
             pm.photonTracing(1, std::back_inserter(photons), &sampler);
           }
-          auto const photon_map =
-            pm.buildPhotonMap(photons.begin(), photons.end());
-          std::lock_guard<std::mutex> lock(mtx);
-          progressiveRadianceEstimate(hit_points.begin(),
-                                      hit_points.end(),
-                                      photon_map);
+          progressiveRadianceEstimate(
+            hit_points.begin(),
+            hit_points.end(),
+            pm.buildPhotonMap(photons.begin(), photons.end())
+          );
         }
       });
     }
@@ -204,6 +211,7 @@ private:
       hit_point.radius    = initial_radius_;
       hit_point.n_photon  = 0;
       hit_point.flux      = radiant_type();
+      hit_point.locked    = false;
       output = hit_point;
       return;
     }
@@ -226,14 +234,20 @@ private:
                                    ForwardIterator last,
                                    photon_map_type const& photon_map) const {
     std::for_each(first, last, [&](auto& hit_point){
-      auto const photons =
-        photon_map.kNearestNeighbours(hit_point.position,
-                                      hit_point.radius,
-                                      k_nearest_photon_);
+      bool expected = false;
+      while (hit_point.locked.compare_exchange_strong(expected, true)) {}
+
+      auto const photons = photon_map.kNearestNeighbours(
+        hit_point.position,
+        hit_point.radius,
+        k_nearest_photon_
+      );
+
       auto const n = hit_point.n_photon;
       auto const m = photons.size();
       hit_point.n_photon = n + m * alpha_;
       if (hit_point.n_photon == 0) {
+        hit_point.locked = false;
         return;
       }
 
@@ -242,13 +256,16 @@ private:
       auto const flux_n = hit_point.flux;
       radiant_type flux_m;
       for (auto const& photon : photons) {
-        auto const bsdf =
-          hit_point.object.bsdf(photon.direction.template cast<real_type>(),
-                                hit_point.direction,
-                                hit_point.normal);
+        auto const bsdf = hit_point.object.bsdf(
+          photon.direction.template cast<real_type>(),
+          hit_point.direction,
+          hit_point.normal
+        );
         flux_m += bsdf * photon.power;
       }
       hit_point.flux = (flux_n + flux_m) * (1. * hit_point.n_photon / (n + m));
+
+      hit_point.locked = false;
     });
   }
 };

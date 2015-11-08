@@ -236,7 +236,9 @@ private:
     stats.radius *= std::sqrt(1. * stats.n_photons / (n + m));
 
     auto const flux_n = stats.flux;
-    auto flux_m = hit_point.object.emittance() * kPI * stats.radius * stats.radius * n_photons_;
+    auto flux_m =
+      hit_point.object.emittance() *
+      kPI * stats.radius * stats.radius * n_photons_;
     for (auto const& photon : photons) {
       auto const bsdf = hit_point.object.bsdf(
         photon.direction.template cast<real_type>(),
