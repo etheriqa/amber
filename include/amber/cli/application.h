@@ -85,6 +85,7 @@ public:
       << std::endl
       << "Options:" << std::endl
       << "    --algorithm <algorithm=pt>      rendering algorithm to use" << std::endl
+      << "    --exposure <exposure=1.0>       relative exposure value" << std::endl
       << "    --iterations <n>                a number of iterations (ppm)" << std::endl
       << "    --k <n>                         a number of photons used for radiance estimate (pm, ppm)" << std::endl
       << "    --mutations <n>                 a number of mutations (pssmlt)" << std::endl
@@ -108,6 +109,7 @@ public:
 
     static option options[] = {
       {"algorithm", required_argument, 0, 'a'},
+      {"exposure", required_argument, 0, 'e'},
       {"help", no_argument, 0, 'h'},
       {"iterations", required_argument, 0, 'i'},
       {"k", required_argument, 0, 'k'},
@@ -149,6 +151,9 @@ public:
         if (std::string(optarg) == "sppm") {
           option.algorithm = Algorithm::sppm;
         }
+        break;
+      case 'e':
+        option.exposure = std::stod(std::string(optarg));
         break;
       case 'h':
         show_help = true;
@@ -280,7 +285,7 @@ public:
 
     std::cerr << "Total Power = " << image.totalPower() << std::endl;
 
-    post_process::Filmic<radiant_type> filmic;
+    post_process::Filmic<radiant_type> filmic(option.exposure);
     post_process::Gamma<radiant_type> gamma;
     io::export_rgbe(option.name + ".hdr", image.downSample(option.ssaa));
     io::export_ppm(option.name + ".ppm", gamma(filmic(image.downSample(option.ssaa))));

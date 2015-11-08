@@ -27,12 +27,15 @@ private:
   const hdr_value_type kE = 0.01; // toe numerator
   const hdr_value_type kF = 0.30; // toe denominator
   const hdr_value_type kW = 0.70; // linear white point
+  const hdr_value_type kExposure = 16.0;
 
   hdr_value_type exposure_;
 
 public:
-  Filmic() noexcept : exposure_(16.0) {}
-  explicit Filmic(hdr_value_type exposure) noexcept : exposure_(exposure) { }
+  Filmic() noexcept : exposure_(kExposure) {}
+  explicit Filmic(hdr_value_type exposure) noexcept
+  : exposure_(kExposure * exposure)
+  {}
 
   hdr_image_type operator()(const hdr_image_type& image) const noexcept {
     auto clone = image;
