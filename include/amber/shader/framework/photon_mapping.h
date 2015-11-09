@@ -184,14 +184,14 @@ public:
   void photonTracing(size_t n_photon,
                      OutputIterator output,
                      Sampler* sampler) const {
-    auto const light = (*scene_.light_sampler())(sampler);
+    auto const light = scene_.sampleLight(sampler);
     auto power = scene_.light_sampler()->total_power() / n_photon;
     ray_type ray = light.sampleFirstRay(sampler);
     hit_type hit;
     Object object;
 
     for (;;) {
-      std::tie(hit, object) = scene_.acceleration()->cast(ray);
+      std::tie(hit, object) = scene_.cast(ray);
       if (!hit) {
         break;
       }

@@ -59,7 +59,7 @@ public:
     Sampler* sampler
   ) const
   {
-    auto const light = (*scene_.light_sampler())(sampler);
+    auto const light = scene_.sampleLight(sampler);
     auto const ray = light.sampleFirstRay(sampler);
     auto const p_area = lightPDFArea(light);
     auto const p_psa = static_cast<radiant_value_type>(1 / kPI);
@@ -224,7 +224,7 @@ private:
     Object object;
 
     for (;;) {
-      std::tie(hit, object) = scene_.acceleration()->cast(ray);
+      std::tie(hit, object) = scene_.cast(ray);
       if (!hit) {
         break;
       }

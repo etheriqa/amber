@@ -194,7 +194,7 @@ private:
     hit_type hit;
     Object object;
 
-    std::tie(hit, object) = scene.acceleration()->cast(ray);
+    std::tie(hit, object) = scene.cast(ray);
     if (!hit) {
       return;
     }

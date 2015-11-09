@@ -99,7 +99,7 @@ private:
     Object object;
 
     for (;;) {
-      std::tie(hit, object) = scene.acceleration()->cast(ray);
+      std::tie(hit, object) = scene.cast(ray);
       if (!hit) {
         break;
       }
