@@ -13,12 +13,12 @@ Features
 --------
 
 - Rendering algorithms
-    - Path tracing
-    - Bidirectional path tracing
-    - Photon mapping
-    - Primary sample space Metropolis light transport
-    - Progressive photon mapping
-    - Stochastic progressive photon mapping
+    - `pt` Path tracing
+    - `bdpt` Bidirectional path tracing
+    - `pm` Photon mapping
+    - `pssmlt` Primary sample space Metropolis light transport
+    - `ppm` Progressive photon mapping
+    - `sppm` Stochastic progressive photon mapping
 - Geometric primitives
     - Triangle
     - Disk
