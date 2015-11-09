@@ -59,9 +59,9 @@ public:
     return acceleration_->cast(ray);
   }
 
-  bool test_visibility(ray_type const& ray, Object const& object) const noexcept
+  bool testVisibility(ray_type const& ray, Object const& object) const noexcept
   {
-    return acceleration_->test_visibility(ray, object);
+    return acceleration_->testVisibility(ray, object);
   }
 
   Object sampleLight(Sampler* sampler) const

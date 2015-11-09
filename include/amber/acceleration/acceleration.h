@@ -27,8 +27,11 @@ struct Acceleration : public Writer {
   cast(ray_type const&) const noexcept = 0;
 
   virtual bool
-  test_visibility(ray_type const& ray,
-                  Object const& object) const noexcept {
+  testVisibility(
+    ray_type const& ray,
+    Object const& object
+  ) const noexcept
+  {
     return std::get<1>(cast(ray)) == object;
   }
 
@@ -37,10 +40,13 @@ protected:
 
   template <typename InputIterator>
   static std::tuple<hit_type, Object>
-  traverse(InputIterator first,
-           InputIterator last,
-           ray_type const& ray,
-           real_type t_max) noexcept {
+  traverse(
+    InputIterator first,
+    InputIterator last,
+    ray_type const& ray,
+    real_type t_max
+  ) noexcept
+  {
     hit_type closest_hit;
     Object closest_object;
 

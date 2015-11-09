@@ -279,7 +279,7 @@ private:
         return radiant_type();
       }
       ray_type const ray(l.position, e.position - l.position);
-      if (!scene_.acceleration()->test_visibility(ray, e.object)) {
+      if (!scene_.testVisibility(ray, e.object)) {
         return radiant_type();
       }
       auto const direction_le = normalize(e.position - l.position);
@@ -311,7 +311,7 @@ private:
         return radiant_type();
       }
       ray_type const ray(l.position, e.position - l.position);
-      if (!scene_.acceleration()->test_visibility(ray, e.object)) {
+      if (!scene_.testVisibility(ray, e.object)) {
         return radiant_type();
       }
       auto const direction_le = normalize(e.position - l.position);
