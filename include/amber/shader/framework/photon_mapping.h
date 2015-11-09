@@ -196,7 +196,8 @@ public:
         break;
       }
 
-      if (object.surfaceType() == material::SurfaceType::diffuse) {
+      if (object.surfaceType() == material::SurfaceType::Light ||
+          object.surfaceType() == material::SurfaceType::Diffuse) {
         Photon photon;
         photon.position = hit.position.template cast<photon_real_type>();
         photon.direction = -ray.direction.template cast<photon_real_type>();

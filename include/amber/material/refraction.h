@@ -39,8 +39,7 @@ public:
   explicit Refraction(radiant_value_type ior) noexcept
     : ior_(ior), r0_(fresnel(ior)) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
-  bool isEmissive() const noexcept { return false; }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::Specular; }
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant

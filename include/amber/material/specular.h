@@ -29,8 +29,7 @@ private:
 public:
   explicit Specular(Radiant const& ks) noexcept : ks_(ks) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::specular; }
-  bool isEmissive() const noexcept { return false; }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::Specular; }
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant

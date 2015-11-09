@@ -104,7 +104,8 @@ private:
         break;
       }
 
-      if (object.isEmissive() && dot(hit.normal, ray.direction) < 0) {
+      if (object.surfaceType() == material::SurfaceType::Light &&
+          dot(hit.normal, ray.direction) < 0) {
         power += weight * object.emittance();
       }
 

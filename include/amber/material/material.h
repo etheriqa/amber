@@ -30,7 +30,6 @@ public:
 
 public:
   virtual SurfaceType surfaceType() const noexcept = 0;
-  virtual bool isEmissive() const noexcept = 0;
   virtual Radiant emittance() const noexcept = 0;
 
   virtual

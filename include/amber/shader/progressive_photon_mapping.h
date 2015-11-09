@@ -157,8 +157,7 @@ public:
     for (auto const& hit_point : hit_points) {
       auto& pixel = image.at(hit_point.x, hit_point.y);
 
-      if (hit_point.object.isEmissive() &&
-          dot(hit_point.normal, hit_point.direction) > 0) {
+      if (dot(hit_point.normal, hit_point.direction) > 0) {
         pixel += hit_point.weight * hit_point.object.emittance();
       }
 
@@ -199,7 +198,8 @@ private:
       return;
     }
 
-    if (object.surfaceType() == material::SurfaceType::diffuse) {
+    if (object.surfaceType() == material::SurfaceType::Light ||
+        object.surfaceType() == material::SurfaceType::Diffuse) {
       HitPoint hit_point;
       hit_point.object    = object;
       hit_point.position  = hit.position;

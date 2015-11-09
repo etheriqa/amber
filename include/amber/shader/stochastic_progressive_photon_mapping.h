@@ -185,7 +185,8 @@ private:
         break;
       }
 
-      if (object.surfaceType() == material::SurfaceType::diffuse) {
+      if (object.surfaceType() == material::SurfaceType::Light ||
+          object.surfaceType() == material::SurfaceType::Diffuse) {
         hit_point.object = object;
         hit_point.position = hit.position;
         hit_point.normal = hit.normal;
@@ -236,9 +237,12 @@ private:
     stats.radius *= std::sqrt(1. * stats.n_photons / (n + m));
 
     auto const flux_n = stats.flux;
-    auto flux_m =
-      hit_point.object.emittance() *
-      kPI * stats.radius * stats.radius * n_photons_;
+    radiant_type flux_m;
+    if (dot(hit_point.direction, hit_point.normal) > 0) {
+      flux_m +=
+        hit_point.object.emittance() *
+        kPI * stats.radius * stats.radius * n_photons_;
+    }
     for (auto const& photon : photons) {
       auto const bsdf = hit_point.object.bsdf(
         photon.direction.template cast<real_type>(),

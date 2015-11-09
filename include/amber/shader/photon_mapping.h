@@ -154,7 +154,6 @@ private:
     size_t depth = 0
   ) const
   {
-    radiant_type power;
     hit_type hit;
     Object object;
 
@@ -163,25 +162,29 @@ private:
       return radiant_type();
     }
 
-    if (object.isEmissive() && dot(hit.normal, ray.direction) < 0) {
-      power += weight * object.emittance();
+    if (object.surfaceType() == material::SurfaceType::Light) {
+      if (dot(hit.normal, ray.direction) < 0) {
+        return weight * object.emittance();
+      } else {
+        return radiant_type();
+      }
     }
 
-    if (object.surfaceType() == material::SurfaceType::diffuse) {
-      auto const photons =
-        photon_map.kNearestNeighbours(hit.position,
-                                      static_cast<real_type>(1),
-                                      k_nearest_photon_);
-      return
-        power + weight * filter(photons, hit, object, -ray.direction);
+    if (object.surfaceType() == material::SurfaceType::Diffuse) {
+      auto const photons = photon_map.kNearestNeighbours(hit.position,
+        static_cast<real_type>(1),
+        k_nearest_photon_
+      );
+      return weight * filter(photons, hit, object, -ray.direction);
     }
 
     if (depth > 10) { // FIXME rewrite with Russian roulette
-      return power;
+      return radiant_type();
     }
 
-    auto const scatters =
-      object.distributionLight(-ray.direction, hit.normal);
+    radiant_type power;
+
+    auto const scatters = object.distributionLight(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
       power += estimatePower(
         scene,
