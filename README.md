@@ -5,9 +5,9 @@ amber
 
 **amber** is a global illumination renderer for the purpose of learning.
 
-![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/f57979fbbfc8f7e21c9e30a89d5213323fffe6f4/pssmlt4g.png)
+![](https://gist.githubusercontent.com/etheriqa/fbec5f25fa05084c5abf/raw/d99ca5e32d767ccb53d47e2605bec2580e58abb0/pssmlt16g.png)
 
-(PSSMLT with 4Gi mutations, rendered in 2.4 hours on MacBook Air with Intel Core i5-4250U)
+(PSSMLT with 16Gi mutations, rendered in 9.6 hours on MacBook Air with Intel Core i5-4250U)
 
 Features
 --------
