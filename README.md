@@ -14,11 +14,13 @@ Features
 
 - Rendering algorithms
     - `pt` Path tracing
+    - `lt` Light tracing (**TODO**)
     - `bdpt` Bidirectional path tracing
     - `pm` Photon mapping
     - `pssmlt` Primary sample space Metropolis light transport
     - `ppm` Progressive photon mapping
     - `sppm` Stochastic progressive photon mapping
+    - `vcm` Vertex connection and merging (**TODO**)
 - Geometric primitives
     - Triangle
     - Disk
