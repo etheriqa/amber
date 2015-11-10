@@ -11,19 +11,22 @@
 #include <cmath>
 #include <utility>
 
+#include <boost/optional.hpp>
+
 namespace amber {
 
 template <typename RealType>
-std::tuple<bool, RealType, RealType> solve_quadratic(RealType a, RealType b, RealType c) noexcept
+boost::optional<std::tuple<RealType, RealType>>
+SolveQuadratic(RealType a, RealType b, RealType c) noexcept
 {
-  const auto D = b * b - 4 * a * c;
-  if (D < 0) {
-    return std::make_tuple(false, RealType(), RealType());
+  const auto d = b * b - 4 * a * c;
+  if (d < 0) {
+    return boost::none;
   }
 
-  const auto sqrt_D = std::sqrt(D);
-  auto alpha = - b - sqrt_D;
-  auto beta = - b + sqrt_D;
+  const auto sqrt_d = std::sqrt(d);
+  auto alpha = - b - sqrt_d;
+  auto beta = - b + sqrt_d;
   if (std::abs(alpha) < std::abs(beta)) {
     alpha = c / beta * 2;
     beta /= 2 * a;
@@ -32,7 +35,7 @@ std::tuple<bool, RealType, RealType> solve_quadratic(RealType a, RealType b, Rea
     alpha /= 2 * a;
   }
 
-  return std::make_tuple(true, alpha, beta);
+  return std::make_tuple(alpha, beta);
 }
 
 }

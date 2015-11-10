@@ -61,13 +61,13 @@ public:
     auto const b = -2 * dot(u, v);
     auto const c = v.squaredLength() - radius_ * radius_;
 
-    bool hit;
-    RealType alpha, beta;
-    std::tie(hit, alpha, beta) = solve_quadratic(a, b, c);
-
-    if (!hit) {
+    auto const solutions = SolveQuadratic(a, b, c);
+    if (!solutions) {
       return hit_type();
     }
+
+    auto const& alpha = std::get<0>(*solutions);
+    auto const& beta = std::get<1>(*solutions);
 
     if (alpha > kEPS) {
       auto const h = dot(alpha * ray.direction - OC, normal_);

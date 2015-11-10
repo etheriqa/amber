@@ -47,13 +47,13 @@ public:
     auto const b = -2 * dot(center_ - ray.origin, ray.direction);
     auto const c = (center_ - ray.origin).squaredLength() - radius_ * radius_;
 
-    bool hit;
-    RealType alpha, beta;
-    std::tie(hit, alpha, beta) = solve_quadratic(a, b, c);
-
-    if (!hit) {
+    auto const solutions = SolveQuadratic(a, b, c);
+    if (!solutions) {
       return hit_type();
     }
+
+    auto const& alpha = std::get<0>(*solutions);
+    auto const& beta = std::get<1>(*solutions);
 
     if (alpha > kEPS) {
       return hit_type(ray.origin + alpha * ray.direction,

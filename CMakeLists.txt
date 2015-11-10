@@ -4,7 +4,7 @@ project(amber CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++1y -pedantic -Wall -Wextra -Wno-unused-local-typedef -mavx")
+set(CMAKE_CXX_FLAGS "-std=c++1y -pedantic -Wall -Wno-unused-local-typedef -mavx")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
