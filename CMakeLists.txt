@@ -50,14 +50,14 @@ add_custom_target(pssmlt
 )
 
 add_custom_target(ppm
-    COMMAND time ./amber --algorithm ppm --output ppm --photons 1048576 --iterations 16
+    COMMAND time ./amber --algorithm ppm --output ppm --photons 1048576 --passes 16
     COMMAND convert ppm.ppm ppm.png
     COMMAND open ppm.png
     DEPENDS amber
 )
 
 add_custom_target(sppm
-    COMMAND time ./amber --algorithm sppm output sppm --photons 1048576 --iterations 16
+    COMMAND time ./amber --algorithm sppm output sppm --photons 1048576 --passes 16
     COMMAND convert sppm.ppm sppm.png
     COMMAND open sppm.png
     DEPENDS amber
