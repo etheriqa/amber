@@ -22,7 +22,7 @@ if(Boost_FOUND)
 endif()
 
 add_custom_target(pt
-    COMMAND time ./amber --algorithm pt --output pt --spp 512
+    COMMAND time ./amber --algorithm pt --output pt --spp 256
     COMMAND convert pt.ppm pt.png
     COMMAND open pt.png
     DEPENDS amber
