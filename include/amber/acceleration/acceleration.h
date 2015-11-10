@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <tuple>
 
-#include "base/writer.h"
+#include "writer.h"
 
 namespace amber {
 namespace acceleration {

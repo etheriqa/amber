@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/sampler.h"
+#include "sampler.h"
 #include "geometry/vector.h"
 
 namespace amber {

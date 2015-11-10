@@ -12,7 +12,7 @@
 #include <random>
 #include <tuple>
 
-#include "base/constant.h"
+#include "constant.h"
 #include "geometry/vector.h"
 
 namespace amber {

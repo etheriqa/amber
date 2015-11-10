@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/writer.h"
+#include "writer.h"
 #include "geometry/ray.h"
 
 namespace amber {

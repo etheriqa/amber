@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/writer.h"
+#include "writer.h"
 #include "camera/lens/lens.h"
 #include "camera/sensor.h"
 #include "geometry/first_ray.h"

@@ -13,15 +13,18 @@
 
 namespace amber {
 
-class Writer {
+class Writer
+{
 public:
   virtual void write(std::ostream& os) const noexcept = 0;
 };
 
-template <typename W,
-          typename =
-            typename std::enable_if_t<std::is_base_of<Writer, W>::value>>
-std::ostream& operator<<(std::ostream& os, W const& w) {
+template <
+  typename W,
+  typename = typename std::enable_if_t<std::is_base_of<Writer, W>::value>
+>
+std::ostream& operator<<(std::ostream& os, W const& w)
+{
   w.write(os);
   return os;
 }

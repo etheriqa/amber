@@ -12,7 +12,7 @@
 #include <cmath>
 #include <vector>
 
-#include "base/sampler.h"
+#include "sampler.h"
 
 namespace amber {
 namespace shader {

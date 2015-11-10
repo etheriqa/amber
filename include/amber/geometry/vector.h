@@ -13,7 +13,7 @@
 #include <cmath>
 #include <tuple>
 
-#include "base/writer.h"
+#include "writer.h"
 
 namespace amber {
 namespace geometry {

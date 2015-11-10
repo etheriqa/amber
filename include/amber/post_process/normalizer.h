@@ -12,7 +12,7 @@
 #include <cmath>
 #include <functional>
 
-#include "base/constant.h"
+#include "constant.h"
 #include "camera/image.h"
 #include "radiometry/rgb.h"
 

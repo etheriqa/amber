@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "base/algebra.h"
-#include "base/constant.h"
+#include "algebra.h"
+#include "constant.h"
 #include "geometry/primitive/disk.h"
 
 namespace amber {

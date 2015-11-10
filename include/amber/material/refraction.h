@@ -12,7 +12,7 @@
 #include <cmath>
 #include <numeric>
 
-#include "base/constant.h"
+#include "constant.h"
 #include "material/material.h"
 
 namespace {

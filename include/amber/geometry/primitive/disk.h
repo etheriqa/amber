@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#include "base/constant.h"
+#include "constant.h"
 #include "geometry/primitive/primitive.h"
 
 namespace amber {

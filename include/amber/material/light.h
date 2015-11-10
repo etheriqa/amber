@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/constant.h"
+#include "constant.h"
 #include "material/symmetric_bsdf.h"
 
 namespace amber {

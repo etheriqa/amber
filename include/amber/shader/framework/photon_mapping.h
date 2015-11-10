@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/axis.h"
+#include "axis.h"
 #include "geometry/aabb.h"
 #include "geometry/vector.h"
 
@@ -82,19 +82,19 @@ private:
       auto const z = aabb.max.z() - aabb.min.z();
       Axis axis;
       if (x > y && x > z) {
-        axis = Axis::x;
+        axis = Axis::X;
       } else if (y > z) {
-        axis = Axis::y;
+        axis = Axis::Y;
       } else {
-        axis = Axis::z;
+        axis = Axis::Z;
       }
       std::sort(first, last, [&](auto const& a, auto const& b){
           switch (axis) {
-          case Axis::x:
+          case Axis::X:
             return a.position.x() < b.position.x();
-          case Axis::y:
+          case Axis::Y:
             return a.position.y() < b.position.y();
-          case Axis::z:
+          case Axis::Z:
             return a.position.z() < b.position.z();
           }
       });
@@ -138,13 +138,13 @@ private:
       auto const& photon = photons_[pos];
       photon_real_type plane_distance;
       switch (photon.axis) {
-      case Axis::x:
+      case Axis::X:
         plane_distance = point.x() - photon.position.x();
         break;
-      case Axis::y:
+      case Axis::Y:
         plane_distance = point.y() - photon.position.y();
         break;
-      case Axis::z:
+      case Axis::Z:
         plane_distance = point.z() - photon.position.z();
         break;
       }

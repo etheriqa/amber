@@ -12,7 +12,7 @@
 #include <numeric>
 #include <vector>
 
-#include "base/sampler.h"
+#include "sampler.h"
 #include "material/scatter.h"
 #include "material/surface_type.h"
 

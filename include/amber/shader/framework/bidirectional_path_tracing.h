@@ -14,8 +14,8 @@
 #include <numeric>
 #include <vector>
 
-#include "base/constant.h"
-#include "base/sampler.h"
+#include "constant.h"
+#include "sampler.h"
 #include "material/surface_type.h"
 #include "shader/framework/light_sampler.h"
 

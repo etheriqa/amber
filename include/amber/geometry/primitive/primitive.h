@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "base/sampler.h"
+#include "sampler.h"
 #include "geometry/aabb.h"
 #include "geometry/first_ray.h"
 #include "geometry/hit.h"

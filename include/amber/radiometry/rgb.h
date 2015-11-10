@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <array>
 
-#include "base/writer.h"
+#include "writer.h"
 
 namespace amber {
 namespace radiometry {

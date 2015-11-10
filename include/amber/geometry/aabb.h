@@ -15,8 +15,8 @@
 
 #include "immintrin.h"
 
-#include "base/constant.h"
-#include "base/writer.h"
+#include "constant.h"
+#include "writer.h"
 #include "geometry/ray.h"
 
 namespace amber {
