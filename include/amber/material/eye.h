@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <cmath>
-
 #include "base/constant.h"
 #include "material/symmetric_bsdf.h"
 
@@ -17,36 +15,26 @@ namespace amber {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Specular : public SymmetricBSDF<Radiant, RealType> {
+class Eye : public SymmetricBSDF<Radiant, RealType>
+{
 public:
   using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
   using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
 
-private:
-  Radiant ks_;
+  Eye() noexcept {}
 
-public:
-  explicit Specular(Radiant const& ks) noexcept : ks_(ks) {}
-
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Specular; }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::Eye; }
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant
   bsdf(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
   ) const noexcept
   {
-    auto const signed_cos_i = dot(direction_i, normal);
-    auto const signed_cos_o = dot(direction_o, normal);
-
-    if (signed_cos_i * signed_cos_o <= 0) {
-      return Radiant();
-    } else {
-      return ks_ * kDiracDelta / std::abs(signed_cos_i);
-    }
+    return Radiant();
   }
 
   radiant_value_type
@@ -66,8 +54,8 @@ public:
   ) const
   {
     return {
-      scatter_type(2 * dot(direction_o, normal) * normal - direction_o, ks_),
-    };
+      scatter_type(direction_o, Radiant(1)),
+    }
   }
 };
 

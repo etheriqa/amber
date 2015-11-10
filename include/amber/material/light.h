@@ -27,8 +27,7 @@ private:
 public:
   explicit Light(Radiant const& radiance) noexcept : radiance_(radiance) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::diffuse; }
-  bool isEmissive() const noexcept { return true; }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::Light; }
   Radiant emittance() const noexcept { return radiance_; }
 
   Radiant

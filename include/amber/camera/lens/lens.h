@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "base/sampler.h"
 #include "base/writer.h"
 #include "geometry/ray.h"
 
@@ -24,7 +23,25 @@ public:
 
   RealType static constexpr kFocalLength = 0.050;
 
-  virtual ray_type sampleRay(vector3_type const&, Sampler*) const = 0;
+  virtual RealType sensorDistance() const noexcept = 0;
+
+  virtual
+  vector3_type
+  outgoing(
+    vector3_type const&, // sensor_point
+    vector3_type const&, // aperture_point
+    vector3_type const&, // origin
+    vector3_type const&  // axis
+  ) const noexcept = 0;
+
+  virtual
+  vector3_type
+  incoming(
+    vector3_type const&, // direction
+    vector3_type const&, // aperture_point
+    vector3_type const&, // origin
+    vector3_type const&  // axis
+  ) const noexcept = 0;
 };
 
 }

@@ -43,7 +43,7 @@ public:
   template <typename InputIterator>
   LightSampler(InputIterator first, InputIterator last) noexcept {
     std::for_each(first, last, [&](const auto& object){
-      if (!object.isEmissive()) {
+      if (object.surfaceType() != material::SurfaceType::Light) {
         return;
       }
       total_power_ += object.power();

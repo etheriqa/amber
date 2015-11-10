@@ -87,10 +87,6 @@ public:
     return material_->surfaceType();
   }
 
-  bool isEmissive() const noexcept {
-    return material_->isEmissive();
-  }
-
   radiant_type emittance() const noexcept {
     return material_->emittance();
   }

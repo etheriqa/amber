@@ -27,8 +27,7 @@ private:
 public:
   explicit Lambertian(Radiant const& kd) noexcept : kd_(kd) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::diffuse; }
-  bool isEmissive() const noexcept { return false; }
+  SurfaceType surfaceType() const noexcept { return SurfaceType::Diffuse; }
   Radiant emittance() const noexcept { return Radiant(); }
 
   Radiant

@@ -272,10 +272,10 @@ private:
     if (s >= 2 && t >= 2) {
       auto const& l = light.at(s - 1);
       auto const& e = eye.at(t - 1);
-      if (l.object.surfaceType() == material::SurfaceType::specular) {
+      if (l.object.surfaceType() == material::SurfaceType::Specular) {
         return radiant_type();
       }
-      if (e.object.surfaceType() == material::SurfaceType::specular) {
+      if (e.object.surfaceType() == material::SurfaceType::Specular) {
         return radiant_type();
       }
       ray_type const ray(l.position, e.position - l.position);
@@ -293,7 +293,7 @@ private:
       // zero light subpath vertices
       auto const& l = eye.at(t - 1);
       auto const& e = eye.at(t - 2);
-      if (!l.object.isEmissive()) {
+      if (l.object.surfaceType() != material::SurfaceType::Light) {
         return radiant_type();
       }
       if (dot(e.position - l.position, l.normal) <= 0) {
@@ -304,7 +304,7 @@ private:
       // one light subpath vertex
       auto const& l = light.at(s - 1);
       auto const& e = eye.at(t - 1);
-      if (e.object.surfaceType() == material::SurfaceType::specular) {
+      if (e.object.surfaceType() == material::SurfaceType::Specular) {
         return radiant_type();
       }
       if (dot(e.position - l.position, l.normal) <= 0) {
@@ -440,8 +440,7 @@ private:
       // ignore contributions by a connection with specular surfaces
       for (size_t i = 0; i < s + t; i++) {
         auto const& object = event_buffer_.at(i).object;
-        if (object &&
-            object.surfaceType() == material::SurfaceType::diffuse) {
+        if (object && object.surfaceType() != material::SurfaceType::Specular) {
           continue;
         }
         probability_buffer_.at(i) =

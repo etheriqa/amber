@@ -12,8 +12,10 @@ namespace amber {
 namespace material {
 
 enum class SurfaceType {
-  specular,
-  diffuse,
+  Light,
+  Eye,
+  Specular,
+  Diffuse,
 };
 
 }
