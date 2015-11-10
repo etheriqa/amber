@@ -18,13 +18,11 @@
 #include "acceleration/bvh.h"
 #include "acceleration/kdtree.h"
 #include "acceleration/list.h"
-#include "camera/aperture/circle.h"
-#include "camera/aperture/polygon.h"
 #include "camera/camera.h"
-#include "camera/lens/pinhole.h"
 #include "camera/lens/thin.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
+#include "geometry/primitive/regular_polygon.h"
 #include "geometry/vector.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
@@ -150,18 +148,27 @@ public:
       return -1;
     }
 
+    vector3_type const origin(0, 0, 4);
+    vector3_type const axis(0, 0, -1);
+    vector3_type const up(0, 1, 0);
+    size_type const n_blades = 6;
+    real_type const radius = 0.05;
+    real_type const focus_distance = 4;
+
     std::vector<object_type> objects;
     scene::cornel_box(std::back_inserter(objects));
 
-    auto const aperture = new camera::aperture::Polygon<real_type>(6, 0.05);
-    auto const lens = new camera::lens::Thin<real_type>(aperture, 4);
+    auto const aperture = geometry::primitive::RegularPolygon<real_type>(
+      origin, axis, up, n_blades, radius
+    );
+    auto const lens = camera::lens::Thin<real_type>(focus_distance);
     auto const sensor = camera::Sensor<radiant_type, real_type>(
       vm.at("width").as<size_type>() * vm.at("ssaa").as<size_type>(),
       vm.at("height").as<size_type>() * vm.at("ssaa").as<size_type>()
     );
     auto const camera = camera::Camera<radiant_type, real_type>(
-      sensor, lens,
-      vector3_type(0, 0, 4), vector3_type(0, 0, 0), vector3_type(0, 1, 0));
+      sensor, &lens, &aperture, origin, axis, up
+    );
 
     auto const image = render<scene_type>(shader.get(), objects, camera);
 

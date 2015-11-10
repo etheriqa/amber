@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "camera/image.h"
+#include "base/sampler.h"
 #include "geometry/vector.h"
 
 namespace amber {
@@ -27,24 +27,27 @@ private:
 
 public:
   Sensor(size_t width, size_t height) noexcept
-    : Sensor(width, height, kFilmSize) {}
+  : Sensor(width, height, kFilmSize) {}
 
   Sensor(size_t width, size_t height, RealType film_size) noexcept
-    : resolution_width_(width),
-      resolution_height_(height),
-      sensor_width_(film_size),
-      sensor_height_(film_size / width * height) {}
+  : resolution_width_(width),
+    resolution_height_(height),
+    sensor_width_(film_size),
+    sensor_height_(film_size / width * height)
+  {}
 
   size_t const& width() const noexcept { return resolution_width_; }
   size_t const& height() const noexcept { return resolution_height_; }
 
-  vector3_type samplePoint(size_t x, size_t y) const noexcept {
-    return vector3_type(
-      - ((x + RealType(0.5)) / resolution_width_ - RealType(0.5)) *
+  std::tuple<RealType, RealType>
+  sampleLocalPoint(size_t x, size_t y, Sampler*) const noexcept
+  {
+    // TODO random sampling
+    return std::make_tuple(
+      ((x + RealType(0.5)) / resolution_width_ - RealType(0.5)) *
         sensor_width_,
       ((y + RealType(0.5)) / resolution_height_ - RealType(0.5)) *
-        sensor_height_,
-      0
+        sensor_height_
     );
   }
 };
