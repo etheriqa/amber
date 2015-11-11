@@ -55,7 +55,7 @@ public:
   {
     return {
       scatter_type(direction_o, Radiant(1)),
-    }
+    };
   }
 };
 

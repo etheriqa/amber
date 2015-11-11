@@ -18,11 +18,11 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class RegularPolygon : public Primitive<RealType> {
+class RegularPolygon : public Primitive<RealType>
+{
 public:
   using aabb_type      = typename Primitive<RealType>::aabb_type;
   using hit_type       = typename Primitive<RealType>::hit_type;
-  using first_ray_type = typename Primitive<RealType>::first_ray_type;
   using ray_type       = typename Primitive<RealType>::ray_type;
 
   using vector3_type   = Vector3<RealType>;
@@ -46,7 +46,7 @@ public:
     angle_(2 * kPI / n_),
     long_radius_(radius),
     short_radius_(long_radius_ * std::cos(angle_ / 2)),
-    surface_area_(n * radius * radius * std::sin(2 * kPI / n_)),
+    surface_area_(n * radius * radius * std::sin(2 * kPI / n_) / 2),
     aabb_()
   {
     w_ = normalize(direction);
@@ -105,7 +105,7 @@ public:
     return hit_type(center_ + x * u_ + y * v_, w_, t);
   }
 
-  first_ray_type sampleFirstRay(Sampler* sampler) const
+  ray_type SamplePoint(Sampler* sampler) const
   {
     auto const x = std::sqrt(sampler->uniform(short_radius_ * short_radius_));
     auto const y = x * std::tan(angle_ / 2) * sampler->uniform<RealType>(-1, 1);
@@ -113,13 +113,12 @@ public:
       angle_ * std::floor(sampler->uniform<RealType>(n_)) +
       static_cast<RealType>(kPI / 2);
 
-    return first_ray_type(
+    auto const origin =
       center_ +
         u_ * (x * std::cos(theta) - y * std::sin(theta)) +
-        v_ * (x * std::sin(theta) + y * std::cos(theta)),
-      std::get<0>(sampler->hemispherePSA(w_)),
-      w_
-    );
+        v_ * (x * std::sin(theta) + y * std::cos(theta));
+
+    return ray_type(origin, w_);
   }
 };
 

@@ -177,8 +177,12 @@ private:
                   size_t y,
                   OutputIterator output,
                   DefaultSampler<>& sampler) const {
-    auto const ray = camera.sampleFirstRay(x, y, &sampler);
-    rayTracing(scene, x, y, ray, radiant_type(1), 0, output, sampler);
+    ray_type ray;
+    radiant_type weight;
+    std::tie(ray, weight, std::ignore, std::ignore) =
+      camera.GenerateRay(x, y, &sampler);
+
+    rayTracing(scene, x, y, ray, weight, 0, output, sampler);
   }
 
   template <typename OutputIterator>

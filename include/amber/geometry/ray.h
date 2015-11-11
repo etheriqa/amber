@@ -15,15 +15,19 @@ namespace amber {
 namespace geometry {
 
 template <typename RealType>
-struct Ray : public Writer {
+struct Ray : public Writer
+{
   using vector3_type = Vector3<RealType>;
 
   vector3_type origin, direction;
 
-  Ray(vector3_type const& origin, vector3_type const& direction) noexcept
-    : origin(origin), direction(normalize(direction)) {}
+  Ray() noexcept : origin(), direction() {}
 
-  void write(std::ostream& os) const noexcept {
+  Ray(vector3_type const& origin, vector3_type const& direction) noexcept
+  : origin(origin), direction(normalize(direction)) {}
+
+  void write(std::ostream& os) const noexcept
+  {
     os << "Ray(origin=" << origin << ", direction=" << direction << ")";
   }
 };

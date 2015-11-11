@@ -18,10 +18,10 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Triangle : public Primitive<RealType> {
+class Triangle : public Primitive<RealType>
+{
 public:
   using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using first_ray_type = typename Primitive<RealType>::first_ray_type;
   using hit_type       = typename Primitive<RealType>::hit_type;
   using ray_type       = typename Primitive<RealType>::ray_type;
 
@@ -83,7 +83,8 @@ public:
                     t);
   }
 
-  first_ray_type sampleFirstRay(Sampler* sampler) const {
+  ray_type SamplePoint(Sampler* sampler) const
+  {
     auto u = sampler->uniform<RealType>();
     auto v = sampler->uniform<RealType>();
 
@@ -94,10 +95,7 @@ public:
 
     auto const origin = (1 - u - v) * v0_ + u * v1_ + v * v2_;
 
-    vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(normal_);
-
-    return first_ray_type(origin, direction_o, normal_);
+    return ray_type(origin, normal_);
   }
 };
 

@@ -13,6 +13,7 @@
 #include <boost/program_options.hpp>
 
 #include "shader/bidirectional_path_tracing.h"
+#include "shader/light_tracing.h"
 #include "shader/path_tracing.h"
 #include "shader/photon_mapping.h"
 #include "shader/primary_sample_space_mlt.h"
@@ -48,6 +49,14 @@ public:
         std::make_shared<shader::PathTracing<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("spp").as<size_type>()
+        );
+    }
+
+    if (algorithm == "lt") {
+      return
+        std::make_shared<shader::LightTracing<Scene>>(
+          vm.at("threads").as<size_type>(),
+          vm.at("samples").as<size_type>()
         );
     }
 

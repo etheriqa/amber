@@ -16,18 +16,19 @@ namespace camera {
 namespace lens {
 
 template <typename RealType>
-class Lens : public Writer {
+class Lens : public Writer
+{
 public:
   using ray_type     = geometry::Ray<RealType>;
   using vector3_type = geometry::Vector3<RealType>;
 
   RealType static constexpr kFocalLength = 0.050;
 
-  virtual RealType sensorDistance() const noexcept = 0;
+  virtual RealType SensorDistance() const noexcept = 0;
 
   virtual
-  vector3_type
-  outgoing(
+  vector3_type // direction
+  Outgoing(
     vector3_type const&, // sensor_point
     vector3_type const&, // aperture_point
     vector3_type const&, // origin
@@ -35,8 +36,8 @@ public:
   ) const noexcept = 0;
 
   virtual
-  vector3_type
-  incoming(
+  vector3_type // sensor_point
+  Incoming(
     vector3_type const&, // direction
     vector3_type const&, // aperture_point
     vector3_type const&, // origin

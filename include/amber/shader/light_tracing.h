@@ -23,7 +23,7 @@ template <
   typename Scene,
   typename Object = typename Scene::object_type
 >
-class PathTracing : public Shader<Scene>
+class LightTracing : public Shader<Scene>
 {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -36,21 +36,21 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  size_t n_threads_, spp_;
+  size_t n_threads_, n_samples_;
   Progress progress_;
 
 public:
-  PathTracing(size_t n_threads, size_t spp) noexcept
+  LightTracing(size_t n_threads, size_t n_samples) noexcept
   : n_threads_(n_threads),
-    spp_(spp),
+    n_samples_(n_samples),
     progress_(1)
   {}
 
   void write(std::ostream& os) const noexcept
   {
     os
-      << "PathTracing(n_threads=" << n_threads_
-      << ", spp=" << spp_
+      << "LightTracing(n_threads=" << n_threads_
+      << ", n_samples=" << n_samples_
       << ")";
   }
 
@@ -58,10 +58,10 @@ public:
 
   image_type operator()(Scene const& scene, camera_type const& camera)
   {
-    progress_.phase = "Path Tracing";
+    progress_.phase = "Light Tracing";
     progress_.current_phase = 1;
     progress_.current_job = 0;
-    progress_.total_job = spp_;
+    progress_.total_job = n_samples_;
 
     std::vector<std::thread> threads;
     std::mutex mtx;
@@ -71,16 +71,12 @@ public:
         DefaultSampler<> sampler((std::random_device()()));
         image_type buffer(camera.imageWidth(), camera.imageHeight());
         while (progress_.current_job++ < progress_.total_job) {
-          for (size_t y = 0; y < camera.imageHeight(); y++) {
-            for (size_t x = 0; x < camera.imageWidth(); x++) {
-              buffer.at(x, y) += Sample(scene, camera, x, y, sampler);
-            }
-          }
+          Sample(scene, camera, buffer, sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
         for (size_t y = 0; y < camera.imageHeight(); y++) {
           for (size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y) / spp_;
+            image.at(x, y) += buffer.at(x, y) / n_samples_;
           }
         }
       });
@@ -93,21 +89,18 @@ public:
   }
 
 private:
-  radiant_type
+  void
   Sample(
     Scene const& scene,
     camera_type const& camera,
-    size_t x,
-    size_t y,
+    image_type& image,
     DefaultSampler<>& sampler
   ) const
   {
     ray_type ray;
     radiant_type weight;
-    std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, &sampler);
-
-    radiant_type power;
+    std::tie(ray, weight, std::ignore, std::ignore, std::ignore) =
+      scene.GenerateLightRay(&sampler);
 
     for (;;) {
       hit_type hit;
@@ -117,13 +110,16 @@ private:
         break;
       }
 
-      if (object.surfaceType() == material::SurfaceType::Light &&
-          dot(hit.normal, ray.direction) < 0) {
-        power += weight * object.emittance();
+      if (object.surfaceType() == material::SurfaceType::Eye &&
+          dot(ray.direction, hit.normal) < 0) {
+        auto const point = camera.ResponsePoint(ray.direction, hit.position);
+        if (point) {
+          image.at(std::get<0>(*point), std::get<1>(*point)) += weight;
+        }
       }
 
       auto const scatter =
-        object.sampleLight(-ray.direction, hit.normal, &sampler);
+        object.sampleImportance(-ray.direction, hit.normal, &sampler);
       auto const p_russian_roulette =
         std::min<radiant_value_type>(1, scatter.weight.max());
 
@@ -134,8 +130,6 @@ private:
       ray = ray_type(hit.position, scatter.direction);
       weight *= scatter.weight / p_russian_roulette;
     }
-
-    return power;
   }
 };
 

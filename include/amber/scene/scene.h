@@ -22,12 +22,16 @@ template <
 class Scene : public acceleration::Acceleration<Object>
 {
 public:
-  using hit_type          = typename Object::hit_type;
-  using object_type       = Object;
-  using ray_type          = typename Object::ray_type;
+  using object_type        = Object;
 
-  using acceleration_ptr  = std::shared_ptr<Acceleration const>;
-  using light_sampler_ptr = std::shared_ptr<LightSampler const>;
+  using hit_type           = typename Object::hit_type;
+  using radiant_type       = typename Object::radiant_type;
+  using radiant_value_type = typename Object::radiant_value_type;
+  using ray_type           = typename Object::ray_type;
+  using vector3_type       = typename Object::vector3_type;
+
+  using acceleration_ptr   = std::shared_ptr<Acceleration const>;
+  using light_sampler_ptr  = std::shared_ptr<LightSampler const>;
 
 private:
   acceleration_ptr acceleration_;
@@ -64,9 +68,16 @@ public:
     return acceleration_->testVisibility(ray, object);
   }
 
-  Object sampleLight(Sampler* sampler) const
+  radiant_value_type
+  LightPDFArea(Object const& object) const noexcept
   {
-    return (*light_sampler_)(sampler);
+    return light_sampler_->PDFArea(object);
+  }
+
+  std::tuple<ray_type, radiant_type, Object, radiant_value_type, vector3_type>
+  GenerateLightRay(Sampler* sampler) const
+  {
+    return light_sampler_->GenerateLightRay(sampler);
   }
 };
 

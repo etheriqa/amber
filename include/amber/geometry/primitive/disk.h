@@ -18,11 +18,11 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class Disk : public Primitive<RealType> {
+class Disk : public Primitive<RealType>
+{
 public:
   using aabb_type      = typename Primitive<RealType>::aabb_type;
   using hit_type       = typename Primitive<RealType>::hit_type;
-  using first_ray_type = typename Primitive<RealType>::first_ray_type;
   using ray_type       = typename Primitive<RealType>::ray_type;
 
   using vector3_type   = Vector3<RealType>;
@@ -70,7 +70,8 @@ public:
      return hit_type(ray.origin + t * ray.direction, normal_, t);
   }
 
-  first_ray_type sampleFirstRay(Sampler* sampler) const {
+  ray_type SamplePoint(Sampler* sampler) const
+  {
     auto const radius = std::sqrt(sampler->uniform(radius_ * radius_));
 
     vector3_type u, v;
@@ -79,12 +80,9 @@ public:
     RealType x, y;
     std::tie(x, y) = sampler->circle<RealType>();
 
-    vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(u, v, normal_);
+    auto const origin = center_ + (u * x + v * y) * radius;
 
-    return first_ray_type(center_ + (u * x + v * y) * radius,
-                          direction_o,
-                          normal_);
+    return ray_type(origin, normal_);
   }
 };
 
