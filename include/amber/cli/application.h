@@ -26,6 +26,7 @@
 #include "geometry/vector.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
+#include "material/eye.h"
 #include "object/object.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
@@ -78,7 +79,7 @@ public:
       description.add_options()
         ("algorithm",
          po::value<std::string>(),
-         "rendering algorithm to use (pt, bdpt, pm, pssmlt, ppm, sppm)")
+         "rendering algorithm to use (pt, lt, bdpt, pm, pssmlt, ppm, sppm)")
         ("alpha",
          po::value<real_type>()->default_value(0.7),
          "a parameter used in the progressive photon mapping algoritms")
@@ -123,6 +124,9 @@ public:
         ("width",
          po::value<size_type>()->default_value(512),
          "image width")
+        ("samples",
+         po::value<size_type>()->default_value(65536),
+         "a number of samples")
         ;
 
       try {
@@ -161,6 +165,7 @@ public:
     auto const aperture = geometry::primitive::RegularPolygon<real_type>(
       origin, axis, up, n_blades, radius
     );
+    objects.emplace_back(&aperture, new material::Eye<radiant_type, real_type>);
     auto const lens = camera::lens::Thin<real_type>(focus_distance);
     auto const sensor = camera::Sensor<radiant_type, real_type>(
       vm.at("width").as<size_type>() * vm.at("ssaa").as<size_type>(),

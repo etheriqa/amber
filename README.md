@@ -14,13 +14,12 @@ Features
 
 - Rendering algorithms
     - `pt` Path tracing
-    - `lt` Light tracing (**TODO**)
+    - `lt` Light tracing
     - `bdpt` Bidirectional path tracing
     - `pm` Photon mapping
     - `pssmlt` Primary sample space Metropolis light transport
     - `ppm` Progressive photon mapping
     - `sppm` Stochastic progressive photon mapping
-    - `vcm` Vertex connection and merging (**TODO**)
 - Geometric primitives
     - Triangle
     - Disk
@@ -44,6 +43,7 @@ References
 - T. Hachisuka, S. Ogaki, and H. W. Jensen, Progressive Photon Mapping, *ACM Transactions on Graphics* **27** (5), 2008.
 - V. Havran, *Heuristic Ray Shooting Algorithms*, Ph.D. Dissertation, Czech Technical University, 2000.
 - H. W. Jensen, and P. Christensen, High Quality Rendering using Ray Tracing and Photon Mapping, *ACM SIGGRAPH 2007* Course 8, 2007.
+- J. Kajiya, The rendering equation, *Computer Graphics* **20** (4), 1986.
 - C. Kelemen, L. Szirmay-Kalos, G. Antal, and F. Csonka, A Simple and Robust Mutation Strategy for the Metropolis Light Transport Algorithm, *Computer Graphics Forum* **21** (3), 2002.
 - E. Lafortune, and Y. Willems, Using the Modified Phong Reflectance Model for Physically Based Rendering, Report CW197, Department of Computer Science, Katholieke Universiteit Leuven, 1994.
 - T. Möller, and B. Trumbore, Fast, Minimum Storage Ray/Triangle Intersection, *Journal of Graphics Tools* **2** (1), 1997.

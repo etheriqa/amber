@@ -19,11 +19,11 @@ namespace geometry {
 namespace primitive {
 
 template <typename RealType>
-class ConvexPolygon : public Primitive<RealType> {
+class ConvexPolygon : public Primitive<RealType>
+{
 public:
   using aabb_type      = typename Primitive<RealType>::aabb_type;
   using hit_type       = typename Primitive<RealType>::hit_type;
-  using first_ray_type = typename Primitive<RealType>::first_ray_type;
   using ray_type       = typename Primitive<RealType>::ray_type;
 
   using vector3_type   = Vector3<RealType>;
@@ -67,7 +67,8 @@ public:
     return hit_type();
   }
 
-  first_ray_type sampleFirstRay(Sampler* sampler) const {
+  ray_type SamplePoint(Sampler* sampler) const
+  {
     auto const polygon_area = surfaceArea();
     auto const r = sampler->uniform(polygon_area);
 
@@ -76,7 +77,7 @@ public:
       auto const triangle_area = triangle.surfaceArea();
       area += triangle_area;
       if (area > r) {
-        return triangle.sampleFirstRay(sampler);
+        return triangle.SamplePoint(sampler);
       }
     }
 

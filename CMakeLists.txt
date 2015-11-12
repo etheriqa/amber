@@ -28,6 +28,13 @@ add_custom_target(pt
     DEPENDS amber
 )
 
+add_custom_target(lt
+    COMMAND time ./amber --algorithm lt --output lt --samples 67108864
+    COMMAND convert lt.ppm lt.png
+    COMMAND open lt.png
+    DEPENDS amber
+)
+
 add_custom_target(bdpt
     COMMAND time ./amber --algorithm bdpt --output bdpt --spp 64
     COMMAND convert bdpt.ppm bdpt.png
@@ -57,7 +64,7 @@ add_custom_target(ppm
 )
 
 add_custom_target(sppm
-    COMMAND time ./amber --algorithm sppm output sppm --photons 1048576 --passes 16
+    COMMAND time ./amber --algorithm sppm --output sppm --photons 1048576 --passes 16
     COMMAND convert sppm.ppm sppm.png
     COMMAND open sppm.png
     DEPENDS amber

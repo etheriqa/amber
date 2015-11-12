@@ -8,11 +8,12 @@
 
 #pragma once
 
-#include "writer.h"
+#include <boost/optional.hpp>
+
 #include "camera/lens/lens.h"
 #include "camera/sensor.h"
-#include "geometry/first_ray.h"
 #include "geometry/primitive/primitive.h"
+#include "writer.h"
 
 namespace amber {
 namespace camera {
@@ -20,16 +21,18 @@ namespace camera {
 template <typename Radiant, typename RealType>
 class Camera : public Writer {
 public:
-  using first_ray_type = geometry::FirstRay<RealType>;
-  using lens_type      = lens::Lens<RealType>;
-  using primitive_type = geometry::primitive::Primitive<RealType>;
-  using sensor_type    = Sensor<Radiant, RealType>;
-  using vector3_type   = geometry::Vector3<RealType>;
+  using ray_type           = geometry::Ray<RealType>;
+  using lens_type          = lens::Lens<RealType>;
+  using primitive_type     = geometry::primitive::Primitive<RealType>;
+  using radiant_value_type = typename Radiant::value_type;
+  using sensor_type        = Sensor<Radiant, RealType>;
+  using vector3_type       = geometry::Vector3<RealType>;
 
 private:
   sensor_type sensor_;
   lens_type const* lens_;
   primitive_type const* aperture_;
+  radiant_value_type p_area_, base_weight_;
   vector3_type origin_, u_, v_, w_;
 
 public:
@@ -44,6 +47,8 @@ public:
   : sensor_(sensor),
     lens_(lens),
     aperture_(aperture),
+    p_area_(1 / sensor_.SensorArea() / aperture_->surfaceArea()),
+    base_weight_(1 / std::pow(lens_->SensorDistance(), 2) / p_area_),
     origin_(origin)
   {
     w_ = normalize(axis);
@@ -51,9 +56,9 @@ public:
     v_ = normalize(cross(w_, u_));
   }
 
-  size_t const& imageWidth() const noexcept { return sensor_.width(); }
-  size_t const& imageHeight() const noexcept { return sensor_.height(); }
-  size_t imageSize() const noexcept { return imageWidth() * imageHeight(); }
+  size_t const& imageWidth() const noexcept { return sensor_.ImageWidth(); }
+  size_t const& imageHeight() const noexcept { return sensor_.ImageHeight(); }
+  size_t imageSize() const noexcept { return sensor_.ImageSize(); }
 
   void write(std::ostream& os) const noexcept {
     os
@@ -63,23 +68,41 @@ public:
       << "Lens: " << *lens_;
   }
 
-  first_ray_type
-  sampleFirstRay(
+  std::tuple<ray_type, Radiant, radiant_value_type, vector3_type>
+  GenerateRay(
     size_t x,
     size_t y,
-    Sampler *sampler
+    Sampler* sampler
   ) const
   {
     RealType x_sensor, y_sensor;
     std::tie(x_sensor, y_sensor) = sensor_.sampleLocalPoint(x, y, sampler);
-    const auto sensor_point =
-      origin_ + u_ * x_sensor + v_ * y_sensor - w_ * lens_->sensorDistance();
-    const auto aperture_point = aperture_->sampleFirstRay(sampler).origin;
+    auto const sensor_point =
+      origin_ + u_ * x_sensor + v_ * y_sensor - w_ * lens_->SensorDistance();
+    auto const aperture_point = aperture_->SamplePoint(sampler).origin;
+    auto const direction =
+      lens_->Outgoing(sensor_point, aperture_point, origin_, w_);
 
-    return first_ray_type(
-      aperture_point,
-      lens_->outgoing(sensor_point, aperture_point, origin_, w_),
+    return std::make_tuple(
+      ray_type(aperture_point, direction),
+      Radiant(base_weight_ * std::pow(std::abs(dot(direction, w_)), 4)),
+      p_area_,
       w_
+    );
+  }
+
+  boost::optional<std::tuple<size_t, size_t>>
+  ResponsePoint(
+    vector3_type const& direction,
+    vector3_type const& aperture_point
+  ) const noexcept
+  {
+    auto const sensor_point =
+      lens_->Incoming(direction, aperture_point, origin_, w_);
+    auto const det = dot(cross(u_, v_), w_);
+    return sensor_.responsePoint(
+      dot(cross(sensor_point, v_), w_) / det,
+      dot(cross(u_, sensor_point), w_) / det
     );
   }
 };

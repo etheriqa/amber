@@ -17,47 +17,78 @@ namespace amber {
 namespace shader {
 namespace framework {
 
-template <typename Object>
-class LightSampler {
+template <
+  typename Object,
+  typename Radiant = typename Object::radiant_type
+>
+class LightSampler
+{
+public:
+  using radiant_value_type = typename Object::radiant_value_type;
+  using ray_type           = typename Object::ray_type;
+  using vector3_type       = typename Object::vector3_type;
+
 private:
-  using object_type  = Object;
-  using radiant_type = typename Object::radiant_type;
-  using real_type    = typename Object::real_type;
 
-  struct Node {
-    real_type partial_sum_power;
-    object_type object;
+  struct Node
+  {
+    radiant_value_type partial_sum_power;
+    Object object;
 
-    Node(real_type partial_sum_power, const object_type& object) noexcept
-      : partial_sum_power(partial_sum_power), object(object) {}
+    Node(radiant_value_type partial_sum_power, Object const& object) noexcept
+    : partial_sum_power(partial_sum_power), object(object) {}
 
-    bool operator<(const Node& node) const noexcept {
+    bool operator<(const Node& node) const noexcept
+    {
       return partial_sum_power < node.partial_sum_power;
     }
   };
 
   std::vector<Node> nodes_;
-  radiant_type total_power_;
+  radiant_value_type total_power_;
 
 public:
   template <typename InputIterator>
-  LightSampler(InputIterator first, InputIterator last) noexcept {
-    std::for_each(first, last, [&](const auto& object){
+  LightSampler(InputIterator first, InputIterator last) noexcept
+  {
+    std::for_each(first, last, [&](auto const& object){
       if (object.surfaceType() != material::SurfaceType::Light) {
         return;
       }
-      total_power_ += object.power();
-      nodes_.emplace_back(total_power_.sum(), object);
+      total_power_ += object.power().sum();
+      nodes_.emplace_back(total_power_, object);
     });
   }
 
-  const radiant_type& total_power() const noexcept { return total_power_; }
+  Object
+  SampleLight(Sampler *sampler) const
+  {
+    return std::lower_bound(
+      nodes_.begin(),
+      nodes_.end(),
+      Node(sampler->uniform(total_power_), Object())
+    )->object;
+  }
 
-  object_type operator()(Sampler *sampler) const {
-    const auto it = std::lower_bound(
-      nodes_.begin(), nodes_.end(),
-      Node(sampler->uniform(total_power_.sum()), object_type()));
-    return it->object;
+  radiant_value_type
+  PDFArea(Object const& object) const noexcept
+  {
+    return object.emittance().sum() * kPI / total_power_;
+  }
+
+  std::tuple<ray_type, Radiant, Object, radiant_value_type, vector3_type>
+  GenerateLightRay(Sampler* sampler) const
+  {
+    auto const light = SampleLight(sampler);
+    auto const ray = light.SamplePoint(sampler);
+    auto const p_area = PDFArea(light);
+    return std::make_tuple(
+      ray_type(ray.origin, std::get<0>(sampler->hemispherePSA(ray.direction))),
+      light.emittance() * kPI / p_area,
+      light,
+      p_area,
+      ray.direction
+    );
   }
 };
 

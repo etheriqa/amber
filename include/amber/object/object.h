@@ -21,7 +21,6 @@ public:
   using material_type      = Material;
 
   using aabb_type          = typename primitive_type::aabb_type;
-  using first_ray_type     = typename primitive_type::first_ray_type;
   using hit_type           = typename primitive_type::hit_type;
   using ray_type           = typename primitive_type::ray_type;
   using real_type          = typename primitive_type::real_type;
@@ -46,14 +45,17 @@ public:
   };
 
 private:
-  primitive_type* primitive_;
-  material_type* material_;
+  primitive_type const* primitive_;
+  material_type const* material_;
 
 public:
   Object() noexcept : primitive_(nullptr), material_(nullptr) {}
 
-  Object(primitive_type* primitive, material_type* material) noexcept
-    : primitive_(primitive), material_(material) {}
+  Object(
+    primitive_type const* primitive,
+    material_type const* material
+  ) noexcept
+  : primitive_(primitive), material_(material) {}
 
   operator bool() const noexcept {
     return primitive_ != nullptr && material_ != nullptr;
@@ -79,8 +81,8 @@ public:
     return primitive_->intersect(ray);
   }
 
-  first_ray_type sampleFirstRay(Sampler* sampler) const {
-    return primitive_->sampleFirstRay(sampler);
+  ray_type SamplePoint(Sampler* sampler) const {
+    return primitive_->SamplePoint(sampler);
   }
 
   material::SurfaceType surfaceType() const noexcept {

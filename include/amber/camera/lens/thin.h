@@ -15,7 +15,8 @@ namespace camera {
 namespace lens {
 
 template <typename RealType>
-class Thin : public Lens<RealType> {
+class Thin : public Lens<RealType>
+{
 public:
   using ray_type      = typename Lens<RealType>::ray_type;
   using vector3_type  = typename Lens<RealType>::vector3_type;
@@ -34,7 +35,7 @@ public:
     sensor_distance_(1 / (1 / focal_length_ - 1 / focus_distance_))
   {}
 
-  RealType sensorDistance() const noexcept { return sensor_distance_; }
+  RealType SensorDistance() const noexcept { return sensor_distance_; }
 
   void write(std::ostream& os) const noexcept {
     os
@@ -45,11 +46,11 @@ public:
   }
 
   vector3_type
-  outgoing(
+  Outgoing(
     vector3_type const& sensor_point,
     vector3_type const& aperture_point,
     vector3_type const& origin,
-    vector3_type const&
+    vector3_type const& axis
   ) const noexcept
   {
     auto const ratio = focus_distance_ / focal_length_;
@@ -58,14 +59,18 @@ public:
   }
 
   vector3_type
-  incoming(
+  Incoming(
     vector3_type const& direction,
     vector3_type const& aperture_point,
     vector3_type const& origin,
     vector3_type const& axis
   ) const noexcept
   {
-    throw std::logic_error("Thin::incoming(): not yet implemented");
+    auto const ratio = sensor_distance_ / focus_distance_;
+    return
+      (1 + ratio) * origin -
+      ratio * aperture_point -
+      sensor_distance_ / dot(direction, axis) * direction;
   }
 };
 

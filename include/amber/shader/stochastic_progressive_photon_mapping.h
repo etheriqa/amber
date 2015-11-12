@@ -174,11 +174,13 @@ private:
   {
     HitPoint hit_point;
 
-    ray_type ray = camera.sampleFirstRay(x, y, &sampler);
-    hit_type hit;
-    Object object;
+    ray_type ray;
+    std::tie(ray, hit_point.weight, std::ignore, std::ignore) =
+      camera.GenerateRay(x, y, &sampler);
 
     for (;;) {
+      hit_type hit;
+      Object object;
       std::tie(hit, object) = scene.cast(ray);
       if (!hit) {
         hit_point.weight = radiant_type();

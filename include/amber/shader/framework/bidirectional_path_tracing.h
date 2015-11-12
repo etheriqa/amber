@@ -59,20 +59,24 @@ public:
     Sampler* sampler
   ) const
   {
-    auto const light = scene_.sampleLight(sampler);
-    auto const ray = light.sampleFirstRay(sampler);
-    auto const p_area = lightPDFArea(light);
-    auto const p_psa = static_cast<radiant_value_type>(1 / kPI);
+    ray_type ray;
+    Object light;
+    radiant_type weight;
+    radiant_value_type p_area;
+    radiant_value_type p_psa = 1 / kPI;
+    vector3_type normal;
+    std::tie(ray, weight, light, p_area, normal) =
+      scene_.GenerateLightRay(sampler);
 
     Event event;
     event.object             = light;
     event.position           = ray.origin;
-    event.normal             = ray.normal;
+    event.normal             = normal;
     event.direction_i        = ray.direction;
     event.direction_o        = vector3_type();
     event.p_russian_roulette = 1;
     event.log_p_area         = std::log2(p_area);
-    event.weight             = light.emittance() * kPI / p_area;
+    event.weight             = weight;
 
     return tracing(
       event, p_psa, sampler,
@@ -105,20 +109,22 @@ public:
     size_t y
   ) const
   {
-    auto const importance = radiant_type(kDiracDelta); // TODO make eye diffuse
-    auto const ray = camera.sampleFirstRay(x, y, sampler);
-    auto const p_area = eyePDFArea();
-    auto const p_psa = static_cast<radiant_value_type>(1 / kPI);
+    ray_type ray;
+    radiant_type weight;
+    radiant_value_type p_area;
+    radiant_value_type p_psa = 1;
+    vector3_type normal;
+    std::tie(ray, weight, p_area, normal) = camera.GenerateRay(x, y, sampler);
 
     Event event;
     event.object             = Object();
     event.position           = ray.origin;
-    event.normal             = ray.normal;
+    event.normal             = normal;
     event.direction_i        = ray.direction;
     event.direction_o        = vector3_type();
     event.p_russian_roulette = 1;
     event.log_p_area         = std::log2(p_area);
-    event.weight             = importance / p_area;
+    event.weight             = weight;
 
     return tracing(
       event, p_psa, sampler,
@@ -154,11 +160,11 @@ public:
 
     for (size_t s = 0; s <= light.size(); s++) {
       for (size_t t = 0; t <= eye.size(); t++) {
-        auto const contribution = unweightedContribution(light, eye, s, t);
+        auto const contribution = UnweightedContribution(light, eye, s, t);
         if (contribution.max() == 0) {
           continue;
         }
-        calculateLogProbabilities(light, eye, s, t);
+        CalculateLogProbabilities(light, eye, s, t);
         auto const weight = mis(
           probability_buffer_.begin(),
           probability_buffer_.end(),
@@ -172,29 +178,17 @@ public:
   }
 
 private:
-  radiant_value_type lightPDFArea(Object const& light) const noexcept
-  {
-    return
-      light.emittance().sum() * kPI /
-      scene_.light_sampler()->total_power().sum();
-  }
-
-  radiant_value_type eyePDFArea() const noexcept
-  {
-    return kDiracDelta; // TODO make eye diffuse
-  }
-
   radiant_value_type
-  geometryFactor(
+  GeometryFactor(
     Event const& x,
     Event const& y
   ) const noexcept
   {
-    return geometryFactor(x, y, normalize(y.position - x.position));
+    return GeometryFactor(x, y, normalize(y.position - x.position));
   }
 
   radiant_value_type
-  geometryFactor(
+  GeometryFactor(
     Event const& x,
     Event const& y,
     vector3_type const& direction
@@ -262,7 +256,7 @@ private:
     return events;
   }
 
-  radiant_type unweightedContribution(
+  radiant_type UnweightedContribution(
     std::vector<Event> const& light,
     std::vector<Event> const& eye,
     size_t s,
@@ -286,7 +280,7 @@ private:
       return
         l.weight *
         l.object.bsdf(l.direction_o, direction_le, l.normal) *
-        geometryFactor(l, e, direction_le) *
+        GeometryFactor(l, e, direction_le) *
         e.object.bsdf(-direction_le, e.direction_o, e.normal) *
         e.weight;
     } else if (s == 0 && t >= 2) {
@@ -318,7 +312,7 @@ private:
       return
         l.weight *
         (1 / kPI) *
-        geometryFactor(l, e, direction_le) *
+        GeometryFactor(l, e, direction_le) *
         e.object.bsdf(-direction_le, e.direction_o, e.normal) *
         e.weight;
     } else if (s >= 2 && t == 0) {
@@ -336,7 +330,7 @@ private:
   }
 
   // caution: this function is not thread-safe
-  void calculateLogProbabilities(
+  void CalculateLogProbabilities(
     std::vector<Event> const& light,
     std::vector<Event> const& eye,
     size_t s,
@@ -383,7 +377,8 @@ private:
         s == 0 ? 1 : event_buffer_.at(s - 1).p_russian_roulette;
       for (size_t i = s + 1; i < n_technique; i++) {
         if (s == 0) {
-          log_p_light += std::log2(lightPDFArea(event_buffer_.front().object));
+          log_p_light +=
+            std::log2(scene_.LightPDFArea(event_buffer_.front().object));
         } else {
           auto& event = event_buffer_.at(i - 2);
           auto const bsdf = event.object.bsdf(
@@ -397,7 +392,7 @@ private:
             event.normal
           );
           auto const geometry_factor =
-            geometryFactor(event, event_buffer_.at(i - 1));
+            GeometryFactor(event, event_buffer_.at(i - 1));
           log_p_light +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
@@ -413,7 +408,7 @@ private:
         t == 0 ? 1 : event_buffer_.at(s).p_russian_roulette;
       for (size_t i = s - 1; i < n_technique; i--) {
         if (t == 0) {
-          log_p_eye += std::log2(eyePDFArea());
+          log_p_eye += std::log2(kDiracDelta); // TODO
         } else {
           auto& event = event_buffer_.at(i + 1);
           auto const bsdf = event.object.bsdf(
@@ -427,7 +422,7 @@ private:
             event.normal
           );
           auto const geometry_factor =
-            geometryFactor(event, event_buffer_.at(i));
+            GeometryFactor(event, event_buffer_.at(i));
           log_p_eye +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
