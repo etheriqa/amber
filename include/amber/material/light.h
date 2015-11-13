@@ -9,7 +9,7 @@
 #pragma once
 
 #include "constant.h"
-#include "material/symmetric_bsdf.h"
+#include "symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
@@ -27,11 +27,15 @@ private:
 public:
   explicit Light(Radiant const& radiance) noexcept : radiance_(radiance) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Light; }
-  Radiant emittance() const noexcept { return radiance_; }
+  SurfaceType Surface() const noexcept
+  {
+    return amber::SurfaceType::Light;
+  }
+
+  Radiant Radiance() const noexcept { return radiance_; }
 
   Radiant
-  bsdf(
+  BSDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&
@@ -51,13 +55,13 @@ public:
   }
 
   scatter_type
-  sample(
+  Sample(
     vector3_type const& direction_i,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    auto const w = dot(direction_i, normal) > 0 ? normal : -normal;
+    auto const w = Dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
     std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
     return scatter_type(direction_o, Radiant(0));

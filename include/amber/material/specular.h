@@ -11,7 +11,7 @@
 #include <cmath>
 
 #include "constant.h"
-#include "material/symmetric_bsdf.h"
+#include "symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
@@ -29,18 +29,20 @@ private:
 public:
   explicit Specular(Radiant const& ks) noexcept : ks_(ks) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Specular; }
-  Radiant emittance() const noexcept { return Radiant(); }
+  SurfaceType Surface() const noexcept
+  {
+    return amber::SurfaceType::Specular;
+  }
 
   Radiant
-  bsdf(
+  BSDF(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_i = dot(direction_i, normal);
-    auto const signed_cos_o = dot(direction_o, normal);
+    auto const signed_cos_i = Dot(direction_i, normal);
+    auto const signed_cos_o = Dot(direction_o, normal);
 
     if (signed_cos_i * signed_cos_o <= 0) {
       return Radiant();
@@ -66,7 +68,7 @@ public:
   ) const
   {
     return {
-      scatter_type(2 * dot(direction_o, normal) * normal - direction_o, ks_),
+      scatter_type(2 * Dot(direction_o, normal) * normal - direction_o, ks_),
     };
   }
 };

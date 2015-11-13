@@ -9,7 +9,7 @@
 #pragma once
 
 #include "constant.h"
-#include "material/symmetric_bsdf.h"
+#include "symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
@@ -37,18 +37,20 @@ public:
     exponent_(exponent)
   {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Diffuse; }
-  Radiant emittance() const noexcept { return Radiant(); }
+  SurfaceType Surface() const noexcept
+  {
+    return amber::SurfaceType::Diffuse;
+  }
 
   Radiant
-  bsdf(
+  BSDF(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_i = dot(direction_i, normal);
-    auto const signed_cos_o = dot(direction_o, normal);
+    auto const signed_cos_i = Dot(direction_i, normal);
+    auto const signed_cos_o = Dot(direction_o, normal);
 
     if (signed_cos_i * signed_cos_o <= 0) {
       return Radiant();
@@ -56,7 +58,7 @@ public:
 
     auto const direction_r = 2 * signed_cos_i * normal - direction_i;
     auto const cos_alpha =
-      std::max<radiant_value_type>(0, dot(direction_r, direction_o));
+      std::max<radiant_value_type>(0, Dot(direction_r, direction_o));
 
     return
       kd_ / kPI +
@@ -70,31 +72,31 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    auto const rho_d = kd_.sum();
-    auto const rho_s = ks_.sum();
+    auto const rho_d = kd_.Sum();
+    auto const rho_s = ks_.Sum();
     auto const rho = rho_d + rho_s;
 
     auto const direction_s =
-      2 * dot(direction_o, normal) * normal - direction_o;
-    auto const cos_alpha = std::max<RealType>(0, dot(direction_i, direction_s));
+      2 * Dot(direction_o, normal) * normal - direction_o;
+    auto const cos_alpha = std::max<RealType>(0, Dot(direction_i, direction_s));
 
     auto const pdf_d = 1 / kPI;
     auto const pdf_s =
       (exponent_ + 1) / 2 / kPI * std::pow(cos_alpha, exponent_) /
-      std::abs(dot(direction_i, normal));
+      std::abs(Dot(direction_i, normal));
 
     return (rho_d * pdf_d + rho_s * pdf_s) / rho;
   }
 
   scatter_type
-  sample(
+  Sample(
     vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler* sampler
   ) const
   {
-    auto const rho_d = kd_.sum();
-    auto const rho_s = ks_.sum();
+    auto const rho_d = kd_.Sum();
+    auto const rho_s = ks_.Sum();
     auto const rho = rho_d + rho_s;
 
     if (sampler->uniform(rho) < rho_d) {
@@ -110,7 +112,7 @@ public:
       return scatter_type(
         direction_i,
         ks_ / rho_s * rho *
-        (exponent_ + 2) / (exponent_ + 1) * std::abs(dot(direction_i, normal))
+        (exponent_ + 2) / (exponent_ + 1) * std::abs(Dot(direction_i, normal))
       );
     }
   }
@@ -123,7 +125,7 @@ private:
     Sampler* sampler
   ) const
   {
-    auto const w = dot(direction_o, normal) > 0 ? normal : -normal;
+    auto const w = Dot(direction_o, normal) > 0 ? normal : -normal;
     return std::get<0>(sampler->hemispherePSA(w));
   }
 
@@ -140,16 +142,16 @@ private:
       auto const sin_alpha = std::sqrt(1 - cos_alpha * cos_alpha);
       auto const phi = 2 * kPI * sampler->uniform<RealType>();
 
-      auto const w = 2 * dot(direction_o, normal) * normal - direction_o;
+      auto const w = 2 * Dot(direction_o, normal) * normal - direction_o;
       vector3_type u, v;
-      std::tie(u, v) = orthonormalBasis(w);
+      std::tie(u, v) = OrthonormalBasis(w);
 
       auto const direction_i =
         sin_alpha * std::cos(phi) * u +
         sin_alpha * std::sin(phi) * v +
         cos_alpha * w;
 
-      if (dot(direction_i, normal) * dot(direction_o, normal) > 0) {
+      if (Dot(direction_i, normal) * Dot(direction_o, normal) > 0) {
         return direction_i;
       }
     }

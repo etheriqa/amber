@@ -14,15 +14,18 @@
 #include <unordered_set>
 #include <vector>
 
-#include "acceleration/acceleration.h"
+#include "acceleration.h"
 
 namespace amber {
 namespace acceleration {
 
-template <typename Object,
-          size_t TraverseCost = 500,
-          size_t IntersectionCost = 100>
-class BVH : public Acceleration<Object> {
+template <
+  typename Object,
+  size_t TraverseCost = 500,
+  size_t IntersectionCost = 100
+>
+class BVH : public Acceleration<Object>
+{
 public:
   using object_type = Object;
 
@@ -111,7 +114,7 @@ private:
     std::tuple<hit_type, Object>
     cast(ray_type const& ray, real_type t_max) const noexcept {
       if (m_objects != nullptr) {
-        return Acceleration<Object>::traverse(m_objects->begin(),
+        return Acceleration<Object>::Traverse(m_objects->begin(),
                                               m_objects->end(),
                                               ray,
                                               t_max);
@@ -120,9 +123,9 @@ private:
       bool left_hit, right_hit;
       real_type t_left, t_right;
       std::tie(left_hit, t_left, std::ignore) =
-        m_left->m_voxel.intersect(ray, t_max);
+        m_left->m_voxel.Intersect(ray, t_max);
       std::tie(right_hit, t_right, std::ignore) =
-        m_right->m_voxel.intersect(ray, t_max);
+        m_right->m_voxel.Intersect(ray, t_max);
 
       if (!left_hit && !right_hit) {
         return std::make_tuple(hit_type(), Object());
@@ -159,7 +162,7 @@ private:
     aabb(InputIterator first, InputIterator last) noexcept {
       aabb_type aabb;
       std::for_each(first, last, [&](auto const& object){
-        aabb += object.aabb();
+        aabb += object.BoundingBox();
       });
       return aabb;
     }
@@ -169,7 +172,7 @@ private:
     build_event_list(InputIterator first, InputIterator last) noexcept {
       event_list_type events;
       std::for_each(first, last, [&](auto const& object){
-        auto const voxel = object.aabb();
+        auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
           auto const& start = voxel.min[static_cast<size_t>(axis)];
           auto const& end = voxel.max[static_cast<size_t>(axis)];
@@ -190,7 +193,7 @@ private:
                       aabb_type, aabb_type>
     split(size_t n,
           event_list_type const& events, aabb_type const& voxel) noexcept {
-      auto const surface_area = voxel.surfaceArea();
+      auto const surface_area = voxel.SurfaceArea();
 
       real_type optimal_cost = IntersectionCost * n;
       Axis optimal_axis = Axis::None;
@@ -202,7 +205,7 @@ private:
                                left_intersection_voxels(1);
         for (auto it = events.begin(); it != events.end(); it++) {
           auto const& event = *it;
-          auto const object_voxel = event.object.aabb();
+          auto const object_voxel = event.object.BoundingBox();
           if (event.type == EventType::End ||
               event.type == EventType::Planar) {
             left_including_voxels.push_back(
@@ -218,7 +221,7 @@ private:
                                right_intersection_voxels(1);
         for (auto it = events.rbegin(); it != events.rend(); it++) {
           auto const& event = *it;
-          auto const object_voxel = event.object.aabb();
+          auto const object_voxel = event.object.BoundingBox();
           if (event.type == EventType::End ||
               event.type == EventType::Planar) {
             right_intersection_voxels.push_back(
@@ -233,8 +236,8 @@ private:
         for (size_t i = 1; i < n; i++) {
           auto const cost = surface_area_heuristic(
             surface_area,
-            left_including_voxels[i].surfaceArea(),
-            right_intersection_voxels[n - i].surfaceArea(),
+            left_including_voxels[i].SurfaceArea(),
+            right_intersection_voxels[n - i].SurfaceArea(),
             i,
             n - i
           );
@@ -248,8 +251,8 @@ private:
         for (size_t i = 1; i < n; i++) {
           auto const cost = surface_area_heuristic(
             surface_area,
-            left_intersection_voxels[i].surfaceArea(),
-            right_including_voxels[n - i].surfaceArea(),
+            left_intersection_voxels[i].SurfaceArea(),
+            right_including_voxels[n - i].SurfaceArea(),
             i,
             n - i
           );
@@ -285,9 +288,9 @@ private:
         }
         if (i < optimal_n_left) {
           left_objects.insert(event.object);
-          left_voxel += event.object.aabb();
+          left_voxel += event.object.BoundingBox();
         } else {
-          right_voxel += event.object.aabb();
+          right_voxel += event.object.BoundingBox();
         }
         i++;
       }
@@ -326,15 +329,17 @@ public:
   template <typename InputIterator>
   BVH(InputIterator first, InputIterator last) : root_(first, last) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "BVH(traverse_cost=" << TraverseCost
+      << "BVH(Traverse_cost=" << TraverseCost
       << ", intersection_cost=" << IntersectionCost
       << ")";
   }
 
   std::tuple<hit_type, Object>
-  cast(const ray_type& ray) const noexcept {
+  Cast(const ray_type& ray) const noexcept
+  {
     return root_.cast(ray, std::numeric_limits<real_type>::max());
   }
 };

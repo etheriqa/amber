@@ -8,14 +8,16 @@
 
 #pragma once
 
-#include "shader/framework/photon_mapping.h"
-#include "shader/shader.h"
+#include "component/photon_mapping.h"
+#include "shader.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
+template <
+  typename Scene,
+  typename Object = typename Scene::object_type
+>
 class StochasticProgressivePhotonMapping : public Shader<Scene> {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -28,7 +30,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename framework::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Scene>;
 
   using photon_map_type    = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
@@ -87,7 +89,7 @@ public:
     progress_(1)
   {}
 
-  void write(std::ostream& os) const noexcept
+  void Write(std::ostream& os) const noexcept
   {
     os
       << "StochasticProgressivePhotonMapping(n_threads=" << n_threads_
@@ -134,7 +136,7 @@ public:
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
               auto const hit_point = rayTracing(scene, camera, x, y, sampler);
-              if (hit_point.weight.max() == 0) {
+              if (hit_point.weight.Max() == 0) {
                 continue;
               }
               auto& stats = statistics.at(x + y * camera.imageWidth());
@@ -181,14 +183,14 @@ private:
     for (;;) {
       hit_type hit;
       Object object;
-      std::tie(hit, object) = scene.cast(ray);
+      std::tie(hit, object) = scene.Cast(ray);
       if (!hit) {
         hit_point.weight = radiant_type();
         break;
       }
 
-      if (object.surfaceType() == material::SurfaceType::Light ||
-          object.surfaceType() == material::SurfaceType::Diffuse) {
+      if (object.Surface() == SurfaceType::Light ||
+          object.Surface() == SurfaceType::Diffuse) {
         hit_point.object = object;
         hit_point.position = hit.position;
         hit_point.normal = hit.normal;
@@ -197,9 +199,9 @@ private:
       }
 
       auto const scatter =
-        object.sampleLight(-ray.direction, hit.normal, &sampler);
+        object.SampleLight(-ray.direction, hit.normal, &sampler);
       auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, scatter.weight.max());
+        std::min<radiant_value_type>(1, scatter.weight.Max());
 
       if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
         hit_point.weight = radiant_type();
@@ -240,13 +242,13 @@ private:
 
     auto const flux_n = stats.flux;
     radiant_type flux_m;
-    if (dot(hit_point.direction, hit_point.normal) > 0) {
+    if (Dot(hit_point.direction, hit_point.normal) > 0) {
       flux_m +=
-        hit_point.object.emittance() *
+        hit_point.object.Radiance() *
         kPI * stats.radius * stats.radius * n_photons_;
     }
     for (auto const& photon : photons) {
-      auto const bsdf = hit_point.object.bsdf(
+      auto const bsdf = hit_point.object.BSDF(
         photon.direction.template cast<real_type>(),
         hit_point.direction,
         hit_point.normal

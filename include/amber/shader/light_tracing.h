@@ -13,8 +13,8 @@
 #include <thread>
 #include <vector>
 
-#include "material/surface_type.h"
-#include "shader/shader.h"
+#include "shader.h"
+#include "surface_type.h"
 
 namespace amber {
 namespace shader {
@@ -46,7 +46,7 @@ public:
     progress_(1)
   {}
 
-  void write(std::ostream& os) const noexcept
+  void Write(std::ostream& os) const noexcept
   {
     os
       << "LightTracing(n_threads=" << n_threads_
@@ -105,13 +105,13 @@ private:
     for (;;) {
       hit_type hit;
       Object object;
-      std::tie(hit, object) = scene.cast(ray);
+      std::tie(hit, object) = scene.Cast(ray);
       if (!hit) {
         break;
       }
 
-      if (object.surfaceType() == material::SurfaceType::Eye &&
-          dot(ray.direction, hit.normal) < 0) {
+      if (object.Surface() == SurfaceType::Eye &&
+          Dot(ray.direction, hit.normal) < 0) {
         auto const point = camera.ResponsePoint(ray.direction, hit.position);
         if (point) {
           image.at(std::get<0>(*point), std::get<1>(*point)) += weight;
@@ -119,9 +119,9 @@ private:
       }
 
       auto const scatter =
-        object.sampleImportance(-ray.direction, hit.normal, &sampler);
+        object.SampleImportance(-ray.direction, hit.normal, &sampler);
       auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, scatter.weight.max());
+        std::min<radiant_value_type>(1, scatter.weight.Max());
 
       if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
         break;

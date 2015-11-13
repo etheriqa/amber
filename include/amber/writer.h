@@ -16,7 +16,7 @@ namespace amber {
 class Writer
 {
 public:
-  virtual void write(std::ostream& os) const noexcept = 0;
+  virtual void Write(std::ostream& os) const noexcept = 0;
 };
 
 template <
@@ -25,7 +25,7 @@ template <
 >
 std::ostream& operator<<(std::ostream& os, W const& w)
 {
-  w.write(os);
+  w.Write(os);
   return os;
 }
 

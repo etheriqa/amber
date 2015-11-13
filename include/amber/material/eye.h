@@ -9,7 +9,7 @@
 #pragma once
 
 #include "constant.h"
-#include "material/symmetric_bsdf.h"
+#include "symmetric_bsdf.h"
 
 namespace amber {
 namespace material {
@@ -24,11 +24,13 @@ public:
 
   Eye() noexcept {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Eye; }
-  Radiant emittance() const noexcept { return Radiant(); }
+  SurfaceType Surface() const noexcept
+  {
+    return amber::SurfaceType::Eye;
+  }
 
   Radiant
-  bsdf(
+  BSDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&

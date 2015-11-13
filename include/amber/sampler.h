@@ -13,7 +13,7 @@
 #include <tuple>
 
 #include "constant.h"
-#include "geometry/vector.h"
+#include "vector.h"
 
 namespace amber {
 
@@ -54,13 +54,13 @@ public:
    * based on the ordinary *solid angle* measure.
    */
   template <typename RealType>
-  geometry::Vector3<RealType>
+  Vector3<RealType>
   sphereSA() {
     const auto r0 = uniform<RealType>(-1, 1), r1 = uniform<RealType>();
     const auto cos_theta = r0;
     const auto sin_theta = std::sqrt(1 - r0 * r0);
     const auto phi = 2 * static_cast<RealType>(kPI) * r1;
-    return geometry::Vector3<RealType>(
+    return Vector3<RealType>(
       cos_theta * std::cos(phi),
       cos_theta * std::sin(phi),
       sin_theta
@@ -72,10 +72,10 @@ public:
    * based on the ordinary *solid angle* measure.
    */
   template <typename RealType>
-  std::tuple<geometry::Vector3<RealType>, RealType>
-  hemisphereSA(const geometry::Vector3<RealType>& u,
-               const geometry::Vector3<RealType>& v,
-               const geometry::Vector3<RealType>& w) {
+  std::tuple<Vector3<RealType>, RealType>
+  hemisphereSA(const Vector3<RealType>& u,
+               const Vector3<RealType>& v,
+               const Vector3<RealType>& w) {
     const auto r0 = uniform<RealType>(), r1 = uniform<RealType>();
     const auto cos_theta = r0;
     const auto sin_theta = std::sqrt(1 - r0 * r0);
@@ -89,10 +89,10 @@ public:
   }
 
   template <typename RealType>
-  std::tuple<geometry::Vector3<RealType>, RealType>
-  hemisphereSA(const geometry::Vector3<RealType>& w) {
-    geometry::Vector3<RealType> u, v;
-    std::tie(u, v) = orthonormalBasis(w);
+  std::tuple<Vector3<RealType>, RealType>
+  hemisphereSA(const Vector3<RealType>& w) {
+    Vector3<RealType> u, v;
+    std::tie(u, v) = OrthonormalBasis(w);
     return hemisphereSA(u, v, w);
   }
 
@@ -101,10 +101,10 @@ public:
    * based on the *projected solid angle* measure (proportional to the cosine).
    */
   template <typename RealType>
-  std::tuple<geometry::Vector3<RealType>, RealType>
-  hemispherePSA(const geometry::Vector3<RealType>& u,
-                const geometry::Vector3<RealType>& v,
-                const geometry::Vector3<RealType>& w) {
+  std::tuple<Vector3<RealType>, RealType>
+  hemispherePSA(const Vector3<RealType>& u,
+                const Vector3<RealType>& v,
+                const Vector3<RealType>& w) {
     const auto r0 = uniform<RealType>(), r1 = uniform<RealType>();
     const auto cos_theta = std::sqrt(r0);
     const auto sin_theta = std::sqrt(1 - r0);
@@ -116,10 +116,10 @@ public:
   }
 
   template <typename RealType>
-  std::tuple<geometry::Vector3<RealType>, RealType>
-  hemispherePSA(const geometry::Vector3<RealType>& w) {
-    geometry::Vector3<RealType> u, v;
-    std::tie(u, v) = orthonormalBasis(w);
+  std::tuple<Vector3<RealType>, RealType>
+  hemispherePSA(const Vector3<RealType>& w) {
+    Vector3<RealType> u, v;
+    std::tie(u, v) = OrthonormalBasis(w);
     return hemispherePSA(u, v, w);
   }
 };
