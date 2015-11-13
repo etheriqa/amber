@@ -11,13 +11,14 @@
 #include <limits>
 #include <vector>
 
-#include "acceleration/acceleration.h"
+#include "acceleration.h"
 
 namespace amber {
 namespace acceleration {
 
 template <typename Object>
-class List : public Acceleration<Object> {
+class List : public Acceleration<Object>
+{
 public:
   using object_type = Object;
 
@@ -33,14 +34,16 @@ public:
   template <typename InputIterator>
   List(InputIterator first, InputIterator last) : objects_(first, last) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os << "List()";
   }
 
   std::tuple<hit_type, Object>
-  cast(const ray_type& ray) const noexcept {
+  Cast(const ray_type& ray) const noexcept
+  {
     return
-      Acceleration<Object>::traverse(objects_.begin(),
+      Acceleration<Object>::Traverse(objects_.begin(),
                                      objects_.end(),
                                      ray,
                                      std::numeric_limits<real_type>::max());

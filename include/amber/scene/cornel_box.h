@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "geometry/primitive/convex_polygon.h"
-#include "geometry/primitive/sphere.h"
+#include "primitive/convex_polygon.h"
+#include "primitive/sphere.h"
 #include "material/lambertian.h"
 #include "material/light.h"
 #include "material/phong.h"
@@ -26,8 +26,8 @@ void cornel_box(OutputIterator output) {
   using real_type     = typename Object::real_type;
   using vector3_type  = typename Object::vector3_type;
 
-  using ConvexPolygon = geometry::primitive::ConvexPolygon<real_type>;
-  using Sphere        = geometry::primitive::Sphere<real_type>;
+  using ConvexPolygon = primitive::ConvexPolygon<real_type>;
+  using Sphere        = primitive::Sphere<real_type>;
 
   using Lambertian    = material::Lambertian<radiant_type, real_type>;
   using Light         = material::Light<radiant_type, real_type>;

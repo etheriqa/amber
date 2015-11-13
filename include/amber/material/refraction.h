@@ -13,7 +13,7 @@
 #include <numeric>
 
 #include "constant.h"
-#include "material/material.h"
+#include "material.h"
 
 namespace {
 
@@ -39,17 +39,19 @@ public:
   explicit Refraction(radiant_value_type ior) noexcept
     : ior_(ior), r0_(fresnel(ior)) {}
 
-  SurfaceType surfaceType() const noexcept { return SurfaceType::Specular; }
-  Radiant emittance() const noexcept { return Radiant(); }
+  SurfaceType Surface() const noexcept
+  {
+    return amber::SurfaceType::Specular;
+  }
 
   Radiant
-  bsdf(
+  BSDF(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_alpha = dot(direction_i, normal);
+    auto const signed_cos_alpha = Dot(direction_i, normal);
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
@@ -60,7 +62,7 @@ public:
       return Radiant(kReflectance * kDiracDelta / cos_alpha);
     }
 
-    auto const signed_cos_o = dot(direction_o, normal);
+    auto const signed_cos_o = Dot(direction_o, normal);
     auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
     auto const rho_t = 1 - rho_r;
 
@@ -74,13 +76,13 @@ public:
   }
 
   radiant_value_type
-  pdfLight(
+  PDFLight(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_alpha = dot(direction_o, normal);
+    auto const signed_cos_alpha = Dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
@@ -95,7 +97,7 @@ public:
     auto const rho_t = (1 - rho_r) / (ior * ior);
     auto const rho = rho_r + rho_t;
 
-    auto const signed_cos_i = dot(direction_i, normal);
+    auto const signed_cos_i = Dot(direction_i, normal);
 
     if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
@@ -107,13 +109,13 @@ public:
   }
 
   radiant_value_type
-  pdfImportance(
+  PDFImportance(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_alpha = dot(direction_o, normal);
+    auto const signed_cos_alpha = Dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
@@ -127,7 +129,7 @@ public:
     auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
     auto const rho_t = 1 - rho_r;
 
-    auto const signed_cos_i = dot(direction_i, normal);
+    auto const signed_cos_i = Dot(direction_i, normal);
 
     if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
@@ -139,12 +141,12 @@ public:
   }
 
   std::vector<scatter_type>
-  distributionLight(
+  DistributionLight(
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
-    auto const signed_cos_alpha = dot(direction_o, normal);
+    auto const signed_cos_alpha = Dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
@@ -178,12 +180,12 @@ public:
   }
 
   std::vector<scatter_type>
-  distributionImportance(
+  DistributionImportance(
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
-    auto const signed_cos_alpha = dot(direction_o, normal);
+    auto const signed_cos_alpha = Dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);

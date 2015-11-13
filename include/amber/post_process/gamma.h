@@ -8,18 +8,18 @@
 
 #pragma once
 
-#include "camera/image.h"
-#include "radiometry/srgb.h"
+#include "image.h"
+#include "srgb.h"
 
 namespace amber {
 namespace post_process {
 
-template <typename HDR, typename LDR = radiometry::SRGB>
+template <typename HDR, typename LDR = SRGB>
 class Gamma {
 private:
-  using hdr_image_type = camera::Image<HDR>;
+  using hdr_image_type = Image<HDR>;
   using hdr_value_type = typename HDR::value_type;
-  using ldr_image_type = camera::Image<LDR>;
+  using ldr_image_type = Image<LDR>;
   using ldr_value_type = typename LDR::value_type;
 
 private:

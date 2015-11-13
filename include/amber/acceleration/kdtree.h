@@ -14,17 +14,20 @@
 #include <unordered_map>
 #include <vector>
 
-#include "acceleration/acceleration.h"
+#include "acceleration.h"
 
 namespace amber {
 namespace acceleration {
 
-template <typename Object,
-          size_t TraverseCost = 500,
-          size_t IntersectionCost = 100,
-          size_t LeafCapacity = 16,
-          size_t MaxDepth = 24>
-class KDTree : public Acceleration<Object> {
+template <
+  typename Object,
+  size_t TraverseCost = 500,
+  size_t IntersectionCost = 100,
+  size_t LeafCapacity = 16,
+  size_t MaxDepth = 24
+>
+class KDTree : public Acceleration<Object>
+{
 public:
   using object_type = Object;
 
@@ -195,7 +198,7 @@ private:
     std::tuple<hit_type, Object>
     cast(const ray_type& ray, real_type t_max) const noexcept {
       if (m_objects != nullptr) {
-        return Acceleration<Object>::traverse(m_objects->begin(),
+        return Acceleration<Object>::Traverse(m_objects->begin(),
                                               m_objects->end(),
                                               ray,
                                               t_max);
@@ -226,9 +229,9 @@ private:
       bool left_hit, right_hit;
       real_type t_left, t_right;
       std::tie(left_hit, t_left, std::ignore) =
-        m_left->m_voxel.intersect(ray, t_max);
+        m_left->m_voxel.Intersect(ray, t_max);
       std::tie(right_hit, t_right, std::ignore) =
-        m_right->m_voxel.intersect(ray, t_max);
+        m_right->m_voxel.Intersect(ray, t_max);
 
       if (!left_hit && !right_hit) {
         return std::make_tuple(hit_type(), Object());
@@ -265,7 +268,7 @@ private:
     aabb(InputIterator first, InputIterator last) noexcept {
       aabb_type aabb;
       std::for_each(first, last, [&](auto const& object){
-        aabb += object.aabb();
+        aabb += object.BoundingBox();
       });
       return aabb;
     }
@@ -276,7 +279,7 @@ private:
       event_list_type events;
       Event event;
       std::for_each(first, last, [&](auto const& object){
-        auto const voxel = object.aabb();
+        auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
           auto const& start = voxel.min[static_cast<size_t>(axis)];
           auto const& end = voxel.max[static_cast<size_t>(axis)];
@@ -365,9 +368,9 @@ private:
       aabb_type left_voxel, right_voxel;
       std::tie(left_voxel, right_voxel) = split_box(voxel, plane);
 
-      auto const surface_area = voxel.surfaceArea();
-      auto const p_left = left_voxel.surfaceArea() / surface_area;
-      auto const p_right = right_voxel.surfaceArea() / surface_area;
+      auto const surface_area = voxel.SurfaceArea();
+      auto const p_left = left_voxel.SurfaceArea() / surface_area;
+      auto const p_right = right_voxel.SurfaceArea() / surface_area;
       auto const cost_left = cost(p_left, p_right, n_left + n_planar, n_right);
       auto const cost_right = cost(p_left, p_right, n_left, n_right + n_planar);
 
@@ -464,9 +467,10 @@ public:
   template <typename InputIterator>
   KDTree(InputIterator first, InputIterator last) : root_(first, last) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "KDTree(traverse_cost=" << TraverseCost
+      << "KDTree(Traverse_cost=" << TraverseCost
       << ", intersection_cost=" << IntersectionCost
       << ", leaf_capacity=" << LeafCapacity
       << ", max_depth=" << MaxDepth
@@ -474,7 +478,8 @@ public:
   }
 
   std::tuple<hit_type, Object>
-  cast(const ray_type& ray) const noexcept {
+  Cast(const ray_type& ray) const noexcept
+  {
     return root_.cast(ray, std::numeric_limits<real_type>::max());
   }
 };

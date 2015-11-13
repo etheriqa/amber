@@ -8,14 +8,16 @@
 
 #pragma once
 
-#include "shader/framework/photon_mapping.h"
-#include "shader/shader.h"
+#include "shader.h"
+#include "component/photon_mapping.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
+template <
+  typename Scene,
+  typename Object = typename Scene::object_type
+>
 class ProgressivePhotonMapping : public Shader<Scene> {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -28,7 +30,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename framework::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Scene>;
 
   using photon_map_type    = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
@@ -82,7 +84,7 @@ public:
       alpha_(alpha),
       progress_(3) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept {
     os
       << "ProgressivePhotonMapping(n_thread=" << n_thread_
       << ", n_photon=" << n_photon_
@@ -157,8 +159,8 @@ public:
     for (auto const& hit_point : hit_points) {
       auto& pixel = image.at(hit_point.x, hit_point.y);
 
-      if (dot(hit_point.normal, hit_point.direction) > 0) {
-        pixel += hit_point.weight * hit_point.object.emittance();
+      if (Dot(hit_point.normal, hit_point.direction) > 0) {
+        pixel += hit_point.weight * hit_point.object.Radiance();
       }
 
       pixel +=
@@ -197,13 +199,13 @@ private:
     hit_type hit;
     Object object;
 
-    std::tie(hit, object) = scene.cast(ray);
+    std::tie(hit, object) = scene.Cast(ray);
     if (!hit) {
       return;
     }
 
-    if (object.surfaceType() == material::SurfaceType::Light ||
-        object.surfaceType() == material::SurfaceType::Diffuse) {
+    if (object.Surface() == SurfaceType::Light ||
+        object.Surface() == SurfaceType::Diffuse) {
       HitPoint hit_point;
       hit_point.object    = object;
       hit_point.position  = hit.position;
@@ -225,7 +227,7 @@ private:
     }
 
     auto const scatters =
-      object.distributionImportance(-ray.direction, hit.normal);
+      object.DistributionImportance(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
       auto const new_ray = ray_type(hit.position, scatter.direction);
       auto const new_weight = weight * scatter.weight;
@@ -260,7 +262,7 @@ private:
       auto const flux_n = hit_point.flux;
       radiant_type flux_m;
       for (auto const& photon : photons) {
-        auto const bsdf = hit_point.object.bsdf(
+        auto const bsdf = hit_point.object.BSDF(
           photon.direction.template cast<real_type>(),
           hit_point.direction,
           hit_point.normal

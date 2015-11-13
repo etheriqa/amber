@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "camera/image.h"
+#include "image.h"
 #include "post_process/normalizer.h"
 
 namespace amber {
@@ -17,7 +17,7 @@ namespace post_process {
 template <typename HDR>
 class Filmic {
 private:
-  using hdr_image_type = camera::Image<HDR>;
+  using hdr_image_type = Image<HDR>;
   using hdr_value_type = typename HDR::value_type;
 
   const hdr_value_type kA = 0.22; // shoulder strength

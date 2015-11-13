@@ -12,15 +12,15 @@
 #include <fstream>
 #include <string>
 
-#include "camera/image.h"
-#include "radiometry/rgb.h"
+#include "image.h"
+#include "rgb.h"
 
 namespace amber {
 namespace io {
 
 template <typename RealType>
 void export_rgbe(std::string const& filename,
-                 camera::Image<radiometry::RGB<RealType>> const& image) {
+                 Image<RGB<RealType>> const& image) {
   std::ofstream ofs(filename, std::ofstream::trunc);
 
   ofs << "#?RADIANCE" << std::endl;
@@ -32,7 +32,7 @@ void export_rgbe(std::string const& filename,
       auto const& p = image.at(i, j);
 
       int exponent;
-      auto const significand = std::frexp(p.max(), &exponent) * 256 / p.max();
+      auto const significand = std::frexp(p.Max(), &exponent) * 256 / p.Max();
 
       ofs << static_cast<unsigned char>(significand * p.r());
       ofs << static_cast<unsigned char>(significand * p.g());

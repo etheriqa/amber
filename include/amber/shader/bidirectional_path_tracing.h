@@ -13,15 +13,17 @@
 #include <thread>
 #include <vector>
 
-#include "shader/framework/bidirectional_path_tracing.h"
-#include "shader/framework/multiple_importance_sampling.h"
-#include "shader/shader.h"
+#include "shader.h"
+#include "component/bidirectional_path_tracing.h"
+#include "component/multiple_importance_sampling.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
+template <
+  typename Scene,
+  typename Object = typename Scene::object_type
+>
 class BidirectionalPathTracing : public Shader<Scene> {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -34,7 +36,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type          = framework::BidirectionalPathTracing<Scene>;
+  using bdpt_type          = component::BidirectionalPathTracing<Scene>;
 
   size_t n_thread_, spp_;
   Progress progress_;
@@ -45,7 +47,7 @@ public:
       spp_(spp),
       progress_(1) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept {
     os
       << "BidirectionalPathTracing(n_thread=" << n_thread_
       << ", spp=" << spp_
@@ -74,7 +76,7 @@ public:
               buffer.at(x, y) += bdpt.connect(
                 bdpt.lightTracing(&sampler),
                 bdpt.rayTracing(&sampler, camera, x, y),
-                framework::PowerHeuristic<radiant_value_type>()
+                component::PowerHeuristic<radiant_value_type>()
                 ) / spp_;
             }
           }

@@ -33,7 +33,7 @@ template <typename Scene>
 class ShaderFactory
 {
 public:
-  using shader_ptr = std::shared_ptr<shader::Shader<Scene>>;
+  using shader_ptr = std::shared_ptr<Shader<Scene>>;
 
 private:
   using real_type = std::double_t;

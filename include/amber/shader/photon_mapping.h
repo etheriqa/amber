@@ -14,14 +14,16 @@
 #include <thread>
 #include <vector>
 
-#include "shader/framework/photon_mapping.h"
-#include "shader/shader.h"
+#include "shader.h"
+#include "component/photon_mapping.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
+template <
+  typename Scene,
+  typename Object = typename Scene::object_type
+>
 class PhotonMapping : public Shader<Scene> {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -34,7 +36,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename framework::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Scene>;
 
   using photon_map_type    = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
@@ -49,7 +51,7 @@ public:
       k_nearest_photon_(k_nearest_photon),
       progress_(3) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept {
     os
       << "PhotonMapping(n_thread=" << n_thread_
       << ", n_photon=" << n_photon_
@@ -156,20 +158,20 @@ private:
     hit_type hit;
     Object object;
 
-    std::tie(hit, object) = scene.cast(ray);
+    std::tie(hit, object) = scene.Cast(ray);
     if (!hit) {
       return radiant_type();
     }
 
-    if (object.surfaceType() == material::SurfaceType::Light) {
-      if (dot(hit.normal, ray.direction) < 0) {
-        return weight * object.emittance();
+    if (object.Surface() == SurfaceType::Light) {
+      if (Dot(hit.normal, ray.direction) < 0) {
+        return weight * object.Radiance();
       } else {
         return radiant_type();
       }
     }
 
-    if (object.surfaceType() == material::SurfaceType::Diffuse) {
+    if (object.Surface() == SurfaceType::Diffuse) {
       auto const photons = photon_map.kNearestNeighbours(hit.position,
         static_cast<real_type>(1),
         k_nearest_photon_
@@ -183,7 +185,7 @@ private:
 
     radiant_type power;
 
-    auto const scatters = object.distributionLight(-ray.direction, hit.normal);
+    auto const scatters = object.DistributionLight(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
       power += estimatePower(
         scene,
@@ -209,12 +211,12 @@ private:
     // TODO sum up simply for now
     auto const squared_max_distance =
       (photons.back().position.template cast<real_type>() - hit.position)
-      .squaredLength();
+      .SquaredLength();
 
     radiant_type power;
     for (auto const& photon : photons) {
       auto const direction_i = photon.direction.template cast<real_type>();
-      auto const bsdf = object.bsdf(direction_i, direction_o, hit.normal);
+      auto const bsdf = object.BSDF(direction_i, direction_o, hit.normal);
       power += bsdf * photon.power;
     }
     return power / kPI / squared_max_distance;

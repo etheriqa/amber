@@ -18,22 +18,22 @@
 #include "acceleration/bvh.h"
 #include "acceleration/kdtree.h"
 #include "acceleration/list.h"
-#include "camera/camera.h"
-#include "camera/lens/thin.h"
+#include "camera.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
-#include "geometry/primitive/regular_polygon.h"
-#include "geometry/vector.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
+#include "lens/thin.h"
 #include "material/eye.h"
-#include "object/object.h"
+#include "object.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
-#include "radiometry/rgb.h"
+#include "primitive/regular_polygon.h"
+#include "rgb.h"
+#include "scene.h"
 #include "scene/cornel_box.h"
 #include "scene/cornel_box_complex.h"
-#include "scene/scene.h"
+#include "vector.h"
 
 namespace amber {
 namespace cli {
@@ -42,18 +42,18 @@ class Application {
 private:
   using size_type          = std::size_t;
   using real_type          = std::double_t;
-  using vector3_type       = geometry::Vector3<real_type>;
+  using vector3_type       = Vector3<real_type>;
 
   using radiant_value_type = std::float_t;
-  using radiant_type       = radiometry::RGB<radiant_value_type>;
+  using radiant_type       = RGB<radiant_value_type>;
 
-  using primitive_type     = geometry::primitive::Primitive<real_type>;
-  using material_type      = material::Material<radiant_type, real_type>;
-  using object_type        = object::Object<primitive_type, material_type>;
+  using primitive_type     = Primitive<real_type>;
+  using material_type      = Material<radiant_type, real_type>;
+  using object_type        = Object<primitive_type, material_type>;
 
   using acceleration_type  = acceleration::KDTree<object_type>;
 
-  using scene_type         = scene::Scene<acceleration_type>;
+  using scene_type         = Scene<acceleration_type>;
 
   int argc_;
   char **argv_;
@@ -162,16 +162,16 @@ public:
     std::vector<object_type> objects;
     scene::cornel_box(std::back_inserter(objects));
 
-    auto const aperture = geometry::primitive::RegularPolygon<real_type>(
+    auto const aperture = primitive::RegularPolygon<real_type>(
       origin, axis, up, n_blades, radius
     );
     objects.emplace_back(&aperture, new material::Eye<radiant_type, real_type>);
-    auto const lens = camera::lens::Thin<real_type>(focus_distance);
-    auto const sensor = camera::Sensor<radiant_type, real_type>(
+    auto const lens = lens::Thin<real_type>(focus_distance);
+    auto const sensor = Sensor<radiant_type, real_type>(
       vm.at("width").as<size_type>() * vm.at("ssaa").as<size_type>(),
       vm.at("height").as<size_type>() * vm.at("ssaa").as<size_type>()
     );
-    auto const camera = camera::Camera<radiant_type, real_type>(
+    auto const camera = Camera<radiant_type, real_type>(
       sensor, &lens, &aperture, origin, axis, up
     );
 

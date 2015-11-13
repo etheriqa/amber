@@ -13,8 +13,8 @@
 #include <functional>
 
 #include "constant.h"
-#include "camera/image.h"
-#include "radiometry/rgb.h"
+#include "image.h"
+#include "rgb.h"
 
 namespace amber {
 namespace post_process {
@@ -22,7 +22,7 @@ namespace post_process {
 template <typename HDR>
 class Normalizer {
 private:
-  using hdr_image_type = camera::Image<HDR>;
+  using hdr_image_type = Image<HDR>;
   using hdr_value_type = typename HDR::value_type;
 
   using evaluator_type = std::function<hdr_value_type(HDR)>;
@@ -31,7 +31,7 @@ private:
 
 public:
   Normalizer() noexcept
-    : evaluator_([](const auto& hdr){ return hdr.max(); }) {}
+    : evaluator_([](const auto& hdr){ return hdr.Max(); }) {}
 
   explicit Normalizer(evaluator_type evaluator) noexcept
     : evaluator_(evaluator) {}

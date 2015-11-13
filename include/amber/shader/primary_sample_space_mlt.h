@@ -13,16 +13,18 @@
 #include <thread>
 #include <vector>
 
-#include "shader/framework/bidirectional_path_tracing.h"
-#include "shader/framework/multiple_importance_sampling.h"
-#include "shader/framework/primary_sample_space.h"
-#include "shader/shader.h"
+#include "shader.h"
+#include "component/bidirectional_path_tracing.h"
+#include "component/multiple_importance_sampling.h"
+#include "component/primary_sample_space.h"
 
 namespace amber {
 namespace shader {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
+template <
+  typename Scene,
+  typename Object = typename Scene::object_type
+>
 class PrimarySampleSpaceMLT : public Shader<Scene> {
 private:
   using camera_type        = typename Shader<Scene>::camera_type;
@@ -35,10 +37,10 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type          = framework::BidirectionalPathTracing<Scene>;
+  using bdpt_type          = component::BidirectionalPathTracing<Scene>;
 
   struct Seed {
-    framework::PrimarySampleSpace<> pss_light, pss_eye;
+    component::PrimarySampleSpace<> pss_light, pss_eye;
     size_t x, y;
     radiant_type power;
     radiant_value_type contribution;
@@ -53,8 +55,8 @@ private:
         power(bdpt.connect(
           bdpt.lightTracing(&pss_light),
           bdpt.rayTracing(&pss_eye, camera, x, y),
-          framework::PowerHeuristic<radiant_value_type>())),
-        contribution(power.sum()) {
+          component::PowerHeuristic<radiant_value_type>())),
+        contribution(power.Sum()) {
       pss_light.accept();
       pss_eye.accept();
     }
@@ -90,7 +92,7 @@ public:
       p_large_step_(p_large_step),
       progress_(2) {}
 
-  void write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept {
     os
       << "PrimarySampleSpaceMLT(n_thread=" << n_thread_
       << ", n_seed=" << n_seed_
@@ -209,16 +211,16 @@ private:
   State propose(State state,
                 bdpt_type& bdpt,
                 camera_type const& camera,
-                framework::PrimarySampleSpace<>& pss_light,
-                framework::PrimarySampleSpace<>& pss_eye) const {
+                component::PrimarySampleSpace<>& pss_light,
+                component::PrimarySampleSpace<>& pss_eye) const {
     state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
     state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
     state.power = bdpt.connect(
       bdpt.lightTracing(&pss_light),
       bdpt.rayTracing(&pss_eye, camera, state.x, state.y),
-      framework::PowerHeuristic<radiant_value_type>()
+      component::PowerHeuristic<radiant_value_type>()
     );
-    state.contribution = state.power.sum();
+    state.contribution = state.power.Sum();
     return state;
   }
 };

@@ -11,14 +11,14 @@
 #include <fstream>
 #include <string>
 
-#include "camera/image.h"
-#include "radiometry/srgb.h"
+#include "image.h"
+#include "srgb.h"
 
 namespace amber {
 namespace io {
 
 void export_ppm(std::string const& filename,
-                camera::Image<radiometry::SRGB> const& image) {
+                Image<SRGB> const& image) {
   std::ofstream ofs(filename, std::ofstream::trunc);
 
   ofs << "P3" << std::endl;
