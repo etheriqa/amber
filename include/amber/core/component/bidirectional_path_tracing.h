@@ -57,8 +57,8 @@ private:
   };
 
   Scene scene_;
-  std::vector<Event> event_buffer_;
-  std::vector<radiant_value_type> probability_buffer_;
+  std::vector<Event> mutable event_buffer_;
+  std::vector<radiant_value_type> mutable probability_buffer_;
 
 public:
   explicit BidirectionalPathTracing(Scene const& scene) noexcept
@@ -166,7 +166,7 @@ public:
     std::vector<Event> const& light,
     std::vector<Event> const& eye,
     MIS const& mis
-  )
+  ) const
   {
     radiant_type power;
 
@@ -348,7 +348,7 @@ private:
     std::vector<Event> const& eye,
     size_t s,
     size_t t
-  )
+  ) const
   {
     event_buffer_.clear();
     probability_buffer_.clear();
