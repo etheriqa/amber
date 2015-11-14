@@ -20,35 +20,26 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-
-#include "core/image.h"
-#include "srgb.h"
+#include "core/vector.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Radiant, typename RealType>
+struct Scatter {
+  using vector3_type       = Vector3<RealType>;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  vector3_type direction;
+  Radiant weight;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
-  }
-}
+  Scatter(
+    vector3_type const& direction,
+    Radiant const& weight
+  ) noexcept
+  : direction(direction),
+    weight(weight)
+  {}
+};
 
 }
 }

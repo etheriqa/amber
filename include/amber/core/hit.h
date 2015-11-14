@@ -20,35 +20,56 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
+#include <cmath>
+#include <limits>
 
-#include "core/image.h"
-#include "srgb.h"
+#include "core/writer.h"
+#include "core/vector.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename RealType>
+struct Hit : public Writer
+{
+  using real_type    = RealType;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  using hit_type     = Hit<real_type>;
+  using vector3_type = Vector3<real_type>;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
+  vector3_type position, normal;
+  real_type distance;
+
+  Hit() noexcept
+  : position(vector3_type()),
+    normal(vector3_type()),
+    distance(std::numeric_limits<real_type>::quiet_NaN())
+  {}
+
+  Hit(const vector3_type& p, const vector3_type& n, real_type d) noexcept
+  : position(p),
+    normal(Normalize(n)),
+    distance(d)
+  {}
+
+  operator bool() const noexcept
+  {
+    return std::isfinite(distance);
+  }
+
+  void Write(std::ostream& os) const noexcept
+  {
+    if (*this) {
+      os
+        << "Hit(position=" << position
+        << ", normal=" << normal
+        << ", distance=" << distance
+        << ")";
+    } else {
+      os << "Hit(none)";
     }
   }
-}
+};
 
 }
 }

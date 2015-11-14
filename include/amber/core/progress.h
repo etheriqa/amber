@@ -20,35 +20,24 @@
 
 #pragma once
 
-#include <fstream>
 #include <string>
-
-#include "core/image.h"
-#include "srgb.h"
+#include <atomic>
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+struct Progress {
+  std::string phase;
+  std::atomic<size_t> current_phase;
+  std::atomic<size_t> total_phase;
+  std::atomic<size_t> current_job;
+  std::atomic<size_t> total_job;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
-
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
-  }
-}
+  Progress(size_t total_phase) noexcept
+    : phase("none"),
+      current_phase(0), total_phase(total_phase),
+      current_job(0), total_job(0) {}
+};
 
 }
 }

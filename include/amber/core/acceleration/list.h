@@ -20,35 +20,49 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
+#include <limits>
+#include <vector>
 
-#include "core/image.h"
-#include "srgb.h"
+#include "core/acceleration.h"
 
 namespace amber {
-namespace io {
+namespace core {
+namespace acceleration {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Object>
+class List : public Acceleration<Object>
+{
+public:
+  using object_type = Object;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  using hit_type    = typename Object::hit_type;
+  using ray_type    = typename Object::ray_type;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
+private:
+  using real_type   = typename Object::real_type;
+
+  std::vector<Object> objects_;
+
+public:
+  template <typename InputIterator>
+  List(InputIterator first, InputIterator last) : objects_(first, last) {}
+
+  void Write(std::ostream& os) const noexcept
+  {
+    os << "List()";
   }
-}
 
+  std::tuple<hit_type, Object>
+  Cast(const ray_type& ray) const noexcept
+  {
+    return
+      Acceleration<Object>::Traverse(objects_.begin(),
+                                     objects_.end(),
+                                     ray,
+                                     std::numeric_limits<real_type>::max());
+  }
+};
+
+}
 }
 }

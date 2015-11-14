@@ -21,7 +21,8 @@
 #pragma once
 
 #include <cmath>
-#include "image.h"
+
+#include "core/image.h"
 #include "post_process/normalizer.h"
 
 namespace amber {
@@ -31,7 +32,7 @@ template <typename HDR>
 class Reinhard
 {
 private:
-  using hdr_image_type = Image<HDR>;
+  using hdr_image_type = core::Image<HDR>;
   using hdr_value_type = typename HDR::value_type;
 
   const hdr_image_type kDelta = 1e-3;

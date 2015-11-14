@@ -20,35 +20,41 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-
-#include "core/image.h"
-#include "srgb.h"
+#include "core/writer.h"
+#include "core/ray.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename RealType>
+class Lens : public Writer
+{
+public:
+  using ray_type     = Ray<RealType>;
+  using vector3_type = Vector3<RealType>;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  RealType static constexpr kFocalLength = 0.050;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
-  }
-}
+  virtual RealType SensorDistance() const noexcept = 0;
+
+  virtual
+  vector3_type // direction
+  Outgoing(
+    vector3_type const&, // sensor_point
+    vector3_type const&, // aperture_point
+    vector3_type const&, // origin
+    vector3_type const&  // axis
+  ) const noexcept = 0;
+
+  virtual
+  vector3_type // sensor_point
+  Incoming(
+    vector3_type const&, // direction
+    vector3_type const&, // aperture_point
+    vector3_type const&, // origin
+    vector3_type const&  // axis
+  ) const noexcept = 0;
+};
 
 }
 }

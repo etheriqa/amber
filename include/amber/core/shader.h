@@ -20,35 +20,27 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-
+#include "core/camera.h"
 #include "core/image.h"
-#include "srgb.h"
+#include "core/progress.h"
+#include "core/writer.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Scene>
+class Shader : public Writer {
+public:
+  using scene_type  = Scene;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  using camera_type = Camera<typename Scene::object_type::radiant_type,
+                             typename Scene::object_type::real_type>;
+  using image_type  = Image<typename Scene::object_type::radiant_type>;
+  using object_type = typename Scene::object_type;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
-  }
-}
+  virtual Progress const& progress() const noexcept = 0;
+  virtual image_type operator()(Scene const&, camera_type const&) = 0;
+};
 
 }
 }

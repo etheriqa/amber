@@ -20,35 +20,29 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-
-#include "core/image.h"
-#include "srgb.h"
+#include "core/vector.h"
+#include "core/writer.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename RealType>
+struct Ray : public Writer
+{
+  using vector3_type = Vector3<RealType>;
 
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
+  vector3_type origin, direction;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
+  Ray() noexcept : origin(), direction() {}
+
+  Ray(vector3_type const& origin, vector3_type const& direction) noexcept
+  : origin(origin), direction(Normalize(direction)) {}
+
+  void Write(std::ostream& os) const noexcept
+  {
+    os << "Ray(origin=" << origin << ", direction=" << direction << ")";
   }
-}
+};
 
 }
 }

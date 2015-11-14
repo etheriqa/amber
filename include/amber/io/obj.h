@@ -22,6 +22,7 @@
 
 #include <fstream>
 #include <limits>
+
 #include "model.h"
 
 namespace amber {

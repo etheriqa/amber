@@ -20,10 +20,10 @@
 
 #pragma once
 
-#include "rgb.h"
+#include "core/rgb.h"
 
 namespace amber {
 
-using SRGB = RGB<unsigned char>;
+using SRGB = core::RGB<unsigned char>;
 
 }

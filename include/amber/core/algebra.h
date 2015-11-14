@@ -20,34 +20,35 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
+#include <cmath>
+#include <utility>
 
-#include "core/image.h"
-#include "srgb.h"
+#include <boost/optional.hpp>
 
 namespace amber {
-namespace io {
+namespace core {
 
-void export_ppm(std::string const& filename,
-                core::Image<SRGB> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
-
-  ofs << "P3" << std::endl;
-  ofs << image.width() << " " << image.height() << std::endl;
-  ofs << 255 << std::endl;
-
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      ofs
-        << static_cast<size_t>(image.at(i, j).r())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).g())
-        << ' '
-        << static_cast<size_t>(image.at(i, j).b())
-        << std::endl;
-    }
+template <typename RealType>
+boost::optional<std::tuple<RealType, RealType>>
+SolveQuadratic(RealType a, RealType b, RealType c) noexcept
+{
+  const auto d = b * b - 4 * a * c;
+  if (d < 0) {
+    return boost::none;
   }
+
+  const auto sqrt_d = std::sqrt(d);
+  auto alpha = - b - sqrt_d;
+  auto beta = - b + sqrt_d;
+  if (std::abs(alpha) < std::abs(beta)) {
+    alpha = c / beta * 2;
+    beta /= 2 * a;
+  } else {
+    beta = c / alpha * 2;
+    alpha /= 2 * a;
+  }
+
+  return std::make_tuple(alpha, beta);
 }
 
 }
