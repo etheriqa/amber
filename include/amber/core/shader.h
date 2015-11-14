@@ -38,6 +38,8 @@ public:
   using image_type  = Image<typename Scene::object_type::radiant_type>;
   using object_type = typename Scene::object_type;
 
+  virtual ~Shader() {}
+
   virtual Progress const& progress() const noexcept = 0;
   virtual image_type operator()(Scene const&, camera_type const&) = 0;
 };

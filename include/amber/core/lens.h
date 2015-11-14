@@ -35,6 +35,8 @@ public:
 
   RealType static constexpr kFocalLength = 0.050;
 
+  virtual ~Lens() {}
+
   virtual RealType SensorDistance() const noexcept = 0;
 
   virtual

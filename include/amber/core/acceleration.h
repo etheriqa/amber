@@ -35,6 +35,8 @@ struct Acceleration : public Writer {
   using hit_type    = typename Object::hit_type;
   using ray_type    = typename Object::ray_type;
 
+  virtual ~Acceleration() {}
+
   virtual std::tuple<hit_type, Object>
   Cast(ray_type const&) const noexcept = 0;
 

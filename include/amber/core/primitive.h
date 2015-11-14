@@ -37,6 +37,8 @@ public:
   using ray_type  = Ray<RealType>;
   using real_type = RealType;
 
+  virtual ~Primitive() {}
+
   virtual RealType SurfaceArea() const noexcept = 0;
   virtual aabb_type BoundingBox() const noexcept = 0;
   virtual hit_type Intersect(ray_type const&) const noexcept = 0;

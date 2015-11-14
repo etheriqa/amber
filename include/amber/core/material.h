@@ -42,6 +42,8 @@ public:
   using radiant_type       = Radiant;                      // TODO remove
 
 public:
+  virtual ~Material() {}
+
   virtual SurfaceType Surface() const noexcept = 0;
 
   virtual Radiant Radiance() const noexcept { return Radiant(); }
