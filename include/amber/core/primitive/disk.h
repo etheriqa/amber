@@ -74,7 +74,7 @@ public:
      }
 
      auto const squared_distance =
-       (ray.origin + t * ray.direction - center_).SquaredLength();
+       SquaredLength(ray.origin + t * ray.direction - center_);
      if (squared_distance > radius_ * radius_) {
        return hit_type();
      }

@@ -50,7 +50,7 @@ public:
     : v0_(v0), v1_(v1), v2_(v2), normal_(Normalize(Cross(v1 - v0, v2 - v0))) {}
 
   RealType SurfaceArea() const noexcept {
-    return (Cross(v1_ - v0_, v2_ - v0_)).Length() / 2;
+    return Length(Cross(v1_ - v0_, v2_ - v0_)) / 2;
   }
 
   aabb_type BoundingBox() const noexcept {

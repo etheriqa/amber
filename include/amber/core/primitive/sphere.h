@@ -57,7 +57,7 @@ public:
   hit_type Intersect(ray_type const& ray) const noexcept {
     auto const a = static_cast<RealType>(1);
     auto const b = -2 * Dot(center_ - ray.origin, ray.direction);
-    auto const c = (center_ - ray.origin).SquaredLength() - radius_ * radius_;
+    auto const c = SquaredLength(center_ - ray.origin) - radius_ * radius_;
 
     auto const solutions = SolveQuadratic(a, b, c);
     if (!solutions) {

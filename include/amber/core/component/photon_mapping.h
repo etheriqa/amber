@@ -49,27 +49,31 @@ private:
   using photon_vector3_type = Vector3<photon_real_type>;
   using photon_aabb_type    = AABB<photon_real_type>;
 
-  struct Photon {
+  struct Photon
+  {
     photon_vector3_type position;
     photon_vector3_type direction;
     radiant_type power;
     Axis axis;
   };
 
-  struct PhotonComparator {
+  struct PhotonComparator
+  {
     photon_vector3_type point;
 
     explicit PhotonComparator(photon_vector3_type const& point) noexcept
-      : point(point) {}
+    : point(point)
+    {}
 
-    bool operator()(Photon const& a, Photon const& b) const noexcept {
+    bool operator()(Photon const& a, Photon const& b) const noexcept
+    {
       return
-        (a.position - point).SquaredLength()
-        < (b.position - point).SquaredLength();
+        SquaredLength(a.position - point) < SquaredLength(b.position - point);
     }
   };
 
-  struct PhotonMap {
+  struct PhotonMap
+  {
     std::vector<Photon> photons_;
 
     template <typename RandomAccessIterator>
@@ -129,13 +133,8 @@ private:
                                            size_t k) const {
       std::vector<Photon> heap;
       heap.reserve(k + 1);
-      kNearestNeighbours(heap,
-                         0,
-                         point.template cast<photon_real_type>(),
-                         radius * radius,
-                         k);
-      std::sort_heap(heap.begin(), heap.end(),
-                     PhotonComparator(point.template cast<photon_real_type>()));
+      kNearestNeighbours(heap, 0, point, radius * radius, k);
+      std::sort_heap(heap.begin(), heap.end(), PhotonComparator(point));
       return heap;
     }
 
@@ -170,12 +169,12 @@ private:
       }
       kNearestNeighbours(heap, near, point, squared_radius, k);
       if (heap.size() >= k) {
-        squared_radius = (heap.front().position - point).SquaredLength();
+        squared_radius = SquaredLength(heap.front().position - point);
       }
       if (plane_distance * plane_distance < squared_radius) {
         kNearestNeighbours(heap, far, point, squared_radius, k);
       }
-      if ((photon.position - point).SquaredLength() < squared_radius) {
+      if (SquaredLength(photon.position - point) < squared_radius) {
         heap.push_back(photon);
         std::push_heap(heap.begin(), heap.end(), PhotonComparator(point));
       }
@@ -213,8 +212,8 @@ public:
       if (object.Surface() == SurfaceType::Light ||
           object.Surface() == SurfaceType::Diffuse) {
         Photon photon;
-        photon.position = hit.position.template cast<photon_real_type>();
-        photon.direction = -ray.direction.template cast<photon_real_type>();
+        photon.position = hit.position;
+        photon.direction = -ray.direction;
         photon.power = power;
         output = photon;
       }

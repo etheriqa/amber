@@ -276,7 +276,7 @@ private:
       radiant_type flux_m;
       for (auto const& photon : photons) {
         auto const bsdf = hit_point.object.BSDF(
-          photon.direction.template cast<real_type>(),
+          photon.direction,
           hit_point.direction,
           hit_point.normal
         );

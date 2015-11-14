@@ -69,9 +69,9 @@ public:
     auto const u = ray.direction - Dot(ray.direction, normal_) * normal_;
     auto const v = OC - Dot(OC, normal_) * normal_;
 
-    auto const a = u.SquaredLength();
+    auto const a = SquaredLength(u);
     auto const b = -2 * Dot(u, v);
-    auto const c = v.SquaredLength() - radius_ * radius_;
+    auto const c = SquaredLength(v) - radius_ * radius_;
 
     auto const solutions = SolveQuadratic(a, b, c);
     if (!solutions) {

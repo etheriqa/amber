@@ -223,13 +223,11 @@ private:
   {
     // TODO sum up simply for now
     auto const squared_max_distance =
-      (photons.back().position.template cast<real_type>() - hit.position)
-      .SquaredLength();
+      SquaredLength(vector3_type(photons.back().position) - hit.position);
 
     radiant_type power;
     for (auto const& photon : photons) {
-      auto const direction_i = photon.direction.template cast<real_type>();
-      auto const bsdf = object.BSDF(direction_i, direction_o, hit.normal);
+      auto const bsdf = object.BSDF(photon.direction, direction_o, hit.normal);
       power += bsdf * photon.power;
     }
     return power / kPI / squared_max_distance;

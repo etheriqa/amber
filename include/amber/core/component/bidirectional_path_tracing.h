@@ -206,9 +206,11 @@ private:
     vector3_type const& direction
   ) const noexcept
   {
-    return std::abs(Dot(direction, x.normal) *
-                    Dot(direction, y.normal) /
-                    (y.position - x.position).SquaredLength());
+    return std::abs(
+      Dot(direction, x.normal) *
+      Dot(direction, y.normal) /
+      SquaredLength(y.position - x.position)
+    );
   }
 
   template <typename Sample, typename PDF>
