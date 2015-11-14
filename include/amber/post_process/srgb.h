@@ -23,7 +23,9 @@
 #include "core/rgb.h"
 
 namespace amber {
+namespace post_process {
 
 using SRGB = core::RGB<unsigned char>;
 
+}
 }

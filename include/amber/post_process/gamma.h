@@ -21,7 +21,7 @@
 #pragma once
 
 #include "core/image.h"
-#include "srgb.h"
+#include "post_process/srgb.h"
 
 namespace amber {
 namespace post_process {
