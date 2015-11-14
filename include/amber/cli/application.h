@@ -195,12 +195,22 @@ public:
     std::cerr << "Total Power = " << image.totalPower() << std::endl;
 
     {
-      auto const filename = vm.at("output").as<std::string>() + ".hdr";
+      auto const filename = vm.at("output").as<std::string>() + ".exr";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      io::export_rgbe(
-        filename,
-        image.downSample(vm.at("ssaa").as<size_type>())
-      );
+      post_process::Normalizer<radiant_type> normalizer;
+      auto const hdr_image =
+        normalizer(image.downSample(vm.at("ssaa").as<size_type>()));
+
+      cv::Mat mat(hdr_image.height(), hdr_image.width(), CV_32FC3);
+      for (size_t i = 0; i < hdr_image.height(); i++) {
+        for (size_t j = 0; j < hdr_image.width(); j++) {
+          auto& rgb = mat.at<cv::Vec3f>(i, j);
+          rgb[0] = hdr_image.at(j, i).b();
+          rgb[1] = hdr_image.at(j, i).g();
+          rgb[2] = hdr_image.at(j, i).r();
+        }
+      }
+      cv::imwrite(filename, mat);
     }
 
     {
@@ -212,14 +222,13 @@ public:
       auto const ldr_image =
         gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())));
 
-      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC4);
+      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC3);
       for (size_t i = 0; i < ldr_image.height(); i++) {
         for (size_t j = 0; j < ldr_image.width(); j++) {
-          auto& rgba = mat.at<cv::Vec4b>(i, j);
-          rgba[0] = ldr_image.at(j, i).b();
-          rgba[1] = ldr_image.at(j, i).g();
-          rgba[2] = ldr_image.at(j, i).r();
-          rgba[3] = 255;
+          auto& rgb = mat.at<cv::Vec3b>(i, j);
+          rgb[0] = ldr_image.at(j, i).b();
+          rgb[1] = ldr_image.at(j, i).g();
+          rgb[2] = ldr_image.at(j, i).r();
         }
       }
       cv::imwrite(filename, mat);
