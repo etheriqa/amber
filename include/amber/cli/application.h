@@ -41,7 +41,6 @@
 #include "core/rgb.h"
 #include "core/scene.h"
 #include "core/vector.h"
-#include "io/rgbe.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
 #include "scene/cornel_box.h"
