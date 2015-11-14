@@ -25,6 +25,7 @@
 #include <thread>
 
 #include <boost/program_options.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "cli/render.h"
 #include "cli/shader_factory.h"
@@ -40,7 +41,6 @@
 #include "core/rgb.h"
 #include "core/scene.h"
 #include "core/vector.h"
-#include "io/ppm.h"
 #include "io/rgbe.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
@@ -204,15 +204,25 @@ public:
     }
 
     {
-      auto const filename = vm.at("output").as<std::string>() + ".ppm";
+      auto const filename = vm.at("output").as<std::string>() + ".png";
       std::cerr << "Exporting " << filename << "..." << std::endl;
       post_process::Filmic<radiant_type>
         filmic(vm.at("exposure").as<std::double_t>());
       post_process::Gamma<radiant_type> gamma;
-      io::export_ppm(
-        filename,
-        gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())))
-      );
+      auto const ldr_image =
+        gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())));
+
+      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC4);
+      for (size_t i = 0; i < ldr_image.height(); i++) {
+        for (size_t j = 0; j < ldr_image.width(); j++) {
+          auto& rgba = mat.at<cv::Vec4b>(i, j);
+          rgba[0] = ldr_image.at(j, i).b();
+          rgba[1] = ldr_image.at(j, i).g();
+          rgba[2] = ldr_image.at(j, i).r();
+          rgba[3] = 255;
+        }
+      }
+      cv::imwrite(filename, mat);
     }
 
     return 0;
