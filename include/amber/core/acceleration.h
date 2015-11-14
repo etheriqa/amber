@@ -20,39 +20,61 @@
 
 #pragma once
 
-#include <cmath>
-#include <fstream>
-#include <string>
+#include <algorithm>
+#include <tuple>
 
-#include "core/image.h"
-#include "core/rgb.h"
+#include "core/writer.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
-template <typename RealType>
-void export_rgbe(std::string const& filename,
-                 core::Image<core::RGB<RealType>> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Object>
+struct Acceleration : public Writer {
+  using object_type = Object;
 
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
+  using hit_type    = typename Object::hit_type;
+  using ray_type    = typename Object::ray_type;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      auto const& p = image.at(i, j);
+  virtual std::tuple<hit_type, Object>
+  Cast(ray_type const&) const noexcept = 0;
 
-      int exponent;
-      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
-
-      ofs << static_cast<unsigned char>(significand * p.r());
-      ofs << static_cast<unsigned char>(significand * p.g());
-      ofs << static_cast<unsigned char>(significand * p.b());
-      ofs << static_cast<unsigned char>(exponent + 128);
-    }
+  virtual bool
+  TestVisibility(
+    ray_type const& ray,
+    Object const& object
+  ) const noexcept
+  {
+    return std::get<1>(Cast(ray)) == object;
   }
-}
+
+protected:
+  using real_type = typename Object::real_type;
+
+  template <typename InputIterator>
+  static std::tuple<hit_type, Object>
+  Traverse(
+    InputIterator first,
+    InputIterator last,
+    ray_type const& ray,
+    real_type t_max
+  ) noexcept
+  {
+    hit_type closest_hit;
+    Object closest_object;
+
+    std::for_each(first, last, [&](auto const& object){
+      auto const hit = object.Intersect(ray);
+      if (hit && hit.distance < t_max) {
+        t_max = hit.distance;
+        closest_hit = hit;
+        closest_object = object;
+      }
+    });
+
+    return std::make_tuple(closest_hit, closest_object);
+  }
+};
+
 
 }
 }

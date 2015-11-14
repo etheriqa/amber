@@ -23,14 +23,14 @@
 #include <fstream>
 #include <string>
 
-#include "image.h"
+#include "core/image.h"
 #include "srgb.h"
 
 namespace amber {
 namespace io {
 
 void export_ppm(std::string const& filename,
-                Image<SRGB> const& image) {
+                core::Image<SRGB> const& image) {
   std::ofstream ofs(filename, std::ofstream::trunc);
 
   ofs << "P3" << std::endl;

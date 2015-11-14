@@ -24,13 +24,13 @@
 
 #include <boost/program_options.hpp>
 
-#include "shader/bidirectional_path_tracing.h"
-#include "shader/light_tracing.h"
-#include "shader/path_tracing.h"
-#include "shader/photon_mapping.h"
-#include "shader/primary_sample_space_mlt.h"
-#include "shader/progressive_photon_mapping.h"
-#include "shader/stochastic_progressive_photon_mapping.h"
+#include "core/shader/bidirectional_path_tracing.h"
+#include "core/shader/light_tracing.h"
+#include "core/shader/path_tracing.h"
+#include "core/shader/photon_mapping.h"
+#include "core/shader/primary_sample_space_mlt.h"
+#include "core/shader/progressive_photon_mapping.h"
+#include "core/shader/stochastic_progressive_photon_mapping.h"
 
 namespace amber {
 namespace cli {
@@ -45,7 +45,7 @@ template <typename Scene>
 class ShaderFactory
 {
 public:
-  using shader_ptr = std::shared_ptr<Shader<Scene>>;
+  using shader_ptr = std::shared_ptr<core::Shader<Scene>>;
 
 private:
   using real_type = std::double_t;
@@ -58,7 +58,7 @@ public:
 
     if (algorithm == "pt") {
       return
-        std::make_shared<shader::PathTracing<Scene>>(
+        std::make_shared<core::shader::PathTracing<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("spp").as<size_type>()
         );
@@ -66,7 +66,7 @@ public:
 
     if (algorithm == "lt") {
       return
-        std::make_shared<shader::LightTracing<Scene>>(
+        std::make_shared<core::shader::LightTracing<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("samples").as<size_type>()
         );
@@ -74,7 +74,7 @@ public:
 
     if (algorithm == "bdpt") {
       return
-        std::make_shared<shader::BidirectionalPathTracing<Scene>>(
+        std::make_shared<core::shader::BidirectionalPathTracing<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("spp").as<size_type>()
         );
@@ -82,7 +82,7 @@ public:
 
     if (algorithm == "pm") {
       return
-        std::make_shared<shader::PhotonMapping<Scene>>(
+        std::make_shared<core::shader::PhotonMapping<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("photons").as<size_type>(),
           vm.at("k").as<size_type>()
@@ -91,7 +91,7 @@ public:
 
     if (algorithm == "pssmlt") {
       return
-        std::make_shared<shader::PrimarySampleSpaceMLT<Scene>>(
+        std::make_shared<core::shader::PrimarySampleSpaceMLT<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("seeds").as<size_type>(),
           vm.at("mutations").as<size_type>(),
@@ -101,7 +101,7 @@ public:
 
     if (algorithm == "ppm") {
       return
-        std::make_shared<shader::ProgressivePhotonMapping<Scene>>(
+        std::make_shared<core::shader::ProgressivePhotonMapping<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("photons").as<size_type>(),
           vm.at("k").as<size_type>(),
@@ -113,7 +113,7 @@ public:
 
     if (algorithm == "sppm") {
       return
-        std::make_shared<shader::StochasticProgressivePhotonMapping<Scene>>(
+        std::make_shared<core::shader::StochasticProgressivePhotonMapping<Scene>>(
           vm.at("threads").as<size_type>(),
           vm.at("photons").as<size_type>(),
           vm.at("k").as<size_type>(),

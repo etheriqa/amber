@@ -20,13 +20,13 @@
 
 #pragma once
 
-#include "primitive/convex_polygon.h"
-#include "primitive/sphere.h"
-#include "material/lambertian.h"
-#include "material/light.h"
-#include "material/phong.h"
-#include "material/refraction.h"
-#include "material/specular.h"
+#include "core/material/lambertian.h"
+#include "core/material/light.h"
+#include "core/material/phong.h"
+#include "core/material/refraction.h"
+#include "core/material/specular.h"
+#include "core/primitive/convex_polygon.h"
+#include "core/primitive/sphere.h"
 
 namespace amber {
 namespace scene {
@@ -38,14 +38,14 @@ void cornel_box(OutputIterator output) {
   using real_type     = typename Object::real_type;
   using vector3_type  = typename Object::vector3_type;
 
-  using ConvexPolygon = primitive::ConvexPolygon<real_type>;
-  using Sphere        = primitive::Sphere<real_type>;
+  using ConvexPolygon = core::primitive::ConvexPolygon<real_type>;
+  using Sphere        = core::primitive::Sphere<real_type>;
 
-  using Lambertian    = material::Lambertian<radiant_type, real_type>;
-  using Light         = material::Light<radiant_type, real_type>;
-  using Phong         = material::Phong<radiant_type, real_type>;
-  using Refraction    = material::Refraction<radiant_type, real_type>;
-  using Specular      = material::Specular<radiant_type, real_type>;
+  using Lambertian    = core::material::Lambertian<radiant_type, real_type>;
+  using Light         = core::material::Light<radiant_type, real_type>;
+  using Phong         = core::material::Phong<radiant_type, real_type>;
+  using Refraction    = core::material::Refraction<radiant_type, real_type>;
+  using Specular      = core::material::Specular<radiant_type, real_type>;
 
   // light source
   output = Object(

@@ -20,39 +20,49 @@
 
 #pragma once
 
-#include <cmath>
-#include <fstream>
-#include <string>
+#include <limits>
+#include <vector>
 
-#include "core/image.h"
-#include "core/rgb.h"
+#include "core/acceleration.h"
 
 namespace amber {
-namespace io {
+namespace core {
+namespace acceleration {
 
-template <typename RealType>
-void export_rgbe(std::string const& filename,
-                 core::Image<core::RGB<RealType>> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Object>
+class List : public Acceleration<Object>
+{
+public:
+  using object_type = Object;
 
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
+  using hit_type    = typename Object::hit_type;
+  using ray_type    = typename Object::ray_type;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      auto const& p = image.at(i, j);
+private:
+  using real_type   = typename Object::real_type;
 
-      int exponent;
-      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
+  std::vector<Object> objects_;
 
-      ofs << static_cast<unsigned char>(significand * p.r());
-      ofs << static_cast<unsigned char>(significand * p.g());
-      ofs << static_cast<unsigned char>(significand * p.b());
-      ofs << static_cast<unsigned char>(exponent + 128);
-    }
+public:
+  template <typename InputIterator>
+  List(InputIterator first, InputIterator last) : objects_(first, last) {}
+
+  void Write(std::ostream& os) const noexcept
+  {
+    os << "List()";
   }
-}
 
+  std::tuple<hit_type, Object>
+  Cast(const ray_type& ray) const noexcept
+  {
+    return
+      Acceleration<Object>::Traverse(objects_.begin(),
+                                     objects_.end(),
+                                     ray,
+                                     std::numeric_limits<real_type>::max());
+  }
+};
+
+}
 }
 }

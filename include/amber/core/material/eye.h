@@ -20,39 +20,60 @@
 
 #pragma once
 
-#include <cmath>
-#include <fstream>
-#include <string>
-
-#include "core/image.h"
-#include "core/rgb.h"
+#include "core/constant.h"
+#include "core/symmetric_bsdf.h"
 
 namespace amber {
-namespace io {
+namespace core {
+namespace material {
 
-template <typename RealType>
-void export_rgbe(std::string const& filename,
-                 core::Image<core::RGB<RealType>> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+template <typename Radiant, typename RealType>
+class Eye : public SymmetricBSDF<Radiant, RealType>
+{
+public:
+  using radiant_value_type = typename Radiant::value_type;
+  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
+  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
 
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
+  Eye() noexcept {}
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      auto const& p = image.at(i, j);
-
-      int exponent;
-      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
-
-      ofs << static_cast<unsigned char>(significand * p.r());
-      ofs << static_cast<unsigned char>(significand * p.g());
-      ofs << static_cast<unsigned char>(significand * p.b());
-      ofs << static_cast<unsigned char>(exponent + 128);
-    }
+  SurfaceType Surface() const noexcept
+  {
+    return SurfaceType::Eye;
   }
-}
 
+  Radiant
+  BSDF(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
+    return Radiant();
+  }
+
+  radiant_value_type
+  pdf(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept
+  {
+    return kDiracDelta;
+  }
+
+  std::vector<scatter_type>
+  distribution(
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const
+  {
+    return {
+      scatter_type(direction_o, Radiant(1)),
+    };
+  }
+};
+
+}
 }
 }

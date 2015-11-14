@@ -26,26 +26,26 @@
 
 #include <boost/program_options.hpp>
 
-#include "acceleration/bsp.h"
-#include "acceleration/bvh.h"
-#include "acceleration/kdtree.h"
-#include "acceleration/list.h"
-#include "camera.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
+#include "core/acceleration/bsp.h"
+#include "core/acceleration/bvh.h"
+#include "core/acceleration/kdtree.h"
+#include "core/acceleration/list.h"
+#include "core/camera.h"
+#include "core/lens/thin.h"
+#include "core/material/eye.h"
+#include "core/object.h"
+#include "core/primitive/regular_polygon.h"
+#include "core/rgb.h"
+#include "core/scene.h"
+#include "core/vector.h"
 #include "io/ppm.h"
 #include "io/rgbe.h"
-#include "lens/thin.h"
-#include "material/eye.h"
-#include "object.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
-#include "primitive/regular_polygon.h"
-#include "rgb.h"
-#include "scene.h"
 #include "scene/cornel_box.h"
 #include "scene/cornel_box_complex.h"
-#include "vector.h"
 
 namespace amber {
 namespace cli {
@@ -54,18 +54,18 @@ class Application {
 private:
   using size_type          = std::size_t;
   using real_type          = std::double_t;
-  using vector3_type       = Vector3<real_type>;
+  using vector3_type       = core::Vector3<real_type>;
 
   using radiant_value_type = std::float_t;
-  using radiant_type       = RGB<radiant_value_type>;
+  using radiant_type       = core::RGB<radiant_value_type>;
 
-  using primitive_type     = Primitive<real_type>;
-  using material_type      = Material<radiant_type, real_type>;
-  using object_type        = Object<primitive_type, material_type>;
+  using primitive_type     = core::Primitive<real_type>;
+  using material_type      = core::Material<radiant_type, real_type>;
+  using object_type        = core::Object<primitive_type, material_type>;
 
-  using acceleration_type  = acceleration::KDTree<object_type>;
+  using acceleration_type  = core::acceleration::KDTree<object_type>;
 
-  using scene_type         = Scene<acceleration_type>;
+  using scene_type         = core::Scene<acceleration_type>;
 
   int argc_;
   char **argv_;
@@ -174,16 +174,19 @@ public:
     std::vector<object_type> objects;
     scene::cornel_box(std::back_inserter(objects));
 
-    auto const aperture = primitive::RegularPolygon<real_type>(
+    auto const aperture = core::primitive::RegularPolygon<real_type>(
       origin, axis, up, n_blades, radius
     );
-    objects.emplace_back(&aperture, new material::Eye<radiant_type, real_type>);
-    auto const lens = lens::Thin<real_type>(focus_distance);
-    auto const sensor = Sensor<radiant_type, real_type>(
+    objects.emplace_back(
+      &aperture,
+      new core::material::Eye<radiant_type, real_type>
+    );
+    auto const lens = core::lens::Thin<real_type>(focus_distance);
+    auto const sensor = core::Sensor<radiant_type, real_type>(
       vm.at("width").as<size_type>() * vm.at("ssaa").as<size_type>(),
       vm.at("height").as<size_type>() * vm.at("ssaa").as<size_type>()
     );
-    auto const camera = Camera<radiant_type, real_type>(
+    auto const camera = core::Camera<radiant_type, real_type>(
       sensor, &lens, &aperture, origin, axis, up
     );
 

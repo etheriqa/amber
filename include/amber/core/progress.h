@@ -20,39 +20,24 @@
 
 #pragma once
 
-#include <cmath>
-#include <fstream>
 #include <string>
-
-#include "core/image.h"
-#include "core/rgb.h"
+#include <atomic>
 
 namespace amber {
-namespace io {
+namespace core {
 
-template <typename RealType>
-void export_rgbe(std::string const& filename,
-                 core::Image<core::RGB<RealType>> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+struct Progress {
+  std::string phase;
+  std::atomic<size_t> current_phase;
+  std::atomic<size_t> total_phase;
+  std::atomic<size_t> current_job;
+  std::atomic<size_t> total_job;
 
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
-
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      auto const& p = image.at(i, j);
-
-      int exponent;
-      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
-
-      ofs << static_cast<unsigned char>(significand * p.r());
-      ofs << static_cast<unsigned char>(significand * p.g());
-      ofs << static_cast<unsigned char>(significand * p.b());
-      ofs << static_cast<unsigned char>(exponent + 128);
-    }
-  }
-}
+  Progress(size_t total_phase) noexcept
+    : phase("none"),
+      current_phase(0), total_phase(total_phase),
+      current_job(0), total_job(0) {}
+};
 
 }
 }

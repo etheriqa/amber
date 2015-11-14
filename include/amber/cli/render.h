@@ -29,14 +29,14 @@
 #include <sstream>
 #include <thread>
 
-#include "camera.h"
-#include "shader.h"
+#include "core/camera.h"
+#include "core/shader.h"
 
 namespace amber {
 namespace cli {
 
 template <typename Scene,
-          typename Shader = typename amber::Shader<Scene>,
+          typename Shader = typename core::Shader<Scene>,
           typename Object = typename Shader::object_type,
           typename Camera = typename Shader::camera_type,
           typename Image = typename Shader::image_type>

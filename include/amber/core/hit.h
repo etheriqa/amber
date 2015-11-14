@@ -21,38 +21,55 @@
 #pragma once
 
 #include <cmath>
-#include <fstream>
-#include <string>
+#include <limits>
 
-#include "core/image.h"
-#include "core/rgb.h"
+#include "core/writer.h"
+#include "core/vector.h"
 
 namespace amber {
-namespace io {
+namespace core {
 
 template <typename RealType>
-void export_rgbe(std::string const& filename,
-                 core::Image<core::RGB<RealType>> const& image) {
-  std::ofstream ofs(filename, std::ofstream::trunc);
+struct Hit : public Writer
+{
+  using real_type    = RealType;
 
-  ofs << "#?RADIANCE" << std::endl;
-  ofs << "FORMAT=32-bit_rle_rgbe" << std::endl << std::endl;
-  ofs << "-Y " << image.height() << " +X " << image.width() << std::endl;
+  using hit_type     = Hit<real_type>;
+  using vector3_type = Vector3<real_type>;
 
-  for (size_t j = 0; j < image.height(); j++) {
-    for (size_t i = 0; i < image.width(); i++) {
-      auto const& p = image.at(i, j);
+  vector3_type position, normal;
+  real_type distance;
 
-      int exponent;
-      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
+  Hit() noexcept
+  : position(vector3_type()),
+    normal(vector3_type()),
+    distance(std::numeric_limits<real_type>::quiet_NaN())
+  {}
 
-      ofs << static_cast<unsigned char>(significand * p.r());
-      ofs << static_cast<unsigned char>(significand * p.g());
-      ofs << static_cast<unsigned char>(significand * p.b());
-      ofs << static_cast<unsigned char>(exponent + 128);
+  Hit(const vector3_type& p, const vector3_type& n, real_type d) noexcept
+  : position(p),
+    normal(Normalize(n)),
+    distance(d)
+  {}
+
+  operator bool() const noexcept
+  {
+    return std::isfinite(distance);
+  }
+
+  void Write(std::ostream& os) const noexcept
+  {
+    if (*this) {
+      os
+        << "Hit(position=" << position
+        << ", normal=" << normal
+        << ", distance=" << distance
+        << ")";
+    } else {
+      os << "Hit(none)";
     }
   }
-}
+};
 
 }
 }

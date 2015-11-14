@@ -24,9 +24,9 @@
 #include <cmath>
 #include <functional>
 
-#include "constant.h"
-#include "image.h"
-#include "rgb.h"
+#include "core/constant.h"
+#include "core/image.h"
+#include "core/rgb.h"
 
 namespace amber {
 namespace post_process {
@@ -34,7 +34,7 @@ namespace post_process {
 template <typename HDR>
 class Normalizer {
 private:
-  using hdr_image_type = Image<HDR>;
+  using hdr_image_type = core::Image<HDR>;
   using hdr_value_type = typename HDR::value_type;
 
   using evaluator_type = std::function<hdr_value_type(HDR)>;
@@ -43,7 +43,7 @@ private:
 
 public:
   Normalizer() noexcept
-    : evaluator_([](const auto& hdr){ return hdr.Max(); }) {}
+    : evaluator_([](const auto& hdr){ return Max(hdr); }) {}
 
   explicit Normalizer(evaluator_type evaluator) noexcept
     : evaluator_(evaluator) {}
