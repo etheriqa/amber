@@ -38,8 +38,8 @@ Features
 Dependencies
 ------------
 
-- Boost
-- OpenCV >=2.4
+- Boost >= 1.55
+- OpenCV >= 2.3
 
 References
 ----------
