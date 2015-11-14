@@ -35,6 +35,12 @@ Features
     - Reinhard
     - Filmic
 
+Dependencies
+------------
+
+- Boost
+- OpenCV >=2.4
+
 References
 ----------
 
