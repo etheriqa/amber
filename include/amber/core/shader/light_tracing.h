@@ -32,15 +32,13 @@ namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class LightTracing : public Shader<Scene>
+template <typename Object>
+class LightTracing : public Shader<Object>
 {
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -69,7 +67,7 @@ public:
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera)
+  image_type operator()(scene_type const& scene, camera_type const& camera)
   {
     progress_.phase = "Light Tracing";
     progress_.current_phase = 1;
@@ -104,7 +102,7 @@ public:
 private:
   void
   Sample(
-    Scene const& scene,
+    scene_type const& scene,
     camera_type const& camera,
     image_type& image,
     DefaultSampler<>& sampler

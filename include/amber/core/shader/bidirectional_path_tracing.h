@@ -25,22 +25,21 @@
 #include <thread>
 #include <vector>
 
-#include "core/shader.h"
 #include "core/component/bidirectional_path_tracing.h"
 #include "core/component/multiple_importance_sampling.h"
+#include "core/shader.h"
 
 namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class BidirectionalPathTracing : public Shader<Scene> {
+template <typename Object>
+class BidirectionalPathTracing : public Shader<Object>
+{
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -49,27 +48,30 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type          = component::BidirectionalPathTracing<Scene>;
+  using bdpt_type          = component::BidirectionalPathTracing<Object>;
 
-  size_t n_thread_, spp_;
+  size_t n_threads_, spp_;
   Progress progress_;
 
 public:
-  BidirectionalPathTracing(size_t n_thread, size_t spp) noexcept
-    : n_thread_(n_thread),
-      spp_(spp),
-      progress_(1) {}
+  BidirectionalPathTracing(size_t n_threads, size_t spp) noexcept
+  : n_threads_(n_threads),
+    spp_(spp),
+    progress_(1)
+  {}
 
-  void Write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "BidirectionalPathTracing(n_thread=" << n_thread_
+      << "BidirectionalPathTracing(n_threads=" << n_threads_
       << ", spp=" << spp_
       << ")";
   }
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera) {
+  image_type operator()(scene_type const& scene, camera_type const& camera)
+  {
     progress_.phase = "Bidirectional Path Tracing";
     progress_.current_phase = 1;
     progress_.current_job = 0;
@@ -78,7 +80,7 @@ public:
     std::vector<std::thread> threads;
     std::mutex mtx;
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));

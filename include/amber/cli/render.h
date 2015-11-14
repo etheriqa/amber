@@ -24,36 +24,44 @@
 #include <future>
 #include <iomanip>
 #include <iostream>
-#include <list>
+#include <iterator>
 #include <locale>
+#include <memory>
 #include <sstream>
 #include <thread>
 
+#include "core/acceleration.h"
 #include "core/camera.h"
+#include "core/component/light_sampler.h"
 #include "core/shader.h"
 
 namespace amber {
 namespace cli {
 
-template <typename Scene,
-          typename Shader = typename core::Shader<Scene>,
-          typename Object = typename Shader::object_type,
-          typename Camera = typename Shader::camera_type,
-          typename Image = typename Shader::image_type>
-Image render(Shader* shader,
-             std::vector<Object> const& objects,
-             Camera const& camera) {
-  {
-    std::vector<Object> dummy_objects;
-    std::cerr
-      << "Shader: " << *shader << std::endl
-      //<< "Acceleration: " << Acceleration(dummy_objects.begin(), dummy_objects.end()) << std::endl
-      << "Objects: " << objects.size() << std::endl
-      << "Camera: " << camera << std::endl
-      << std::endl;
-  }
+template <
+  typename InputIterator,
+  typename Object = typename InputIterator::value_type
+>
+core::Image<typename Object::radiant_type>
+render(
+  InputIterator first,
+  InputIterator last,
+  std::shared_ptr<core::Shader<Object>> const& shader,
+  std::shared_ptr<core::Acceleration<Object>> const& acceleration,
+  core::Camera<typename Object::radiant_type, typename Object::real_type> const& camera
+)
+{
+  std::cerr
+    << "Objects: " << std::distance(first, last) << std::endl
+    << "Shader: " << *shader << std::endl
+    << "Acceleration: " << *acceleration << std::endl
+    << "Camera: " << camera << std::endl
+    << std::endl;
 
-  Scene const scene(objects.begin(), objects.end());
+  core::Scene<Object> const scene(
+    acceleration,
+    std::make_shared<core::component::LightSampler<Object>>(first, last)
+  );
 
   auto image =
     std::async(std::launch::async, [&](){ return (*shader)(scene, camera); });

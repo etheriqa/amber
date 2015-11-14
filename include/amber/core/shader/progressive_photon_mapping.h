@@ -20,21 +20,21 @@
 
 #pragma once
 
-#include "core/shader.h"
 #include "core/component/photon_mapping.h"
+#include "core/shader.h"
+#include "core/surface_type.h"
 
 namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class ProgressivePhotonMapping : public Shader<Scene> {
+template <typename Object>
+class ProgressivePhotonMapping : public Shader<Object>
+{
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -43,12 +43,13 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename component::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Object>;
 
   using photon_map_type    = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
 
-  struct HitPoint {
+  struct HitPoint
+  {
     Object object;
     vector3_type position;
     vector3_type normal;
@@ -57,7 +58,7 @@ private:
     size_t x;
     size_t y;
     real_type radius;
-    size_t n_photon;
+    size_t n_photons;
     radiant_type flux;
     std::atomic<bool> locked;
 
@@ -72,37 +73,41 @@ private:
       x(hp.x),
       y(hp.y),
       radius(hp.radius),
-      n_photon(hp.n_photon),
+      n_photons(hp.n_photons),
       flux(hp.flux),
       locked(hp.locked.load())
     {}
   };
 
-  size_t n_thread_, n_photon_, k_nearest_photon_, n_iteration_;
+  size_t n_threads_, n_photons_, k_nearest_photons_, n_iterations_;
   double initial_radius_, alpha_;
   Progress progress_;
 
 public:
-  ProgressivePhotonMapping(size_t n_thread,
-                           size_t n_photon,
-                           size_t k_nearest_photon,
-                           size_t n_iteration,
-                           double initial_radius,
-                           double alpha)
-    : n_thread_(n_thread),
-      n_photon_(n_photon),
-      k_nearest_photon_(k_nearest_photon),
-      n_iteration_(n_iteration),
-      initial_radius_(initial_radius),
-      alpha_(alpha),
-      progress_(3) {}
+  ProgressivePhotonMapping(
+    size_t n_threads,
+    size_t n_photons,
+    size_t k_nearest_photons,
+    size_t n_iterations,
+    double initial_radius,
+    double alpha
+  ) noexcept
+  : n_threads_(n_threads),
+    n_photons_(n_photons),
+    k_nearest_photons_(k_nearest_photons),
+    n_iterations_(n_iterations),
+    initial_radius_(initial_radius),
+    alpha_(alpha),
+    progress_(3)
+  {}
 
-  void Write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "ProgressivePhotonMapping(n_thread=" << n_thread_
-      << ", n_photon=" << n_photon_
-      << ", k_nearest_photon=" << k_nearest_photon_
-      << ", n_iteration=" << n_iteration_
+      << "ProgressivePhotonMapping(n_threads=" << n_threads_
+      << ", n_photons=" << n_photons_
+      << ", k_nearest_photons=" << k_nearest_photons_
+      << ", n_iterations=" << n_iterations_
       << ", initial_radius=" << initial_radius_
       << ", alpha=" << alpha_
       << ")";
@@ -110,7 +115,8 @@ public:
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera) {
+  image_type operator()(scene_type const& scene, camera_type const& camera)
+  {
     pm_type pm(scene);
     std::vector<std::thread> threads;
 
@@ -139,15 +145,15 @@ public:
     progress_.phase = "Photon Tracing";
     progress_.current_phase = 2;
     progress_.current_job = 0;
-    progress_.total_job = n_iteration_;
+    progress_.total_job = n_iterations_;
 
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
         std::vector<photon_type> photons;
         while (++progress_.current_job <= progress_.total_job) {
           photons.clear();
-          for (size_t i = 0; i < n_photon_; i++) {
+          for (size_t i = 0; i < n_photons_; i++) {
             pm.photonTracing(1, std::back_inserter(photons), &sampler);
           }
           progressiveRadianceEstimate(
@@ -179,19 +185,22 @@ public:
       pixel +=
         hit_point.weight * hit_point.flux /
         (kPI * hit_point.radius * hit_point.radius) /
-        (n_iteration_ * n_photon_);
+        (n_iterations_ * n_photons_);
     }
     return image;
   }
 
 private:
   template <typename OutputIterator>
-  void rayTracing(Scene const& scene,
-                  camera_type const& camera,
-                  size_t x,
-                  size_t y,
-                  OutputIterator output,
-                  DefaultSampler<>& sampler) const {
+  void rayTracing(
+    scene_type const& scene,
+    camera_type const& camera,
+    size_t x,
+    size_t y,
+    OutputIterator output,
+    DefaultSampler<>& sampler
+  ) const
+  {
     ray_type ray;
     radiant_type weight;
     std::tie(ray, weight, std::ignore, std::ignore) =
@@ -201,14 +210,17 @@ private:
   }
 
   template <typename OutputIterator>
-  void rayTracing(Scene const& scene,
-                  size_t x,
-                  size_t y,
-                  ray_type const& ray,
-                  radiant_type const& weight,
-                  size_t depth,
-                  OutputIterator output,
-                  DefaultSampler<>& sampler) const {
+  void rayTracing(
+    scene_type const& scene,
+    size_t x,
+    size_t y,
+    ray_type const& ray,
+    radiant_type const& weight,
+    size_t depth,
+    OutputIterator output,
+    DefaultSampler<>& sampler
+  ) const
+  {
     hit_type hit;
     Object object;
 
@@ -228,7 +240,7 @@ private:
       hit_point.x         = x;
       hit_point.y         = y;
       hit_point.radius    = initial_radius_;
-      hit_point.n_photon  = 0;
+      hit_point.n_photons  = 0;
       hit_point.flux      = radiant_type();
       hit_point.locked    = false;
       output = hit_point;
@@ -249,9 +261,12 @@ private:
   }
 
   template <typename ForwardIterator>
-  void progressiveRadianceEstimate(ForwardIterator first,
-                                   ForwardIterator last,
-                                   photon_map_type const& photon_map) const {
+  void progressiveRadianceEstimate(
+    ForwardIterator first,
+    ForwardIterator last,
+    photon_map_type const& photon_map
+  ) const
+  {
     std::for_each(first, last, [&](auto& hit_point){
       bool expected = false;
       while (hit_point.locked.compare_exchange_strong(expected, true)) {}
@@ -259,18 +274,18 @@ private:
       auto const photons = photon_map.kNearestNeighbours(
         hit_point.position,
         hit_point.radius,
-        k_nearest_photon_
+        k_nearest_photons_
       );
 
-      auto const n = hit_point.n_photon;
+      auto const n = hit_point.n_photons;
       auto const m = photons.size();
-      hit_point.n_photon = n + m * alpha_;
-      if (hit_point.n_photon == 0) {
+      hit_point.n_photons = n + m * alpha_;
+      if (hit_point.n_photons == 0) {
         hit_point.locked = false;
         return;
       }
 
-      hit_point.radius *= std::sqrt(1. * hit_point.n_photon / (n + m));
+      hit_point.radius *= std::sqrt(1. * hit_point.n_photons / (n + m));
 
       auto const flux_n = hit_point.flux;
       radiant_type flux_m;
@@ -282,7 +297,7 @@ private:
         );
         flux_m += bsdf * photon.power;
       }
-      hit_point.flux = (flux_n + flux_m) * (1. * hit_point.n_photon / (n + m));
+      hit_point.flux = (flux_n + flux_m) * (1. * hit_point.n_photons / (n + m));
 
       hit_point.locked = false;
     });

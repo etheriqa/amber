@@ -22,19 +22,18 @@
 
 #include "core/component/photon_mapping.h"
 #include "core/shader.h"
+#include "core/surface_type.h"
 
 namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class StochasticProgressivePhotonMapping : public Shader<Scene> {
+template <typename Object>
+class StochasticProgressivePhotonMapping : public Shader<Object> {
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -43,7 +42,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename component::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Object>;
 
   using photon_map_type    = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
@@ -116,7 +115,7 @@ public:
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera)
+  image_type operator()(scene_type const& scene, camera_type const& camera)
   {
     pm_type pm(scene);
     std::vector<std::thread> threads;
@@ -180,7 +179,7 @@ public:
 
 private:
   HitPoint rayTracing(
-    Scene const& scene,
+    scene_type const& scene,
     camera_type const& camera,
     size_t x,
     size_t y,

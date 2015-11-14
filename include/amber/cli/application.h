@@ -27,12 +27,9 @@
 #include <boost/program_options.hpp>
 #include <opencv2/opencv.hpp>
 
+#include "cli/acceleration_factory.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
-#include "core/acceleration/bsp.h"
-#include "core/acceleration/bvh.h"
-#include "core/acceleration/kdtree.h"
-#include "core/acceleration/list.h"
 #include "core/camera.h"
 #include "core/lens/thin.h"
 #include "core/material/eye.h"
@@ -88,9 +85,9 @@ public:
     {
       namespace po = boost::program_options;
       description.add_options()
-        ("algorithm",
-         po::value<std::string>(),
-         "rendering algorithm to use (pt, lt, bdpt, pm, pssmlt, ppm, sppm)")
+        ("acceleration",
+         po::value<std::string>()->default_value("kdtree"),
+         "acceleration structure to use (list, bsp, kdtree, bvh)")
         ("alpha",
          po::value<real_type>()->default_value(0.7),
          "a parameter used in the progressive photon mapping algoritms")
@@ -119,9 +116,15 @@ public:
         ("photons",
          po::value<size_type>()->default_value(65536),
          "a number of emitted photons")
+        ("samples",
+         po::value<size_type>()->default_value(65536),
+         "a number of samples used in the light tracing algorithm")
         ("seeds",
          po::value<size_type>()->default_value(65536),
          "a number of seed states used in the MCMC algorithms")
+        ("shader",
+         po::value<std::string>(),
+         "rendering algorithm to use (pt, lt, bdpt, pssmlt, pm, ppm, sppm)")
         ("spp",
          po::value<size_type>()->default_value(16),
          "samples per pixel")
@@ -135,9 +138,6 @@ public:
         ("width",
          po::value<size_type>()->default_value(512),
          "image width")
-        ("samples",
-         po::value<size_type>()->default_value(65536),
-         "a number of samples")
         ;
 
       try {
@@ -150,18 +150,13 @@ public:
       po::notify(vm);
     }
 
-    if (vm.count("help") || !vm.count("algorithm")) {
+    if (vm.count("help") || !vm.count("shader")) {
       std::cerr << description << std::endl;
       return 0;
     }
 
-    ShaderFactory<scene_type>::shader_ptr shader;
-    try {
-      shader = ShaderFactory<scene_type>()(vm);
-    } catch (InvalidAlgorithmError const& e) {
-      std::cerr << "invalid algorithm" << std::endl;
-      return -1;
-    }
+    std::vector<object_type> objects;
+    scene::cornel_box(std::back_inserter(objects));
 
     vector3_type const origin(0, 0, 4);
     vector3_type const axis(0, 0, -1);
@@ -169,9 +164,6 @@ public:
     size_type const n_blades = 6;
     real_type const radius = 0.05;
     real_type const focus_distance = 4;
-
-    std::vector<object_type> objects;
-    scene::cornel_box(std::back_inserter(objects));
 
     auto const aperture = core::primitive::RegularPolygon<real_type>(
       origin, axis, up, n_blades, radius
@@ -189,7 +181,25 @@ public:
       sensor, &lens, &aperture, origin, axis, up
     );
 
-    auto const image = render<scene_type>(shader.get(), objects, camera);
+    ShaderFactory<object_type>::shader_ptr shader;
+    try {
+      shader = ShaderFactory<object_type>()(vm);
+    } catch (UnknownShaderError const& e) {
+      std::cerr << e.what() << std::endl;
+      return -1;
+    }
+
+    AccelerationFactory<object_type>::acceleration_ptr acceleration;
+    try {
+      acceleration =
+        AccelerationFactory<object_type>()(objects.begin(), objects.end(), vm);
+    } catch (UnknownAccelerationError const& e) {
+      std::cerr << e.what() << std::endl;
+      return -1;
+    }
+
+    auto const image =
+      render(objects.begin(), objects.end(), shader, acceleration, camera);
 
     std::cerr << "Total Power = " << image.totalPower() << std::endl;
 

@@ -21,6 +21,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 #include <boost/program_options.hpp>
 
@@ -35,95 +36,99 @@
 namespace amber {
 namespace cli {
 
-class InvalidAlgorithmError : public std::runtime_error
+class UnknownShaderError : public std::runtime_error
 {
 public:
-  InvalidAlgorithmError() noexcept : std::runtime_error("Invalid algorithm") {}
+  UnknownShaderError(std::string const& name) noexcept
+  : std::runtime_error("Unknown shader name: " + name)
+  {}
 };
 
-template <typename Scene>
+template <typename Object>
 class ShaderFactory
 {
 public:
-  using shader_ptr = std::shared_ptr<core::Shader<Scene>>;
+  using shader_ptr = std::shared_ptr<core::Shader<Object>>;
 
 private:
   using real_type = std::double_t;
   using size_type = std::size_t;
 
+  using pt_type     = core::shader::PathTracing<Object>;
+  using lt_type     = core::shader::LightTracing<Object>;
+  using bdpt_type   = core::shader::BidirectionalPathTracing<Object>;
+  using pssmlt_type = core::shader::PrimarySampleSpaceMLT<Object>;
+  using pm_type     = core::shader::PhotonMapping<Object>;
+  using ppm_type    = core::shader::ProgressivePhotonMapping<Object>;
+  using sppm_type   = core::shader::StochasticProgressivePhotonMapping<Object>;
+
 public:
-  shader_ptr operator()(boost::program_options::variables_map const& vm) const
+  shader_ptr
+  operator()(boost::program_options::variables_map const& vm) const
   {
-    auto const algorithm = vm.at("algorithm").as<std::string>();
+    auto const shader = vm.at("shader").as<std::string>();
 
-    if (algorithm == "pt") {
-      return
-        std::make_shared<core::shader::PathTracing<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("spp").as<size_type>()
-        );
+    if (shader == "pt") {
+      return std::make_shared<pt_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("spp").as<size_type>()
+      );
     }
 
-    if (algorithm == "lt") {
-      return
-        std::make_shared<core::shader::LightTracing<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("samples").as<size_type>()
-        );
+    if (shader == "lt") {
+      return std::make_shared<lt_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("samples").as<size_type>()
+      );
     }
 
-    if (algorithm == "bdpt") {
-      return
-        std::make_shared<core::shader::BidirectionalPathTracing<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("spp").as<size_type>()
-        );
+    if (shader == "bdpt") {
+      return std::make_shared<bdpt_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("spp").as<size_type>()
+      );
     }
 
-    if (algorithm == "pm") {
-      return
-        std::make_shared<core::shader::PhotonMapping<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("photons").as<size_type>(),
-          vm.at("k").as<size_type>()
-        );
+    if (shader == "pssmlt") {
+      return std::make_shared<pssmlt_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("seeds").as<size_type>(),
+        vm.at("mutations").as<size_type>(),
+        vm.at("p-large").as<real_type>()
+      );
     }
 
-    if (algorithm == "pssmlt") {
-      return
-        std::make_shared<core::shader::PrimarySampleSpaceMLT<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("seeds").as<size_type>(),
-          vm.at("mutations").as<size_type>(),
-          vm.at("p-large").as<real_type>()
-        );
+    if (shader == "pm") {
+      return std::make_shared<pm_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("photons").as<size_type>(),
+        vm.at("k").as<size_type>()
+      );
     }
 
-    if (algorithm == "ppm") {
-      return
-        std::make_shared<core::shader::ProgressivePhotonMapping<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("photons").as<size_type>(),
-          vm.at("k").as<size_type>(),
-          vm.at("passes").as<size_type>(),
-          0.01,
-          vm.at("alpha").as<real_type>()
-        );
+    if (shader == "ppm") {
+      return std::make_shared<ppm_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("photons").as<size_type>(),
+        vm.at("k").as<size_type>(),
+        vm.at("passes").as<size_type>(),
+        0.01,
+        vm.at("alpha").as<real_type>()
+      );
     }
 
-    if (algorithm == "sppm") {
-      return
-        std::make_shared<core::shader::StochasticProgressivePhotonMapping<Scene>>(
-          vm.at("threads").as<size_type>(),
-          vm.at("photons").as<size_type>(),
-          vm.at("k").as<size_type>(),
-          vm.at("passes").as<size_type>(),
-          0.01,
-          vm.at("alpha").as<real_type>()
-        );
+    if (shader == "sppm") {
+      return std::make_shared<sppm_type>(
+        vm.at("threads").as<size_type>(),
+        vm.at("photons").as<size_type>(),
+        vm.at("k").as<size_type>(),
+        vm.at("passes").as<size_type>(),
+        0.01,
+        vm.at("alpha").as<real_type>()
+      );
     }
 
-    throw InvalidAlgorithmError();
+    throw UnknownShaderError(shader);
   }
 };
 

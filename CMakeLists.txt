@@ -28,43 +28,43 @@ if(OpenCV_FOUND)
 endif()
 
 add_custom_target(pt
-    COMMAND time ./amber --algorithm pt --output pt --spp 256
+    COMMAND time ./amber --shader pt --output pt --spp 256
     COMMAND open pt.png
     DEPENDS amber
 )
 
 add_custom_target(lt
-    COMMAND time ./amber --algorithm lt --output lt --samples 67108864
+    COMMAND time ./amber --shader lt --output lt --samples 67108864
     COMMAND open lt.png
     DEPENDS amber
 )
 
 add_custom_target(bdpt
-    COMMAND time ./amber --algorithm bdpt --output bdpt --spp 64
+    COMMAND time ./amber --shader bdpt --output bdpt --spp 64
     COMMAND open bdpt.png
     DEPENDS amber
 )
 
-add_custom_target(pm
-    COMMAND time ./amber --algorithm pm --output pm --photons 8388608
-    COMMAND open pm.png
-    DEPENDS amber
-)
-
 add_custom_target(pssmlt
-    COMMAND time ./amber --algorithm pssmlt --output pssmlt --mutations 16777216
+    COMMAND time ./amber --shader pssmlt --output pssmlt --mutations 16777216
     COMMAND open pssmlt.png
     DEPENDS amber
 )
 
+add_custom_target(pm
+    COMMAND time ./amber --shader pm --output pm --photons 8388608
+    COMMAND open pm.png
+    DEPENDS amber
+)
+
 add_custom_target(ppm
-    COMMAND time ./amber --algorithm ppm --output ppm --photons 1048576 --passes 16
+    COMMAND time ./amber --shader ppm --output ppm --photons 1048576 --passes 16
     COMMAND open ppm.png
     DEPENDS amber
 )
 
 add_custom_target(sppm
-    COMMAND time ./amber --algorithm sppm --output sppm --photons 1048576 --passes 16
+    COMMAND time ./amber --shader sppm --output sppm --photons 1048576 --passes 16
     COMMAND open sppm.png
     DEPENDS amber
 )

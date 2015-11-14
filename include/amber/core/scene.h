@@ -28,12 +28,8 @@
 namespace amber {
 namespace core {
 
-template <
-  typename Acceleration,
-  typename Object = typename Acceleration::object_type,
-  typename LightSampler = typename component::LightSampler<Object>
->
-class Scene : public core::Acceleration<Object>
+template <typename Object>
+class Scene
 {
 public:
   using object_type        = Object;
@@ -44,18 +40,21 @@ public:
   using ray_type           = typename Object::ray_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using acceleration_ptr   = std::shared_ptr<Acceleration const>;
-  using light_sampler_ptr  = std::shared_ptr<LightSampler const>;
+  using acceleration_ptr   = std::shared_ptr<Acceleration<Object>>;
+  using light_sampler_ptr  = std::shared_ptr<component::LightSampler<Object>>;
 
 private:
   acceleration_ptr acceleration_;
   light_sampler_ptr light_sampler_;
 
 public:
-  template <typename InputIterator>
-  Scene(InputIterator first, InputIterator last)
-    : acceleration_(std::make_shared<Acceleration>(first, last)),
-      light_sampler_(std::make_shared<LightSampler>(first, last)) {}
+  Scene(
+    acceleration_ptr const& acceleration,
+    light_sampler_ptr const& light_sampler
+  ) noexcept
+  : acceleration_(acceleration),
+    light_sampler_(light_sampler)
+  {}
 
   acceleration_ptr const& acceleration() const noexcept
   {
@@ -65,11 +64,6 @@ public:
   light_sampler_ptr const& light_sampler() const noexcept
   {
     return light_sampler_;
-  }
-
-  void Write(std::ostream& os) const noexcept
-  {
-    os << "Scene()";
   }
 
   std::tuple<hit_type, Object> Cast(ray_type const& ray) const noexcept

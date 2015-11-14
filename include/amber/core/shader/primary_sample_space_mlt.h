@@ -25,23 +25,22 @@
 #include <thread>
 #include <vector>
 
-#include "core/shader.h"
 #include "core/component/bidirectional_path_tracing.h"
 #include "core/component/multiple_importance_sampling.h"
 #include "core/component/primary_sample_space.h"
+#include "core/shader.h"
 
 namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class PrimarySampleSpaceMLT : public Shader<Scene> {
+template <typename Object>
+class PrimarySampleSpaceMLT : public Shader<Object>
+{
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -50,9 +49,10 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type          = component::BidirectionalPathTracing<Scene>;
+  using bdpt_type          = component::BidirectionalPathTracing<Object>;
 
-  struct Seed {
+  struct Seed
+  {
     component::PrimarySampleSpace<> pss_light, pss_eye;
     size_t x, y;
     radiant_type power;
@@ -76,7 +76,8 @@ private:
 
   };
 
-  struct State {
+  struct State
+  {
     size_t x, y;
     radiant_type power;
     radiant_value_type contribution;
@@ -90,43 +91,48 @@ private:
         weight(0) {}
   };
 
-  size_t n_thread_, n_seed_, n_mutation_;
+  size_t n_threads_, n_seeds_, n_mutations_;
   real_type p_large_step_;
   Progress progress_;
 
 public:
-  PrimarySampleSpaceMLT(size_t n_thread,
-                        size_t n_seed,
-                        size_t n_mutation,
-                        real_type p_large_step) noexcept
-    : n_thread_(n_thread),
-      n_seed_(n_seed),
-      n_mutation_(n_mutation),
-      p_large_step_(p_large_step),
-      progress_(2) {}
+  PrimarySampleSpaceMLT(
+    size_t n_threads,
+    size_t n_seeds,
+    size_t n_mutations,
+    real_type p_large_step
+  ) noexcept
+  : n_threads_(n_threads),
+    n_seeds_(n_seeds),
+    n_mutations_(n_mutations),
+    p_large_step_(p_large_step),
+    progress_(2)
+  {}
 
-  void Write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "PrimarySampleSpaceMLT(n_thread=" << n_thread_
-      << ", n_seed=" << n_seed_
-      << ", n_mutation=" << n_mutation_
+      << "PrimarySampleSpaceMLT(n_threads=" << n_threads_
+      << ", n_seeds=" << n_seeds_
+      << ", n_mutations=" << n_mutations_
       << ", p_large_step=" << p_large_step_
       << ")";
   }
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera) {
+  image_type operator()(scene_type const& scene, camera_type const& camera)
+  {
     std::vector<std::thread> threads;
     std::mutex mtx;
 
     progress_.phase = "Generate seeds";
     progress_.current_phase = 1;
     progress_.current_job = 0;
-    progress_.total_job = n_seed_;
+    progress_.total_job = n_seeds_;
 
     std::vector<Seed> seeds;
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
@@ -144,16 +150,16 @@ public:
 
     radiant_value_type b = 0;
     for (auto const& seed : seeds) {
-      b += seed.contribution / n_seed_;
+      b += seed.contribution / n_seeds_;
     }
 
     progress_.phase = "Mutation";
     progress_.current_phase = 2;
     progress_.current_job = 0;
-    progress_.total_job = n_mutation_;
+    progress_.total_job = n_mutations_;
 
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
@@ -174,10 +180,10 @@ public:
             proposal.contribution / state.contribution);
           proposal.weight =
             (p_acceptance + large_step) /
-              (proposal.contribution / b + p_large_step_) / n_mutation_;
+              (proposal.contribution / b + p_large_step_) / n_mutations_;
           state.weight +=
             (1 - p_acceptance) /
-              (state.contribution / b + p_large_step_) / n_mutation_;
+              (state.contribution / b + p_large_step_) / n_mutations_;
           if (sampler.uniform<radiant_value_type>() < p_acceptance) {
             buffer.at(state.x, state.y) += state.power * state.weight;
             state = proposal;
@@ -208,9 +214,12 @@ public:
 
 private:
   template <typename InputIterator>
-  Seed sampleSeed(InputIterator first,
-                  InputIterator last,
-                  DefaultSampler<>& sampler) const {
+  Seed sampleSeed(
+    InputIterator first,
+    InputIterator last,
+    DefaultSampler<>& sampler
+  ) const
+  {
     radiant_value_type c = 0;
     std::vector<radiant_value_type> cs;
     std::for_each(first, last, [&](auto const& seed){
@@ -221,11 +230,14 @@ private:
     return *std::next(first, std::distance(cs.begin(), it));
   }
 
-  State propose(State state,
-                bdpt_type& bdpt,
-                camera_type const& camera,
-                component::PrimarySampleSpace<>& pss_light,
-                component::PrimarySampleSpace<>& pss_eye) const {
+  State propose(
+    State state,
+    bdpt_type& bdpt,
+    camera_type const& camera,
+    component::PrimarySampleSpace<>& pss_light,
+    component::PrimarySampleSpace<>& pss_eye
+  ) const
+  {
     state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
     state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
     state.power = bdpt.connect(

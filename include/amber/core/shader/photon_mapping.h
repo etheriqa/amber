@@ -26,21 +26,21 @@
 #include <thread>
 #include <vector>
 
-#include "core/shader.h"
 #include "core/component/photon_mapping.h"
+#include "core/shader.h"
+#include "core/surface_type.h"
 
 namespace amber {
 namespace core {
 namespace shader {
 
-template <
-  typename Scene,
-  typename Object = typename Scene::object_type
->
-class PhotonMapping : public Shader<Scene> {
+template <typename Object>
+class PhotonMapping : public Shader<Object>
+{
 private:
-  using camera_type        = typename Shader<Scene>::camera_type;
-  using image_type         = typename Shader<Scene>::image_type;
+  using camera_type        = typename Shader<Object>::camera_type;
+  using image_type         = typename Shader<Object>::image_type;
+  using scene_type         = typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -49,32 +49,38 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using pm_type            = typename component::PhotonMapping<Scene>;
+  using pm_type            = typename component::PhotonMapping<Object>;
 
-  using photon_map_type    = typename pm_type::photon_map_type;
+  using photon_map_type   = typename pm_type::photon_map_type;
   using photon_type        = typename pm_type::photon_type;
 
-  size_t n_thread_, n_photon_, k_nearest_photon_;
+  size_t n_threads_, n_photons_, k_nearest_photons_;
   Progress progress_;
 
 public:
-  PhotonMapping(size_t n_thread, size_t n_photon, size_t k_nearest_photon)
-    : n_thread_(n_thread),
-      n_photon_(n_photon),
-      k_nearest_photon_(k_nearest_photon),
-      progress_(3) {}
+  PhotonMapping(
+    size_t n_threads,
+    size_t n_photons,
+    size_t k_nearest_photons
+  ) noexcept
+  : n_threads_(n_threads),
+    n_photons_(n_photons),
+    k_nearest_photons_(k_nearest_photons),
+    progress_(3) {}
 
-  void Write(std::ostream& os) const noexcept {
+  void Write(std::ostream& os) const noexcept
+  {
     os
-      << "PhotonMapping(n_thread=" << n_thread_
-      << ", n_photon=" << n_photon_
-      << ", k_nearest_photon=" << k_nearest_photon_
+      << "PhotonMapping(n_threads=" << n_threads_
+      << ", n_photons=" << n_photons_
+      << ", k_nearest_photons=" << k_nearest_photons_
       << ")";
   }
 
   Progress const& progress() const noexcept { return progress_; }
 
-  image_type operator()(Scene const& scene, camera_type const& camera) {
+  image_type operator()(scene_type const& scene, camera_type const& camera)
+  {
     pm_type pm(scene);
     std::vector<std::thread> threads;
     std::mutex mtx;
@@ -82,15 +88,15 @@ public:
     progress_.phase = "Photon Tracing";
     progress_.current_phase = 1;
     progress_.current_job = 0;
-    progress_.total_job = n_photon_;
+    progress_.total_job = n_photons_;
 
     std::vector<photon_type> photons;
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         std::vector<photon_type> buffer;
         DefaultSampler<> sampler((std::random_device()()));
         while (progress_.current_job++ < progress_.total_job) {
-          pm.photonTracing(n_photon_, std::back_inserter(buffer), &sampler);
+          pm.photonTracing(n_photons_, std::back_inserter(buffer), &sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
         std::move(buffer.begin(), buffer.end(), std::back_inserter(photons));
@@ -118,7 +124,7 @@ public:
     std::shuffle(pixels.begin(), pixels.end(), std::random_device());
 
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_thread_; i++) {
+    for (size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
         for (size_t j = progress_.current_job++;
@@ -143,7 +149,7 @@ public:
 private:
   radiant_type
   rendering(
-    Scene const& scene,
+    scene_type const& scene,
     camera_type const& camera,
     photon_map_type const& photon_map,
     size_t x, size_t y,
@@ -160,7 +166,7 @@ private:
 
   radiant_type
   estimatePower(
-    Scene const& scene,
+    scene_type const& scene,
     photon_map_type const& photon_map,
     ray_type const& ray,
     radiant_type const& weight,
@@ -187,7 +193,7 @@ private:
     if (object.Surface() == SurfaceType::Diffuse) {
       auto const photons = photon_map.kNearestNeighbours(hit.position,
         static_cast<real_type>(1),
-        k_nearest_photon_
+        k_nearest_photons_
       );
       return weight * filter(photons, hit, object, -ray.direction);
     }

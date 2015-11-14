@@ -22,22 +22,23 @@
 
 #include <algorithm>
 #include <cmath>
-#include <memory>
-#include <numeric>
 #include <vector>
 
-#include "core/component/light_sampler.h"
 #include "core/constant.h"
 #include "core/sampler.h"
+#include "core/scene.h"
 #include "core/surface_type.h"
 
 namespace amber {
 namespace core {
 namespace component {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
-class BidirectionalPathTracing {
+template <typename Object>
+class BidirectionalPathTracing
+{
+public:
+  using scene_type         = Scene<Object>;
+
 private:
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -45,7 +46,8 @@ private:
   using ray_type           = typename Object::ray_type;
   using vector3_type       = typename Object::vector3_type;
 
-  struct Event {
+  struct Event
+  {
     Object object;
     vector3_type position;
     vector3_type normal;
@@ -56,12 +58,12 @@ private:
     radiant_type weight;
   };
 
-  Scene scene_;
+  scene_type scene_;
   std::vector<Event> mutable event_buffer_;
   std::vector<radiant_value_type> mutable probability_buffer_;
 
 public:
-  explicit BidirectionalPathTracing(Scene const& scene) noexcept
+  explicit BidirectionalPathTracing(scene_type const& scene) noexcept
   : scene_(scene),
     event_buffer_(),
     probability_buffer_()

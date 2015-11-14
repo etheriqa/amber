@@ -23,25 +23,24 @@
 #include "core/camera.h"
 #include "core/image.h"
 #include "core/progress.h"
+#include "core/scene.h"
 #include "core/writer.h"
 
 namespace amber {
 namespace core {
 
-template <typename Scene>
+template <typename Object>
 class Shader : public Writer {
 public:
-  using scene_type  = Scene;
-
-  using camera_type = Camera<typename Scene::object_type::radiant_type,
-                             typename Scene::object_type::real_type>;
-  using image_type  = Image<typename Scene::object_type::radiant_type>;
-  using object_type = typename Scene::object_type;
+  using camera_type = Camera<typename Object::radiant_type,
+                             typename Object::real_type>;
+  using scene_type  = Scene<Object>;
+  using image_type  = Image<typename Object::radiant_type>;
 
   virtual ~Shader() {}
 
   virtual Progress const& progress() const noexcept = 0;
-  virtual image_type operator()(Scene const&, camera_type const&) = 0;
+  virtual image_type operator()(scene_type const&, camera_type const&) = 0;
 };
 
 }

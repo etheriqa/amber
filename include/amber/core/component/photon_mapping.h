@@ -20,17 +20,18 @@
 
 #pragma once
 
-#include "core/axis.h"
 #include "core/aabb.h"
+#include "core/axis.h"
+#include "core/scene.h"
 #include "core/vector.h"
 
 namespace amber {
 namespace core {
 namespace component {
 
-template <typename Scene,
-          typename Object = typename Scene::object_type>
-class PhotonMapping {
+template <typename Object>
+class PhotonMapping
+{
 private:
   struct Photon;
   struct PhotonMap;
@@ -38,6 +39,8 @@ private:
 public:
   using photon_type         = Photon;
   using photon_map_type     = PhotonMap;
+
+  using scene_type          = Scene<Object>;
 
 private:
   using hit_type            = typename Object::hit_type;
@@ -185,11 +188,10 @@ private:
     }
   };
 
-  Scene scene_;
+  scene_type scene_;
 
 public:
-  explicit PhotonMapping(Scene const& scene) noexcept
-    : scene_(scene) {}
+  explicit PhotonMapping(scene_type const& scene) noexcept : scene_(scene) {}
 
   template <typename OutputIterator>
   void photonTracing(size_t n_photon,
