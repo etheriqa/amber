@@ -44,7 +44,7 @@ void export_rgbe(std::string const& filename,
       auto const& p = image.at(i, j);
 
       int exponent;
-      auto const significand = std::frexp(p.Max(), &exponent) * 256 / p.Max();
+      auto const significand = std::frexp(Max(p), &exponent) * 256 / Max(p);
 
       ofs << static_cast<unsigned char>(significand * p.r());
       ofs << static_cast<unsigned char>(significand * p.g());

@@ -44,7 +44,7 @@ private:
   std::array<T, 3> values_;
 
 public:
-  Vector3() noexcept {}
+  Vector3() noexcept : Vector3(T()) {}
   Vector3(T const& value) noexcept { values_.fill(value); }
   Vector3(T const& x, T const& y, T const& z) noexcept : values_({{x, y, z}}) {}
 

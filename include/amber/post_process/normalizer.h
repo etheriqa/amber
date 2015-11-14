@@ -43,7 +43,7 @@ private:
 
 public:
   Normalizer() noexcept
-    : evaluator_([](const auto& hdr){ return hdr.Max(); }) {}
+    : evaluator_([](const auto& hdr){ return Max(hdr); }) {}
 
   explicit Normalizer(evaluator_type evaluator) noexcept
     : evaluator_(evaluator) {}

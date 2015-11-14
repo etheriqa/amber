@@ -149,7 +149,7 @@ public:
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
               auto const hit_point = rayTracing(scene, camera, x, y, sampler);
-              if (hit_point.weight.Max() == 0) {
+              if (Max(hit_point.weight) == 0) {
                 continue;
               }
               auto& stats = statistics.at(x + y * camera.imageWidth());
@@ -214,7 +214,7 @@ private:
       auto const scatter =
         object.SampleLight(-ray.direction, hit.normal, &sampler);
       auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, scatter.weight.Max());
+        std::min<radiant_value_type>(1, Max(scatter.weight));
 
       if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
         hit_point.weight = radiant_type();

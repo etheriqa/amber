@@ -23,13 +23,17 @@
 #include <algorithm>
 #include <array>
 
+#include <boost/operators.hpp>
+
 #include "core/writer.h"
 
 namespace amber {
 namespace core {
 
 template <typename T>
-class RGB : public Writer
+class RGB
+: public Writer,
+  private boost::field_operators<RGB<T>>
 {
 public:
   using value_type = T;
@@ -39,76 +43,65 @@ private:
 
 public:
   RGB() noexcept : RGB(T()) {}
-  explicit RGB(const T& value) noexcept { values_.fill(value); }
+  RGB(const T& value) noexcept { values_.fill(value); }
   RGB(const T& r, const T& g, const T& b) noexcept : values_({{r, g, b}}) {}
 
-  T& r() noexcept { return values_[0]; }
   const T& r() const noexcept { return values_[0]; }
-  T& g() noexcept { return values_[1]; }
+  T& r() noexcept { return values_[0]; }
   const T& g() const noexcept { return values_[1]; }
-  T& b() noexcept { return values_[2]; }
+  T& g() noexcept { return values_[1]; }
   const T& b() const noexcept { return values_[2]; }
+  T& b() noexcept { return values_[2]; }
 
   void Write(std::ostream& os) const noexcept {
     os << "RGB(" << r() << " " << g() << " " << b() << ")";
   }
 
-  T Min() const noexcept { return std::min({r(), g(), b()}); }
-  T Max() const noexcept { return std::max({r(), g(), b()}); }
-  T Sum() const noexcept { return r() + g() + b(); }
-  T Mean() const noexcept { return Sum() / 3; }
+  RGB<T>& operator+=(RGB<T> const& c) noexcept
+  {
+    r() += c.r();
+    g() += c.g();
+    b() += c.b();
+    return *this;
+  }
 
-  template <typename U>
-  RGB<T>& operator+=(const U& u) noexcept { return *this = *this + u; }
+  RGB<T>& operator-=(RGB<T> const& c) noexcept
+  {
+    r() -= c.r();
+    g() -= c.g();
+    b() -= c.b();
+    return *this;
+  }
 
-  template <typename U>
-  RGB<T>& operator-=(const U& u) noexcept { return *this = *this - u; }
+  RGB<T>& operator*=(RGB<T> const& c) noexcept
+  {
+    r() *= c.r();
+    g() *= c.g();
+    b() *= c.b();
+    return *this;
+  }
 
-  template <typename U>
-  RGB<T>& operator*=(const U& u) noexcept { return *this = *this * u; }
-
-  template <typename U>
-  RGB<T>& operator/=(const U& u) noexcept { return *this = *this / u; }
+  RGB<T>& operator/=(RGB<T> const& c) noexcept
+  {
+    r() /= c.r();
+    g() /= c.g();
+    b() /= c.b();
+    return *this;
+  }
 };
 
 template <typename T>
-RGB<T> operator+(const RGB<T>& x, const RGB<T>& y) noexcept {
-  return RGB<T>(x.r() + y.r(), x.g() + y.g(), x.b() + y.b());
-}
-
-template <typename T, typename U>
-RGB<T> operator+(const RGB<T>& x, const U& k) noexcept {
-  return RGB<T>(x.r() + k, x.g() + k, x.b() + k);
+T
+Max(RGB<T> const& c) noexcept
+{
+  return std::max({c.r(), c.g(), c.b()});
 }
 
 template <typename T>
-RGB<T> operator-(const RGB<T>& x, const RGB<T>& y) noexcept {
-  return RGB<T>(x.r() - y.r(), x.g() - y.g(), x.b() - y.b());
-}
-
-template <typename T, typename U>
-RGB<T> operator-(const RGB<T>& x, const U& k) noexcept {
-  return RGB<T>(x.r() - k, x.g() - k, x.b() - k);
-}
-
-template <typename T>
-RGB<T> operator*(const RGB<T>& x, const RGB<T>& y) noexcept {
-  return RGB<T>(x.r() * y.r(), x.g() * y.g(), x.b() * y.b());
-}
-
-template <typename T, typename U>
-RGB<T> operator*(const RGB<T>& x, const U& k) noexcept {
-  return RGB<T>(x.r() * k, x.g() * k, x.b() * k);
-}
-
-template <typename T>
-RGB<T> operator/(const RGB<T>& x, const RGB<T>& y) noexcept {
-  return RGB<T>(x.r() / y.r(), x.g() / y.g(), x.b() / y.b());
-}
-
-template <typename T, typename U>
-RGB<T> operator/(const RGB<T>& x, const U& k) noexcept {
-  return RGB<T>(x.r() / k, x.g() / k, x.b() / k);
+T
+Sum(RGB<T> const& c) noexcept
+{
+  return c.r() + c.g() + c.b();
 }
 
 }

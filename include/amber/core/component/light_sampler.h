@@ -68,7 +68,7 @@ public:
       if (object.Surface() != SurfaceType::Light) {
         return;
       }
-      total_power_ += object.power().Sum();
+      total_power_ += Sum(object.power());
       nodes_.emplace_back(total_power_, object);
     });
   }
@@ -86,7 +86,7 @@ public:
   radiant_value_type
   PDFArea(Object const& object) const noexcept
   {
-    return object.Radiance().Sum() * kPI / total_power_;
+    return Sum(object.Radiance()) * kPI / total_power_;
   }
 
   std::tuple<ray_type, Radiant, Object, radiant_value_type, vector3_type>

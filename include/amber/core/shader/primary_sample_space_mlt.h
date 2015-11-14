@@ -69,7 +69,7 @@ private:
           bdpt.lightTracing(&pss_light),
           bdpt.rayTracing(&pss_eye, camera, x, y),
           component::PowerHeuristic<radiant_value_type>())),
-        contribution(power.Sum()) {
+        contribution(Sum(power)) {
       pss_light.accept();
       pss_eye.accept();
     }
@@ -233,7 +233,7 @@ private:
       bdpt.rayTracing(&pss_eye, camera, state.x, state.y),
       component::PowerHeuristic<radiant_value_type>()
     );
-    state.contribution = state.power.Sum();
+    state.contribution = Sum(state.power);
     return state;
   }
 };

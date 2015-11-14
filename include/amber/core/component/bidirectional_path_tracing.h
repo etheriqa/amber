@@ -173,7 +173,7 @@ public:
     for (size_t s = 0; s <= light.size(); s++) {
       for (size_t t = 0; t <= eye.size(); t++) {
         auto const contribution = UnweightedContribution(light, eye, s, t);
-        if (contribution.Max() == 0) {
+        if (Max(contribution) == 0) {
           continue;
         }
         CalculateLogProbabilities(light, eye, s, t);
@@ -243,7 +243,7 @@ private:
                  Dot(ray.direction, hit.normal)) /
         (hit.distance * hit.distance);
       auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, scatter.weight.Max());
+        std::min<radiant_value_type>(1, Max(scatter.weight));
 
       event.object              = object;
       event.position            = hit.position;
@@ -409,7 +409,7 @@ private:
           log_p_light +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
-            std::min<radiant_value_type>(1, (bsdf / pdf).Max());
+            std::min<radiant_value_type>(1, Max(bsdf / pdf));
         }
         probability_buffer_.at(i) += log_p_light;
       }
@@ -439,7 +439,7 @@ private:
           log_p_eye +=
             std::log2(pdf * p_russian_roulette * geometry_factor);
           p_russian_roulette =
-            std::min<radiant_value_type>(1, (bsdf / pdf).Max());
+            std::min<radiant_value_type>(1, Max(bsdf / pdf));
         }
         probability_buffer_.at(i) += log_p_eye;
       }

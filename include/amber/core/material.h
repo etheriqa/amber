@@ -133,7 +133,7 @@ protected:
       scatters.begin(),
       scatters.end(),
       weights.begin(),
-      [](auto const& scatter){ return scatter.weight.Sum(); }
+      [](auto const& scatter){ return Sum(scatter.weight); }
     );
     std::partial_sum(weights.begin(), weights.end(), weights.begin());
 
@@ -148,7 +148,7 @@ protected:
     auto const& scatter = scatters.at(distance);
     return scatter_type(
       scatter.direction,
-      scatter.weight / scatter.weight.Sum() * weights.back()
+      scatter.weight / Sum(scatter.weight) * weights.back()
     );
   }
 };

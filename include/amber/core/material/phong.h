@@ -85,8 +85,8 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    auto const rho_d = kd_.Sum();
-    auto const rho_s = ks_.Sum();
+    auto const rho_d = Sum(kd_);
+    auto const rho_s = Sum(ks_);
     auto const rho = rho_d + rho_s;
 
     auto const direction_s =
@@ -108,8 +108,8 @@ public:
     Sampler* sampler
   ) const
   {
-    auto const rho_d = kd_.Sum();
-    auto const rho_s = ks_.Sum();
+    auto const rho_d = Sum(kd_);
+    auto const rho_s = Sum(ks_);
     auto const rho = rho_d + rho_s;
 
     if (sampler->uniform(rho) < rho_d) {
