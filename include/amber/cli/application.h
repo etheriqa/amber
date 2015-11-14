@@ -108,6 +108,9 @@ public:
         ("mutations",
          po::value<size_type>()->default_value(65536),
          "a number of mutations used in the MCMC algorithms")
+        ("nl-means",
+         po::bool_switch(),
+         "use non-local means denoising algorithm")
         ("output",
          po::value<std::string>()->default_value("output"),
          "an output filename without an extension")
@@ -212,15 +215,18 @@ public:
       auto const ldr_image =
         gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())));
 
-      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC4);
+      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC3);
       for (size_t i = 0; i < ldr_image.height(); i++) {
         for (size_t j = 0; j < ldr_image.width(); j++) {
-          auto& rgba = mat.at<cv::Vec4b>(i, j);
-          rgba[0] = ldr_image.at(j, i).b();
-          rgba[1] = ldr_image.at(j, i).g();
-          rgba[2] = ldr_image.at(j, i).r();
-          rgba[3] = 255;
+          auto& rgb = mat.at<cv::Vec3b>(i, j);
+          rgb[0] = ldr_image.at(j, i).b();
+          rgb[1] = ldr_image.at(j, i).g();
+          rgb[2] = ldr_image.at(j, i).r();
         }
+      }
+      if (vm.at("nl-means").as<bool>()) {
+        auto src = mat;
+        cv::fastNlMeansDenoisingColored(src, mat);
       }
       cv::imwrite(filename, mat);
     }
