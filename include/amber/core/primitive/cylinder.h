@@ -32,39 +32,45 @@ template <typename RealType>
 class Cylinder : public Primitive<RealType>
 {
 public:
-  using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using hit_type       = typename Primitive<RealType>::hit_type;
-  using ray_type       = typename Primitive<RealType>::ray_type;
-
-  using vector3_type   = Vector3<RealType>;
+  using vector3_type = Vector3<RealType>;
 
 private:
-  using disk_type      = Disk<RealType>;
+  using typename Primitive<RealType>::aabb_type;
+  using typename Primitive<RealType>::hit_type;
+  using typename Primitive<RealType>::ray_type;
+
+  using disk_type = Disk<RealType>;
 
   vector3_type center_, normal_;
   RealType radius_, height_;
 
 public:
-  Cylinder(vector3_type const& center,
-           vector3_type const& normal,
-           RealType radius,
-           RealType height) noexcept
-    : center_(center),
-      normal_(Normalize(normal)),
-      radius_(radius),
-      height_(height) {}
+  Cylinder(
+    vector3_type const& center,
+    vector3_type const& normal,
+    RealType radius,
+    RealType height
+  ) noexcept
+  : center_(center),
+    normal_(Normalize(normal)),
+    radius_(radius),
+    height_(height)
+  {}
 
-  RealType SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     return 2 * static_cast<RealType>(kPI) * radius_ * height_;
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     auto const bottom = disk_type(center_, normal_, radius_);
     auto const top = disk_type(center_ + height_ * normal_, normal_, radius_);
     return bottom.BoundingBox() + top.BoundingBox();
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
     auto const OC = center_ - ray.origin;
     auto const u = ray.direction - Dot(ray.direction, normal_) * normal_;
     auto const v = OC - Dot(OC, normal_) * normal_;

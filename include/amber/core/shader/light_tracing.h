@@ -36,9 +36,9 @@ template <typename Object>
 class LightTracing : public Shader<Object>
 {
 private:
-  using camera_type        = typename Shader<Object>::camera_type;
-  using image_type         = typename Shader<Object>::image_type;
-  using scene_type         = typename Shader<Object>::scene_type;
+  using typename Shader<Object>::camera_type;
+  using typename Shader<Object>::image_type;
+  using typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;

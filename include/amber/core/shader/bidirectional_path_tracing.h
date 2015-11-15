@@ -37,9 +37,9 @@ template <typename Object>
 class BidirectionalPathTracing : public Shader<Object>
 {
 private:
-  using camera_type        = typename Shader<Object>::camera_type;
-  using image_type         = typename Shader<Object>::image_type;
-  using scene_type         = typename Shader<Object>::scene_type;
+  using typename Shader<Object>::camera_type;
+  using typename Shader<Object>::image_type;
+  using typename Shader<Object>::scene_type;
 
   using hit_type           = typename Object::hit_type;
   using radiant_type       = typename Object::radiant_type;
@@ -48,7 +48,7 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type          = component::BidirectionalPathTracing<Object>;
+  using bdpt_type = component::BidirectionalPathTracing<Object>;
 
   size_t n_threads_, spp_;
   Progress progress_;

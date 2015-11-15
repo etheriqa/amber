@@ -39,8 +39,6 @@ public:
   using scatter_type       = Scatter<Radiant, RealType>;
   using vector3_type       = Vector3<RealType>;
 
-  using radiant_type       = Radiant;                      // TODO remove
-
 public:
   virtual ~Material() {}
 

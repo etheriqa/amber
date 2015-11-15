@@ -27,23 +27,26 @@
 namespace amber {
 namespace core {
 
-template <typename Primitive, typename Material>
-class Object {
+template <typename Radiant, typename RealType>
+class Object
+{
 public:
-  using primitive_type     = Primitive;
-  using material_type      = Material;
+  using primitive_type = Primitive<RealType>;
+  using material_type  = Material<Radiant, RealType>;
 
-  using aabb_type          = typename primitive_type::aabb_type;
-  using hit_type           = typename primitive_type::hit_type;
-  using ray_type           = typename primitive_type::ray_type;
-  using real_type          = typename primitive_type::real_type;
+  using real_type    = RealType; // TODO remove
+  using radiant_type = Radiant;  // TODO remove
 
-  using radiant_type       = typename material_type::radiant_type;
+  using aabb_type = typename primitive_type::aabb_type;
+  using hit_type  = typename primitive_type::hit_type;
+  using ray_type  = typename primitive_type::ray_type;
+
   using radiant_value_type = typename material_type::radiant_value_type;
   using scatter_type       = typename material_type::scatter_type;
   using vector3_type       = typename material_type::vector3_type;
 
-  struct Hash {
+  struct Hash
+  {
     size_t operator()(Object const& o) const noexcept {
       return
         std::hash<size_t>()(reinterpret_cast<size_t>(o.primitive_)) +
@@ -51,7 +54,8 @@ public:
     }
   };
 
-  struct EqualTo {
+  struct EqualTo
+  {
     bool operator()(Object const& a, Object const& b) const noexcept {
       return a == b;
     }
@@ -70,43 +74,52 @@ public:
   ) noexcept
   : primitive_(primitive), material_(material) {}
 
-  operator bool() const noexcept {
+  operator bool() const noexcept
+  {
     return primitive_ != nullptr && material_ != nullptr;
   }
 
-  bool operator==(Object const& o) const noexcept {
+  bool operator==(Object const& o) const noexcept
+  {
     return primitive_ == o.primitive_ && material_ == o.material_;
   }
 
-  bool operator!=(Object const& o) const noexcept {
+  bool operator!=(Object const& o) const noexcept
+  {
     return !(*this == o);
   }
 
-  real_type SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     return primitive_->SurfaceArea();
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     return primitive_->BoundingBox();
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
     return primitive_->Intersect(ray);
   }
 
-  ray_type SamplePoint(Sampler* sampler) const {
+  ray_type SamplePoint(Sampler* sampler) const
+  {
     return primitive_->SamplePoint(sampler);
   }
 
-  SurfaceType Surface() const noexcept {
+  SurfaceType Surface() const noexcept
+  {
     return material_->Surface();
   }
 
-  radiant_type Radiance() const noexcept {
+  Radiant Radiance() const noexcept
+  {
     return material_->Radiance();
   }
 
-  radiant_type
+  Radiant
   BSDF(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
@@ -174,7 +187,8 @@ public:
     return material_->DistributionImportance(direction_i, normal);
   }
 
-  radiant_type power() const noexcept {
+  Radiant power() const noexcept
+  {
     return Radiance() * SurfaceArea() * kPI;
   }
 };

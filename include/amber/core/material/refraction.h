@@ -39,13 +39,13 @@ namespace core {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Refraction : public Material<Radiant, RealType> {
-public:
-  using radiant_value_type = typename Radiant::value_type;
-  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
-  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
-
+class Refraction : public Material<Radiant, RealType>
+{
 private:
+  using typename Material<Radiant, RealType>::radiant_value_type;
+  using typename Material<Radiant, RealType>::scatter_type;
+  using typename Material<Radiant, RealType>::vector3_type;
+
   radiant_value_type ior_, r0_;
 
 public:

@@ -33,27 +33,35 @@ template <typename RealType>
 class Triangle : public Primitive<RealType>
 {
 public:
-  using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using hit_type       = typename Primitive<RealType>::hit_type;
-  using ray_type       = typename Primitive<RealType>::ray_type;
-
-  using vector3_type   = Vector3<RealType>;
+  using vector3_type = Vector3<RealType>;
 
 private:
+  using typename Primitive<RealType>::aabb_type;
+  using typename Primitive<RealType>::hit_type;
+  using typename Primitive<RealType>::ray_type;
+
   vector3_type v0_, v1_, v2_;
   vector3_type normal_;
 
 public:
-  Triangle(vector3_type const& v0,
-           vector3_type const& v1,
-           vector3_type const& v2) noexcept
-    : v0_(v0), v1_(v1), v2_(v2), normal_(Normalize(Cross(v1 - v0, v2 - v0))) {}
+  Triangle(
+    vector3_type const& v0,
+    vector3_type const& v1,
+    vector3_type const& v2
+  ) noexcept
+  : v0_(v0),
+    v1_(v1),
+    v2_(v2),
+    normal_(Normalize(Cross(v1 - v0, v2 - v0)))
+  {}
 
-  RealType SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     return Length(Cross(v1_ - v0_, v2_ - v0_)) / 2;
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     return aabb_type(vector3_type(std::min({v0_.x(), v1_.x(), v2_.x()}),
                                   std::min({v0_.y(), v1_.y(), v2_.y()}),
                                   std::min({v0_.z(), v1_.z(), v2_.z()})),
@@ -62,7 +70,8 @@ public:
                                   std::max({v0_.z(), v1_.z(), v2_.z()})));
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
     auto const E1 = v1_ - v0_;
     auto const E2 = v2_ - v0_;
 

@@ -26,11 +26,12 @@ namespace amber {
 namespace core {
 
 template <typename Radiant, typename RealType>
-class SymmetricBSDF : public Material<Radiant, RealType> {
+class SymmetricBSDF : public Material<Radiant, RealType>
+{
 public:
-  using radiant_value_type = typename Radiant::value_type;
-  using scatter_type       = Scatter<Radiant, RealType>;
-  using vector3_type       = Vector3<RealType>;
+  using typename Material<Radiant, RealType>::radiant_value_type;
+  using typename Material<Radiant, RealType>::scatter_type;
+  using typename Material<Radiant, RealType>::vector3_type;
 
   radiant_value_type
   PDFLight(

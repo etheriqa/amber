@@ -34,26 +34,28 @@ template <typename RealType>
 class ConvexPolygon : public Primitive<RealType>
 {
 public:
-  using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using hit_type       = typename Primitive<RealType>::hit_type;
-  using ray_type       = typename Primitive<RealType>::ray_type;
-
-  using vector3_type   = Vector3<RealType>;
+  using vector3_type = Vector3<RealType>;
 
 private:
-  using triangle_type  = Triangle<RealType>;
+  using typename Primitive<RealType>::aabb_type;
+  using typename Primitive<RealType>::hit_type;
+  using typename Primitive<RealType>::ray_type;
+
+  using triangle_type = Triangle<RealType>;
 
   std::vector<triangle_type> triangles_;
 
 public:
-  ConvexPolygon(std::initializer_list<vector3_type> vertices) noexcept {
+  ConvexPolygon(std::initializer_list<vector3_type> const& vertices) noexcept
+  {
     auto const it = vertices.begin();
     for (size_t i = 2; i < vertices.size(); i++) {
       triangles_.emplace_back(*std::next(it, i - 1), *std::next(it, i), *it);
     }
   }
 
-  RealType SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     RealType surface_area = 0;
     for (auto const& triangle : triangles_) {
       surface_area += triangle.SurfaceArea();
@@ -61,7 +63,8 @@ public:
     return surface_area;
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     aabb_type aabb;
     for (auto const& triangle : triangles_) {
       aabb += triangle.BoundingBox();
@@ -69,7 +72,8 @@ public:
     return aabb;
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
     for (auto const& triangle : triangles_) {
       auto const hit = triangle.Intersect(ray);
       if (hit) {

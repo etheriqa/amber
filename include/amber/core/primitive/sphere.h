@@ -32,29 +32,32 @@ template <typename RealType>
 class Sphere : public Primitive<RealType>
 {
 public:
-  using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using hit_type       = typename Primitive<RealType>::hit_type;
-  using ray_type       = typename Primitive<RealType>::ray_type;
-
-  using vector3_type   = Vector3<RealType>;
+  using vector3_type = Vector3<RealType>;
 
 private:
+  using typename Primitive<RealType>::aabb_type;
+  using typename Primitive<RealType>::hit_type;
+  using typename Primitive<RealType>::ray_type;
+
   vector3_type center_;
   RealType radius_;
 
 public:
   Sphere(vector3_type const& center, RealType radius) noexcept
-    : center_(center), radius_(radius) {}
+  : center_(center), radius_(radius) {}
 
-  RealType SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     return 4 * static_cast<RealType>(kPI) * radius_ * radius_;
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     return aabb_type(center_ - radius_, center_ + radius_);
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
     auto const a = static_cast<RealType>(1);
     auto const b = -2 * Dot(center_ - ray.origin, ray.direction);
     auto const c = SquaredLength(center_ - ray.origin) - radius_ * radius_;

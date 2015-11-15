@@ -29,11 +29,10 @@ namespace lens {
 template <typename RealType>
 class Thin : public Lens<RealType>
 {
-public:
-  using ray_type      = typename Lens<RealType>::ray_type;
-  using vector3_type  = typename Lens<RealType>::vector3_type;
-
 private:
+  using typename Lens<RealType>::ray_type;
+  using typename Lens<RealType>::vector3_type;
+
   RealType focal_length_, focus_distance_, sensor_distance_;
 
 public:

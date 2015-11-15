@@ -55,9 +55,7 @@ private:
   using radiant_value_type = std::float_t;
   using radiant_type       = core::RGB<radiant_value_type>;
 
-  using primitive_type     = core::Primitive<real_type>;
-  using material_type      = core::Material<radiant_type, real_type>;
-  using object_type        = core::Object<primitive_type, material_type>;
+  using object_type        = core::Object<radiant_type, real_type>;
 
   using acceleration_type  = core::acceleration::KDTree<object_type>;
 

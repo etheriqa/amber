@@ -35,7 +35,6 @@ public:
   using aabb_type = AABB<RealType>;
   using hit_type  = Hit<RealType>;
   using ray_type  = Ray<RealType>;
-  using real_type = RealType;
 
   virtual ~Primitive() {}
 

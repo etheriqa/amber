@@ -28,13 +28,13 @@ namespace core {
 namespace material {
 
 template <typename Radiant, typename RealType>
-class Lambertian : public SymmetricBSDF<Radiant, RealType> {
-public:
-  using radiant_value_type = typename Radiant::value_type;
-  using scatter_type       = typename Material<Radiant, RealType>::scatter_type;
-  using vector3_type       = typename Material<Radiant, RealType>::vector3_type;
-
+class Lambertian : public SymmetricBSDF<Radiant, RealType>
+{
 private:
+  using typename Material<Radiant, RealType>::radiant_value_type;
+  using typename Material<Radiant, RealType>::scatter_type;
+  using typename Material<Radiant, RealType>::vector3_type;
+
   Radiant kd_;
 
 public:

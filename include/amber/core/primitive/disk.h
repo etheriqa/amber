@@ -33,27 +33,34 @@ template <typename RealType>
 class Disk : public Primitive<RealType>
 {
 public:
-  using aabb_type      = typename Primitive<RealType>::aabb_type;
-  using hit_type       = typename Primitive<RealType>::hit_type;
-  using ray_type       = typename Primitive<RealType>::ray_type;
-
-  using vector3_type   = Vector3<RealType>;
+  using vector3_type = Vector3<RealType>;
 
 private:
+  using typename Primitive<RealType>::aabb_type;
+  using typename Primitive<RealType>::hit_type;
+  using typename Primitive<RealType>::ray_type;
+
   vector3_type center_, normal_;
   RealType radius_;
 
 public:
-  Disk(vector3_type const& center,
-       vector3_type const& normal,
-       RealType radius) noexcept
-    : center_(center), normal_(Normalize(normal)), radius_(radius) {}
+  Disk(
+    vector3_type const& center,
+    vector3_type const& normal,
+    RealType radius
+  ) noexcept
+  : center_(center),
+    normal_(Normalize(normal)),
+    radius_(radius)
+  {}
 
-  RealType SurfaceArea() const noexcept {
+  RealType SurfaceArea() const noexcept
+  {
     return static_cast<RealType>(kPI) * radius_ * radius_;
   }
 
-  aabb_type BoundingBox() const noexcept {
+  aabb_type BoundingBox() const noexcept
+  {
     auto const factor =
       vector3_type(std::sqrt(1 - normal_.x() * normal_.x()),
                    std::sqrt(1 - normal_.y() * normal_.y()),
@@ -62,7 +69,8 @@ public:
     return aabb_type(center_ - radius_ * factor, center_ + radius_ * factor);
   }
 
-  hit_type Intersect(ray_type const& ray) const noexcept {
+  hit_type Intersect(ray_type const& ray) const noexcept
+  {
      auto const cos_theta = Dot(ray.direction, normal_);
      if (cos_theta == 0) {
        return hit_type();
