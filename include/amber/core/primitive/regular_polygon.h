@@ -117,12 +117,12 @@ public:
     return hit_type(center_ + x * u_ + y * v_, w_, t);
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
-    auto const x = std::sqrt(sampler->uniform(short_radius_ * short_radius_));
-    auto const y = x * std::tan(angle_ / 2) * sampler->uniform<RealType>(-1, 1);
+    auto const x = std::sqrt(Uniform(short_radius_ * short_radius_, sampler));
+    auto const y = x * std::tan(angle_ / 2) * Uniform<RealType>(-1, 1, sampler);
     auto const theta =
-      angle_ * std::floor(sampler->uniform<RealType>(n_)) +
+      angle_ * std::floor(Uniform<RealType>(n_, sampler)) +
       static_cast<RealType>(kPI / 2);
 
     auto const origin =

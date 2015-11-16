@@ -83,10 +83,10 @@ public:
     return hit_type();
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
     auto const polygon_area = SurfaceArea();
-    auto const r = sampler->uniform(polygon_area);
+    auto const r = Uniform(polygon_area, sampler);
 
     RealType area = 0;
     for (auto const& triangle : triangles_) {

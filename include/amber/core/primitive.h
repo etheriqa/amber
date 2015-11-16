@@ -41,7 +41,7 @@ public:
   virtual RealType SurfaceArea() const noexcept = 0;
   virtual aabb_type BoundingBox() const noexcept = 0;
   virtual hit_type Intersect(ray_type const&) const noexcept = 0;
-  virtual ray_type SamplePoint(Sampler*) const = 0;
+  virtual ray_type SamplePoint(Sampler&) const = 0;
 };
 
 }

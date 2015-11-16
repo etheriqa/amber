@@ -90,15 +90,15 @@ public:
      return hit_type(ray.origin + t * ray.direction, normal_, t);
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
-    auto const radius = std::sqrt(sampler->uniform(radius_ * radius_));
+    auto const radius = std::sqrt(Uniform(radius_ * radius_, sampler));
 
     vector3_type u, v;
     std::tie(u, v) = OrthonormalBasis(normal_);
 
     RealType x, y;
-    std::tie(x, y) = sampler->circle<RealType>();
+    std::tie(x, y) = Circle<RealType>(sampler);
 
     auto const origin = center_ + (u * x + v * y) * radius;
 

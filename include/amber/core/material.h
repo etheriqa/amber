@@ -75,7 +75,7 @@ public:
   SampleLight(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return SampleScatter(DistributionLight(direction_o, normal), sampler);
@@ -86,7 +86,7 @@ public:
   SampleImportance(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return SampleScatter(DistributionImportance(direction_o, normal), sampler);
@@ -117,7 +117,7 @@ protected:
   scatter_type
   SampleScatter(
     std::vector<scatter_type> const& scatters,
-    Sampler* sampler
+    Sampler& sampler
   )
   {
     if (scatters.empty()) {
@@ -142,7 +142,7 @@ protected:
       std::lower_bound(
         weights.begin(),
         weights.end(),
-        sampler->uniform(weights.back())
+        Uniform(weights.back(), sampler)
     ));
 
     auto const& scatter = scatters.at(distance);

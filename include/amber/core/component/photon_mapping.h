@@ -196,7 +196,7 @@ public:
   template <typename OutputIterator>
   void photonTracing(size_t n_photon,
                      OutputIterator output,
-                     Sampler* sampler) const {
+                     Sampler& sampler) const {
     ray_type ray;
     radiant_type power;
     std::tie(ray, power, std::ignore, std::ignore, std::ignore) =
@@ -225,7 +225,7 @@ public:
       auto const p_russian_roulette =
         std::min<radiant_value_type>(1, Max(scatter.weight));
 
-      if (sampler->uniform<radiant_value_type>() >= p_russian_roulette) {
+      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
         break;
       }
 

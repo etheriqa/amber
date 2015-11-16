@@ -62,12 +62,12 @@ public:
   }
 
   std::tuple<RealType, RealType>
-  sampleLocalPoint(size_t x, size_t y, Sampler* sampler) const noexcept
+  sampleLocalPoint(size_t x, size_t y, Sampler& sampler) const noexcept
   {
     auto const x_normalized =
-      (x + sampler->uniform<RealType>()) / resolution_width_;
+      (x + Uniform<RealType>(sampler)) / resolution_width_;
     auto const y_normalized =
-      (y + sampler->uniform<RealType>()) / resolution_height_;
+      (y + Uniform<RealType>(sampler)) / resolution_height_;
     return std::make_tuple(
       (x_normalized - RealType(0.5)) * sensor_width_,
       (y_normalized - RealType(0.5)) * sensor_height_

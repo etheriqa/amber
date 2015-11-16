@@ -116,7 +116,7 @@ private:
     ray_type ray;
     radiant_type weight;
     std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, &sampler);
+      camera.GenerateRay(x, y, sampler);
 
     radiant_type power;
 
@@ -134,11 +134,11 @@ private:
       }
 
       auto const scatter =
-        object.SampleLight(-ray.direction, hit.normal, &sampler);
+        object.SampleLight(-ray.direction, hit.normal, sampler);
       auto const p_russian_roulette =
         std::min<radiant_value_type>(1, Max(scatter.weight));
 
-      if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
+      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
         break;
       }
 

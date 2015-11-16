@@ -70,7 +70,7 @@ public:
   {}
 
   std::vector<Event> lightTracing(
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     ray_type ray;
@@ -117,7 +117,7 @@ public:
 
   template <typename Camera>
   std::vector<Event> rayTracing(
-    Sampler* sampler,
+    Sampler& sampler,
     Camera const& camera,
     size_t x,
     size_t y
@@ -219,7 +219,7 @@ private:
   std::vector<Event> tracing(
     Event event,
     radiant_value_type p_psa,
-    Sampler* sampler,
+    Sampler& sampler,
     Sample const& sample,
     PDF const& pdf
   ) const
@@ -257,7 +257,7 @@ private:
       event.weight             *= weight;
       events.push_back(event);
 
-      if (sampler->uniform<radiant_value_type>() >= p_russian_roulette) {
+      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
         break;
       }
 

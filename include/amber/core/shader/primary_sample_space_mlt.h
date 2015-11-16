@@ -61,17 +61,17 @@ private:
     Seed(camera_type const& camera,
          bdpt_type& bdpt,
          DefaultSampler<>& sampler)
-      : pss_light(sampler()),
-        pss_eye(sampler()),
-        x(std::floor(pss_eye.uniform<real_type>(camera.imageWidth()))),
-        y(std::floor(pss_eye.uniform<real_type>(camera.imageHeight()))),
+      : pss_light(sampler.engine()()),
+        pss_eye(sampler.engine()()),
+        x(std::floor(Uniform<real_type>(camera.imageWidth(), pss_eye))),
+        y(std::floor(Uniform<real_type>(camera.imageHeight(), pss_eye))),
         power(bdpt.connect(
-          bdpt.lightTracing(&pss_light),
-          bdpt.rayTracing(&pss_eye, camera, x, y),
+          bdpt.lightTracing(pss_light),
+          bdpt.rayTracing(pss_eye, camera, x, y),
           component::PowerHeuristic<radiant_value_type>())),
         contribution(Sum(power)) {
-      pss_light.accept();
-      pss_eye.accept();
+      pss_light.Accept();
+      pss_eye.Accept();
     }
 
   };
@@ -169,10 +169,10 @@ public:
         auto& pss_eye = seed.pss_eye;
         State state(seed);
         while (progress_.current_job++ < progress_.total_job) {
-          auto const large_step = sampler.canonical() < p_large_step_;
+          auto const large_step = Uniform<real_type>(sampler) < p_large_step_;
           if (large_step) {
-            pss_light.setLargeStep();
-            pss_eye.setLargeStep();
+            pss_light.SetLargeStep();
+            pss_eye.SetLargeStep();
           }
           auto proposal = propose(state, bdpt, camera, pss_light, pss_eye);
           auto const p_acceptance = std::min<radiant_value_type>(
@@ -184,16 +184,16 @@ public:
           state.weight +=
             (1 - p_acceptance) /
               (state.contribution / b + p_large_step_) / n_mutations_;
-          if (sampler.uniform<radiant_value_type>() < p_acceptance) {
+          if (Uniform<radiant_value_type>(sampler) < p_acceptance) {
             buffer.at(state.x, state.y) += state.power * state.weight;
             state = proposal;
-            pss_light.accept();
-            pss_eye.accept();
+            pss_light.Accept();
+            pss_eye.Accept();
           } else {
             buffer.at(proposal.x, proposal.y) +=
               proposal.power * proposal.weight;
-            pss_light.reject();
-            pss_eye.reject();
+            pss_light.Reject();
+            pss_eye.Reject();
           }
         }
         buffer.at(state.x, state.y) += state.power * state.weight;
@@ -226,7 +226,7 @@ private:
       c += seed.contribution;
       cs.push_back(c);
     });
-    auto const it = std::lower_bound(cs.begin(), cs.end(), sampler.uniform(c));
+    auto const it = std::lower_bound(cs.begin(), cs.end(), Uniform(c, sampler));
     return *std::next(first, std::distance(cs.begin(), it));
   }
 
@@ -238,11 +238,11 @@ private:
     component::PrimarySampleSpace<>& pss_eye
   ) const
   {
-    state.x = std::floor(pss_eye.uniform<real_type>(camera.imageWidth()));
-    state.y = std::floor(pss_eye.uniform<real_type>(camera.imageHeight()));
+    state.x = std::floor(Uniform<real_type>(camera.imageWidth(), pss_eye));
+    state.y = std::floor(Uniform<real_type>(camera.imageHeight(), pss_eye));
     state.power = bdpt.connect(
-      bdpt.lightTracing(&pss_light),
-      bdpt.rayTracing(&pss_eye, camera, state.x, state.y),
+      bdpt.lightTracing(pss_light),
+      bdpt.rayTracing(pss_eye, camera, state.x, state.y),
       component::PowerHeuristic<radiant_value_type>()
     );
     state.contribution = Sum(state.power);

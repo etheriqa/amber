@@ -96,7 +96,7 @@ public:
         std::vector<photon_type> buffer;
         DefaultSampler<> sampler((std::random_device()()));
         while (progress_.current_job++ < progress_.total_job) {
-          pm.photonTracing(n_photons_, std::back_inserter(buffer), &sampler);
+          pm.photonTracing(n_photons_, std::back_inserter(buffer), sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
         std::move(buffer.begin(), buffer.end(), std::back_inserter(photons));
@@ -159,7 +159,7 @@ private:
     ray_type ray;
     radiant_type weight;
     std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, &sampler);
+      camera.GenerateRay(x, y, sampler);
 
     return estimatePower(scene, photon_map, ray, weight, sampler);
   }

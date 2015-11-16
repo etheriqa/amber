@@ -104,7 +104,7 @@ public:
     return primitive_->Intersect(ray);
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
     return primitive_->SamplePoint(sampler);
   }
@@ -153,7 +153,7 @@ public:
   SampleLight(
     vector3_type const& direction_i,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return material_->SampleLight(direction_i, normal, sampler);
@@ -163,7 +163,7 @@ public:
   SampleImportance(
     vector3_type const& direction_i,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return material_->SampleImportance(direction_i, normal, sampler);

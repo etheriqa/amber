@@ -139,7 +139,7 @@ public:
           // photon pass
           photons.clear();
           for (size_t j = 0; j < n_photons_; j++) {
-            pm.photonTracing(1, std::back_inserter(photons), &sampler);
+            pm.photonTracing(1, std::back_inserter(photons), sampler);
           }
           auto const photon_map =
             pm.buildPhotonMap(photons.begin(), photons.end());
@@ -190,7 +190,7 @@ private:
 
     ray_type ray;
     std::tie(ray, hit_point.weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, &sampler);
+      camera.GenerateRay(x, y, sampler);
 
     for (;;) {
       hit_type hit;
@@ -211,11 +211,11 @@ private:
       }
 
       auto const scatter =
-        object.SampleLight(-ray.direction, hit.normal, &sampler);
+        object.SampleLight(-ray.direction, hit.normal, sampler);
       auto const p_russian_roulette =
         std::min<radiant_value_type>(1, Max(scatter.weight));
 
-      if (sampler.uniform<radiant_value_type>() >= p_russian_roulette) {
+      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
         hit_point.weight = radiant_type();
         break;
       }

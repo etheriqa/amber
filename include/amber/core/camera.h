@@ -84,7 +84,7 @@ public:
   GenerateRay(
     size_t x,
     size_t y,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     RealType x_sensor, y_sensor;

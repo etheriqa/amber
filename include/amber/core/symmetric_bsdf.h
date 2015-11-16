@@ -57,7 +57,7 @@ public:
   SampleLight(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return Sample(direction_o, normal, sampler);
@@ -67,7 +67,7 @@ public:
   SampleImportance(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const {
     return Sample(direction_o, normal, sampler);
   }
@@ -104,7 +104,7 @@ protected:
   Sample(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     return this->SampleScatter(distribution(direction_o, normal), sampler);

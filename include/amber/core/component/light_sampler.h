@@ -74,12 +74,12 @@ public:
   }
 
   Object
-  SampleLight(Sampler *sampler) const
+  SampleLight(Sampler& sampler) const
   {
     return std::lower_bound(
       nodes_.begin(),
       nodes_.end(),
-      Node(sampler->uniform(total_power_), Object())
+      Node(Uniform(total_power_, sampler), Object())
     )->object;
   }
 
@@ -90,13 +90,13 @@ public:
   }
 
   std::tuple<ray_type, Radiant, Object, radiant_value_type, vector3_type>
-  GenerateLightRay(Sampler* sampler) const
+  GenerateLightRay(Sampler& sampler) const
   {
     auto const light = SampleLight(sampler);
     auto const ray = light.SamplePoint(sampler);
     auto const p_area = PDFArea(light);
     return std::make_tuple(
-      ray_type(ray.origin, std::get<0>(sampler->hemispherePSA(ray.direction))),
+      ray_type(ray.origin, std::get<0>(HemispherePSA(ray.direction, sampler))),
       light.Radiance() * kPI / p_area,
       light,
       p_area,

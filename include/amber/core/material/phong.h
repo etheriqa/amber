@@ -37,13 +37,13 @@ private:
 
   Radiant kd_;
   Radiant ks_;
-  radiant_value_type exponent_;
+  RealType exponent_;
 
 public:
   Phong(
     Radiant const& kd,
     Radiant const& ks,
-    radiant_value_type exponent
+    RealType exponent
   ) noexcept
   : kd_(kd),
     ks_(ks),
@@ -105,14 +105,14 @@ public:
   Sample(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     auto const rho_d = Sum(kd_);
     auto const rho_s = Sum(ks_);
     auto const rho = rho_d + rho_s;
 
-    if (sampler->uniform(rho) < rho_d) {
+    if (Uniform(rho, sampler) < rho_d) {
       // sample from the diffuse component
       auto const direction_i = sampleDiffuse(direction_o, normal, sampler);
       return scatter_type(
@@ -135,35 +135,25 @@ private:
   sampleDiffuse(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     auto const w = Dot(direction_o, normal) > 0 ? normal : -normal;
-    return std::get<0>(sampler->hemispherePSA(w));
+    return std::get<0>(HemispherePSA(w, sampler));
   }
 
   vector3_type
   sampleSpecular(
     vector3_type const& direction_o,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     for (;;) {
-      auto const cos_alpha =
-        std::pow(sampler->uniform<RealType>(), 1 / (exponent_ + 1));
-      auto const sin_alpha = std::sqrt(1 - cos_alpha * cos_alpha);
-      auto const phi = 2 * kPI * sampler->uniform<RealType>();
-
-      auto const w = 2 * Dot(direction_o, normal) * normal - direction_o;
-      vector3_type u, v;
-      std::tie(u, v) = OrthonormalBasis(w);
-
+      auto const direction_r =
+        2 * Dot(direction_o, normal) * normal - direction_o;
       auto const direction_i =
-        sin_alpha * std::cos(phi) * u +
-        sin_alpha * std::sin(phi) * v +
-        cos_alpha * w;
-
+        std::get<0>(CosinePower(direction_r, exponent_, sampler));
       if (Dot(direction_i, normal) * Dot(direction_o, normal) > 0) {
         return direction_i;
       }

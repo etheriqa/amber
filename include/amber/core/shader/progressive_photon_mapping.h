@@ -154,7 +154,7 @@ public:
         while (++progress_.current_job <= progress_.total_job) {
           photons.clear();
           for (size_t i = 0; i < n_photons_; i++) {
-            pm.photonTracing(1, std::back_inserter(photons), &sampler);
+            pm.photonTracing(1, std::back_inserter(photons), sampler);
           }
           progressiveRadianceEstimate(
             hit_points.begin(),
@@ -204,7 +204,7 @@ private:
     ray_type ray;
     radiant_type weight;
     std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, &sampler);
+      camera.GenerateRay(x, y, sampler);
 
     rayTracing(scene, x, y, ray, weight, 0, output, sampler);
   }

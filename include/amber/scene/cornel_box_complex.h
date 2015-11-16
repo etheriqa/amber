@@ -26,7 +26,7 @@
 #include "core/material/refraction.h"
 #include "core/material/specular.h"
 #include "core/primitive/convex_polygon.h"
-#include "core/primitive/sphere.h"
+#include "core/primitive/Sphere.h"
 
 namespace amber {
 namespace scene {
@@ -152,17 +152,17 @@ void cornel_box_complex(OutputIterator output) {
     }),
     new Lambertian(radiant_type(.5, .5, .5))
   );
-  // diffuse sphere
+  // diffuse Sphere
   output = Object(
     new Sphere(vector3_type( 0.4, -0.6, -0.5), 0.4),
     new Lambertian(radiant_type(.5, .5, .5))
   );
-  // specular sphere
+  // specular Sphere
   output = Object(
     new Sphere(vector3_type(-0.4, -0.7,  0.1), 0.3),
     new Specular(radiant_type(.95, .95, .95))
   );
-  // refraction sphere
+  // refraction Sphere
   output = Object(
     new Sphere(vector3_type( 0.1, -0.8,  0.6), 0.2),
     new Refraction(1.5)

@@ -71,12 +71,12 @@ public:
   Sample(
     vector3_type const& direction_i,
     vector3_type const& normal,
-    Sampler* sampler
+    Sampler& sampler
   ) const
   {
     auto const w = Dot(direction_i, normal) > 0 ? normal : -normal;
     vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = sampler->hemispherePSA(w);
+    std::tie(direction_o, std::ignore) = HemispherePSA(w, sampler);
     return scatter_type(direction_o, Radiant(0));
   }
 };

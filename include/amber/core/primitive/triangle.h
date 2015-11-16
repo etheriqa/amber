@@ -104,10 +104,10 @@ public:
                     t);
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
-    auto u = sampler->uniform<RealType>();
-    auto v = sampler->uniform<RealType>();
+    auto u = Uniform<RealType>(sampler);
+    auto v = Uniform<RealType>(sampler);
 
     if (u + v >= 1) {
       u = 1 - u;

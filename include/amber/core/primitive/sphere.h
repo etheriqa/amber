@@ -85,9 +85,9 @@ public:
     return hit_type();
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
-    auto const normal = sampler->sphereSA<RealType>();
+    auto const normal = SphereSA<RealType>(sampler);
     auto const origin = center_ + radius_ * normal;
 
     return ray_type(origin, normal);

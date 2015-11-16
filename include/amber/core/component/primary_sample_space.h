@@ -31,21 +31,24 @@ namespace core {
 namespace component {
 
 template <typename BaseSampler = DefaultSampler<>>
-class PrimarySampleSpace : public Sampler {
+class PrimarySampleSpace : public Sampler
+{
 public:
-  using result_type    = typename BaseSampler::result_type;
+  using seed_type = typename BaseSampler::seed_type;
 
 private:
-  using real_type      = typename Sampler::real_type;
+  using typename Sampler::result_type;
+
   using size_type      = std::size_t;
   using timestamp_type = std::uint_fast64_t;
 
-  struct Sample {
+  struct Sample
+  {
     timestamp_type timestamp;
-    real_type value;
+    result_type value;
 
-    Sample(timestamp_type timestamp, real_type value) noexcept
-      : timestamp(timestamp), value(value) {}
+    Sample(timestamp_type timestamp, result_type value) noexcept
+    : timestamp(timestamp), value(value) {}
   };
 
   BaseSampler sampler_;
@@ -57,17 +60,22 @@ private:
   size_type pos_;
 
 public:
-  PrimarySampleSpace() noexcept
-    : sampler_(), samples_(), logs_(),
-      large_step_(false), large_step_time_(0), time_(0), pos_(0) {}
+  PrimarySampleSpace() noexcept : PrimarySampleSpace(seed_type()) {}
 
   explicit PrimarySampleSpace(result_type seed) noexcept
-    : sampler_(seed), samples_(), logs_(),
-      large_step_(false), large_step_time_(0), time_(0), pos_(0) {}
+  : sampler_(seed),
+    samples_(),
+    logs_(),
+    large_step_(false),
+    large_step_time_(0),
+    time_(0),
+    pos_(0)
+  {}
 
-  void setLargeStep() noexcept { large_step_ = true; }
+  void SetLargeStep() noexcept { large_step_ = true; }
 
-  void accept() noexcept {
+  void Accept() noexcept
+  {
     logs_.clear();
     large_step_ = false;
     large_step_time_ = time_;
@@ -75,7 +83,8 @@ public:
     time_++;
   }
 
-  void reject() noexcept {
+  void Reject() noexcept
+  {
     std::copy(logs_.begin(), logs_.end(), samples_.begin());
     while (!samples_.empty() && samples_.back().timestamp == time_) {
       samples_.pop_back();
@@ -85,7 +94,8 @@ public:
     pos_ = 0;
   }
 
-  void clear() noexcept {
+  void Clear() noexcept
+  {
     samples_.clear();
     logs_.clear();
     large_step_ = false;
@@ -94,12 +104,13 @@ public:
     time_ = 0;
   }
 
-  real_type canonical() {
-    const auto position = pos_++;
+  result_type const operator()()
+  {
+    auto const position = pos_++;
 
     if (position >= samples_.size()) {
       while (position >= samples_.size()) {
-        samples_.emplace_back(time_, sampler_.canonical());
+        samples_.emplace_back(time_, sampler_());
       }
       return samples_.back().value;
     }
@@ -108,14 +119,14 @@ public:
     if (large_step_ || sample.timestamp < large_step_time_) {
       logs_.push_back(sample);
       sample.timestamp = time_;
-      sample.value = sampler_.canonical();
+      sample.value = sampler_();
     } else {
       while (sample.timestamp < time_) {
         if (sample.timestamp == time_ - 1) {
           logs_.push_back(sample);
         }
         sample.timestamp++;
-        sample.value = mutate(sample.value);
+        sample.value = Mutate(sample.value);
       }
     }
 
@@ -123,11 +134,12 @@ public:
   }
 
 private:
-  real_type mutate(real_type value) {
-    const real_type s1 = 1. / 1024;
-    const real_type s2 = 1. / 64;
-    const auto dv = s2 * std::exp(-std::log(s2 / s1) * sampler_.canonical());
-    if (sampler_.canonical() < 0.5) {
+  result_type Mutate(result_type value)
+  {
+    auto const s1 = static_cast<result_type>(1) / 1024;
+    auto const s2 = static_cast<result_type>(1) / 64;
+    auto const dv = s2 * std::exp(-std::log(s2 / s1) * sampler_());
+    if (sampler_() < 0.5) {
       value += dv;
       if (value >= 1) {
         value -= 1;

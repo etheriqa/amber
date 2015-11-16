@@ -110,15 +110,15 @@ public:
     return hit_type();
   }
 
-  ray_type SamplePoint(Sampler* sampler) const
+  ray_type SamplePoint(Sampler& sampler) const
   {
-    auto const height = sampler->uniform(height_);
+    auto const height = Uniform(height_, sampler);
 
     vector3_type u, v;
     std::tie(u, v) = OrthonormalBasis(normal_);
 
     RealType x, y;
-    std::tie(x, y) = sampler->circle<RealType>();
+    std::tie(x, y) = sampler->Circle<RealType>();
 
     auto const origin = center_ + normal_ * height + normal * radius_;
     auto const normal = u * x + v * y;

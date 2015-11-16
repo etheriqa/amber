@@ -89,8 +89,8 @@ public:
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
               buffer.at(x, y) += bdpt.connect(
-                bdpt.lightTracing(&sampler),
-                bdpt.rayTracing(&sampler, camera, x, y),
+                bdpt.lightTracing(sampler),
+                bdpt.rayTracing(sampler, camera, x, y),
                 component::PowerHeuristic<radiant_value_type>()
                 ) / spp_;
             }
