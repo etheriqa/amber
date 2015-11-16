@@ -21,6 +21,7 @@
 #pragma once
 
 #include "core/constant.h"
+#include "core/geometry.h"
 #include "core/symmetric_bsdf.h"
 
 namespace amber {
@@ -69,9 +70,10 @@ public:
       return Radiant();
     }
 
-    auto const direction_r = 2 * signed_cos_i * normal - direction_i;
+    auto const direction_s =
+      PerfectReflection(direction_i, normal, signed_cos_i);
     auto const cos_alpha =
-      std::max<radiant_value_type>(0, Dot(direction_r, direction_o));
+      std::max<radiant_value_type>(0, Dot(direction_s, direction_o));
 
     return
       kd_ / kPI +
@@ -89,8 +91,7 @@ public:
     auto const rho_s = Sum(ks_);
     auto const rho = rho_d + rho_s;
 
-    auto const direction_s =
-      2 * Dot(direction_o, normal) * normal - direction_o;
+    auto const direction_s = PerfectReflection(direction_o, normal);
     auto const cos_alpha = std::max<RealType>(0, Dot(direction_i, direction_s));
 
     auto const pdf_d = 1 / kPI;
@@ -150,8 +151,7 @@ private:
   ) const
   {
     for (;;) {
-      auto const direction_r =
-        2 * Dot(direction_o, normal) * normal - direction_o;
+      auto const direction_r = PerfectReflection(direction_o, normal);
       auto const direction_i =
         std::get<0>(CosinePower(direction_r, exponent_, sampler));
       if (Dot(direction_i, normal) * Dot(direction_o, normal) > 0) {

@@ -23,6 +23,7 @@
 #include <cmath>
 
 #include "core/constant.h"
+#include "core/geometry.h"
 #include "core/symmetric_bsdf.h"
 
 namespace amber {
@@ -81,7 +82,7 @@ public:
   ) const
   {
     return {
-      scatter_type(2 * Dot(direction_o, normal) * normal - direction_o, ks_),
+      scatter_type(PerfectReflection(direction_o, normal), ks_),
     };
   }
 };

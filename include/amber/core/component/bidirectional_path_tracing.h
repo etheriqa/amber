@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "core/constant.h"
+#include "core/geometry.h"
 #include "core/sampler.h"
 #include "core/scene.h"
 #include "core/surface_type.h"
@@ -44,6 +45,7 @@ private:
   using radiant_type       = typename Object::radiant_type;
   using radiant_value_type = typename Object::radiant_type::value_type;
   using ray_type           = typename Object::ray_type;
+  using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
   struct Event
@@ -192,27 +194,13 @@ public:
   }
 
 private:
-  radiant_value_type
+  real_type
   GeometryFactor(
     Event const& x,
     Event const& y
   ) const noexcept
   {
-    return GeometryFactor(x, y, Normalize(y.position - x.position));
-  }
-
-  radiant_value_type
-  GeometryFactor(
-    Event const& x,
-    Event const& y,
-    vector3_type const& direction
-  ) const noexcept
-  {
-    return std::abs(
-      Dot(direction, x.normal) *
-      Dot(direction, y.normal) /
-      SquaredLength(y.position - x.position)
-    );
+    return core::GeometryFactor(x.position, y.position, x.normal, y.normal);
   }
 
   template <typename Sample, typename PDF>
@@ -240,10 +228,12 @@ private:
       }
 
       auto const scatter = sample(object, -ray.direction, hit.normal, sampler);
-      auto const geometry_factor =
-        std::abs(Dot(ray.direction, event.normal) *
-                 Dot(ray.direction, hit.normal)) /
-        (hit.distance * hit.distance);
+      auto const geometry_factor = core::GeometryFactor(
+        ray.direction,
+        hit.distance * hit.distance,
+        event.normal,
+        hit.normal
+      );
       auto const p_russian_roulette =
         std::min<radiant_value_type>(1, Max(scatter.weight));
 
@@ -295,7 +285,7 @@ private:
       return
         l.weight *
         l.object.BSDF(l.direction_o, direction_le, l.normal) *
-        GeometryFactor(l, e, direction_le) *
+        GeometryFactor(l, e) *
         e.object.BSDF(-direction_le, e.direction_o, e.normal) *
         e.weight;
     } else if (s == 0 && t >= 2) {
@@ -327,7 +317,7 @@ private:
       return
         l.weight *
         (1 / kPI) *
-        GeometryFactor(l, e, direction_le) *
+        GeometryFactor(l, e) *
         e.object.BSDF(-direction_le, e.direction_o, e.normal) *
         e.weight;
     } else if (s >= 2 && t == 0) {

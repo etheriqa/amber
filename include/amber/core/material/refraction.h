@@ -25,6 +25,7 @@
 #include <numeric>
 
 #include "core/constant.h"
+#include "core/geometry.h"
 #include "core/material.h"
 
 namespace {
@@ -164,7 +165,7 @@ public:
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
     auto const direction_r =
-      2 * signed_cos_alpha * normal - direction_o;
+      PerfectReflection(direction_o, normal, signed_cos_alpha);
 
     if (squared_cos_beta < 0) {
       return {
@@ -203,7 +204,7 @@ public:
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
     auto const direction_r =
-      2 * signed_cos_alpha * normal - direction_o;
+      PerfectReflection(direction_o, normal, signed_cos_alpha);
 
     if (squared_cos_beta < 0) {
       return {
