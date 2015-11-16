@@ -37,7 +37,7 @@
 #include "core/primitive/regular_polygon.h"
 #include "core/rgb.h"
 #include "core/scene.h"
-#include "core/vector.h"
+#include "core/vector3.h"
 #include "post_process/filmic.h"
 #include "post_process/gamma.h"
 #include "scene/cornel_box.h"

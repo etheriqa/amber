@@ -25,6 +25,7 @@
 #include <ostream>
 #include <tuple>
 
+#include <boost/operators.hpp>
 #include <immintrin.h>
 
 #include "core/constant.h"
@@ -35,14 +36,20 @@ namespace amber {
 namespace core {
 
 template <typename RealType>
-struct AABB : public Writer
+class AABB
+: public Writer,
+  private boost::addable<AABB<RealType>>,
+  private boost::multipliable<AABB<RealType>>
 {
+public:
   using ray_type     = Ray<RealType>;
   using vector3_type = Vector3<RealType>;
 
-  vector3_type min, max;
+private:
+  vector3_type min_, max_;
 
-  AABB<RealType> static constexpr empty() noexcept
+public:
+  AABB<RealType> const static constexpr empty() noexcept
   {
     return AABB<RealType>(
       vector3_type(std::numeric_limits<RealType>::max()),
@@ -50,7 +57,7 @@ struct AABB : public Writer
     );
   }
 
-  AABB<RealType> static constexpr universal() noexcept
+  AABB<RealType> const static constexpr universal() noexcept
   {
     return AABB<RealType>(
       vector3_type(std::numeric_limits<RealType>::lowest()),
@@ -61,128 +68,119 @@ struct AABB : public Writer
   AABB() noexcept : AABB(empty()) {}
 
   explicit AABB(vector3_type const& point) noexcept
-  : min(point), max(point) {}
+  : min_(point), max_(point) {}
 
   AABB(vector3_type const& min, vector3_type const& max) noexcept
-  : min(min), max(max) {}
+  : min_(min), max_(max) {}
 
-  void Write(std::ostream& os) const noexcept {
-    os
-      << "([" << min.x()
-      << ", " << max.x()
-      << "], [" << min.y()
-      << ", " << max.y()
-      << "], [" << min.z()
-      << ", " << max.z()
-      << "])";
-  }
+  vector3_type const& min() const noexcept { return min_; }
+  vector3_type const& max() const noexcept { return max_; }
+
+  vector3_type& min() noexcept { return min_; }
+  vector3_type& max() noexcept { return max_; }
 
   operator bool() const noexcept
   {
-    return min.x() <= max.x() && min.y() <= max.y() && min.z() <= max.z();
+    return min_.x() <= max_.x() && min_.y() <= max_.y() && min_.z() <= max_.z();
   }
 
-  AABB<RealType>& operator+=(AABB<RealType> const& a) noexcept
+  AABB<RealType>& operator+=(AABB<RealType> const& bb) noexcept
   {
-    return *this = *this + a;
+    return this->operator=(AABB<RealType>(
+      Vector3<RealType>(
+        std::min(min_.x(), bb.min_.x()),
+        std::min(min_.y(), bb.min_.y()),
+        std::min(min_.z(), bb.min_.z())
+      ),
+      Vector3<RealType>(
+        std::max(max_.x(), bb.max_.x()),
+        std::max(max_.y(), bb.max_.y()),
+        std::max(max_.z(), bb.max_.z())
+      )
+    ));
   }
 
-  AABB<RealType>& operator*=(AABB<RealType> const& a) noexcept
+  AABB<RealType>& operator*=(AABB<RealType> const& bb) noexcept
   {
-    return *this = *this * a;
+    return this->operator=(AABB<RealType>(
+      Vector3<RealType>(
+        std::max(min_.x(), bb.min_.x()),
+        std::max(min_.y(), bb.min_.y()),
+        std::max(min_.z(), bb.min_.z())
+      ),
+      Vector3<RealType>(
+        std::min(max_.x(), bb.max_.x()),
+        std::min(max_.y(), bb.max_.y()),
+        std::min(max_.z(), bb.max_.z())
+      )
+    ));
+  }
+
+  void Write(std::ostream& os) const noexcept
+  {
+    os
+      << "([" << min_.x()
+      << ", " << max_.x()
+      << "], [" << min_.y()
+      << ", " << max_.y()
+      << "], [" << min_.z()
+      << ", " << max_.z()
+      << "])";
   }
 
   RealType SurfaceArea() const noexcept
   {
-    auto const x = max.x() - min.x();
-    auto const y = max.y() - min.y();
-    auto const z = max.z() - min.z();
+    auto const x = max_.x() - min_.x();
+    auto const y = max_.y() - min_.y();
+    auto const z = max_.z() - min_.z();
     return 2 * (x * y + y * z + z * x);
   }
 
   std::tuple<bool, RealType, RealType>
   Intersect(ray_type const& ray, RealType t_max) const noexcept
   {
-    return RayAABBIntersection(ray, *this, t_max);
+    RealType t_min = static_cast<RealType>(kEPS);
+
+    {
+      auto const t0 = (min_.x() - ray.origin.x()) / ray.direction.x();
+      auto const t1 = (max_.x() - ray.origin.x()) / ray.direction.x();
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
+        return std::make_tuple(false, 0, 0);
+      }
+    }
+
+    {
+      auto const t0 = (min_.y() - ray.origin.y()) / ray.direction.y();
+      auto const t1 = (max_.y() - ray.origin.y()) / ray.direction.y();
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
+        return std::make_tuple(false, 0, 0);
+      }
+    }
+
+    {
+      auto const t0 = (min_.z() - ray.origin.z()) / ray.direction.z();
+      auto const t1 = (max_.z() - ray.origin.z()) / ray.direction.z();
+      t_min = std::max(t_min, std::min(t0, t1));
+      t_max = std::min(t_max, std::max(t0, t1));
+      if (t_min > t_max) {
+        return std::make_tuple(false, 0, 0);
+      }
+    }
+
+    return std::make_tuple(true, t_min, t_max);
   }
 };
 
-template <typename RealType>
-AABB<RealType>
-operator+(AABB<RealType> const& a, AABB<RealType> const& b) noexcept
-{
-  return
-    AABB<RealType>(Vector3<RealType>(std::min(a.min.x(), b.min.x()),
-                                     std::min(a.min.y(), b.min.y()),
-                                     std::min(a.min.z(), b.min.z())),
-                   Vector3<RealType>(std::max(a.max.x(), b.max.x()),
-                                     std::max(a.max.y(), b.max.y()),
-                                     std::max(a.max.z(), b.max.z())));
-}
-
-template <typename RealType>
-AABB<RealType>
-operator*(AABB<RealType> const& a, AABB<RealType> const& b) noexcept
-{
-  return
-    AABB<RealType>(Vector3<RealType>(std::max(a.min.x(), b.min.x()),
-                                     std::max(a.min.y(), b.min.y()),
-                                     std::max(a.min.z(), b.min.z())),
-                   Vector3<RealType>(std::min(a.max.x(), b.max.x()),
-                                     std::min(a.max.y(), b.max.y()),
-                                     std::min(a.max.z(), b.max.z())));
-}
-
-template <typename RealType>
-std::tuple<bool, RealType, RealType>
-RayAABBIntersection(
-  Ray<RealType> const& ray,
-  AABB<RealType> const& aabb,
-  RealType t_max
-) noexcept
-{
-  auto t_min = static_cast<RealType>(kEPS);
-
-  {
-    auto const t0 = (aabb.min.x() - ray.origin.x()) / ray.direction.x();
-    auto const t1 = (aabb.max.x() - ray.origin.x()) / ray.direction.x();
-    t_min = std::max(t_min, std::min(t0, t1));
-    t_max = std::min(t_max, std::max(t0, t1));
-    if (t_min > t_max) {
-      return std::make_tuple(false, 0, 0);
-    }
-  }
-
-  {
-    auto const t0 = (aabb.min.y() - ray.origin.y()) / ray.direction.y();
-    auto const t1 = (aabb.max.y() - ray.origin.y()) / ray.direction.y();
-    t_min = std::max(t_min, std::min(t0, t1));
-    t_max = std::min(t_max, std::max(t0, t1));
-    if (t_min > t_max) {
-      return std::make_tuple(false, 0, 0);
-    }
-  }
-
-  {
-    auto const t0 = (aabb.min.z() - ray.origin.z()) / ray.direction.z();
-    auto const t1 = (aabb.max.z() - ray.origin.z()) / ray.direction.z();
-    t_min = std::max(t_min, std::min(t0, t1));
-    t_max = std::min(t_max, std::max(t0, t1));
-    if (t_min > t_max) {
-      return std::make_tuple(false, 0, 0);
-    }
-  }
-
-  return std::make_tuple(true, t_min, t_max);
-}
-
 template <>
-std::tuple<bool, double, double>
-RayAABBIntersection(
-  Ray<double> const& ray,
-  AABB<double> const& aabb,
-  double t_max
-) noexcept
+std::tuple<bool, std::double_t, std::double_t>
+AABB<std::double_t>::Intersect(
+  Ray<std::double_t> const& ray,
+  std::double_t t_max
+) const noexcept
 {
   double t_min = kEPS;
 
@@ -195,9 +193,9 @@ RayAABBIntersection(
                                  ray.direction.z(),
                                  1));
   auto const aabb_min =
-    _mm256_setr_pd(aabb.min.x(),aabb.min.y(), aabb.min.z(), 0);
+    _mm256_setr_pd(min_.x(), min_.y(), min_.z(), 0);
   auto const aabb_max =
-    _mm256_setr_pd(aabb.max.x(), aabb.max.y(), aabb.max.z(), 0);
+    _mm256_setr_pd(max_.x(), max_.y(), max_.z(), 0);
 
   auto const t0 =
     _mm256_mul_pd(_mm256_sub_pd(aabb_min, ray_origin), inverse_ray_direction);

@@ -21,7 +21,7 @@
 #pragma once
 
 #include "core/sampler.h"
-#include "core/vector.h"
+#include "core/vector3.h"
 
 namespace amber {
 namespace core {

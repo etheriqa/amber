@@ -43,62 +43,48 @@ private:
 
 public:
   RGB() noexcept : RGB(T()) {}
-  RGB(const T& value) noexcept { values_.fill(value); }
+  RGB(const T& value) noexcept : RGB(value, value, value) {}
   RGB(const T& r, const T& g, const T& b) noexcept : values_({{r, g, b}}) {}
 
-  const T& r() const noexcept { return values_[0]; }
-  T& r() noexcept { return values_[0]; }
-  const T& g() const noexcept { return values_[1]; }
-  T& g() noexcept { return values_[1]; }
-  const T& b() const noexcept { return values_[2]; }
-  T& b() noexcept { return values_[2]; }
-
-  void Write(std::ostream& os) const noexcept {
-    os << "RGB(" << r() << " " << g() << " " << b() << ")";
-  }
+  T const& r() const noexcept { return values_[0]; }
+  T const& g() const noexcept { return values_[1]; }
+  T const& b() const noexcept { return values_[2]; }
 
   RGB<T>& operator+=(RGB<T> const& c) noexcept
   {
-    r() += c.r();
-    g() += c.g();
-    b() += c.b();
-    return *this;
+    return this->operator=(RGB<T>(r() + c.r(), g() + c.g(), b() + c.b()));
   }
 
   RGB<T>& operator-=(RGB<T> const& c) noexcept
   {
-    r() -= c.r();
-    g() -= c.g();
-    b() -= c.b();
-    return *this;
+    return this->operator=(RGB<T>(r() - c.r(), g() - c.g(), b() - c.b()));
   }
 
   RGB<T>& operator*=(RGB<T> const& c) noexcept
   {
-    r() *= c.r();
-    g() *= c.g();
-    b() *= c.b();
-    return *this;
+    return this->operator=(RGB<T>(r() * c.r(), g() * c.g(), b() * c.b()));
   }
 
   RGB<T>& operator/=(RGB<T> const& c) noexcept
   {
-    r() /= c.r();
-    g() /= c.g();
-    b() /= c.b();
-    return *this;
+    return this->operator=(RGB<T>(r() / c.r(), g() / c.g(), b() / c.b()));
+  }
+
+  void Write(std::ostream& os) const noexcept
+  {
+    os << "RGB(" << r() << " " << g() << " " << b() << ")";
   }
 };
 
 template <typename T>
-T
+T const
 Max(RGB<T> const& c) noexcept
 {
   return std::max({c.r(), c.g(), c.b()});
 }
 
 template <typename T>
-T
+T const
 Sum(RGB<T> const& c) noexcept
 {
   return c.r() + c.g() + c.b();

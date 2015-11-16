@@ -82,8 +82,8 @@ private:
       auto left_voxel = voxel;
       auto right_voxel = voxel;
       auto const i = static_cast<size_t>(axis);
-      left_voxel.max[i] = (voxel.min[i] + voxel.max[i]) / 2;
-      right_voxel.min[i] = (voxel.min[i] + voxel.max[i]) / 2;
+      left_voxel.max()[i] = (voxel.min()[i] + voxel.max()[i]) / 2;
+      right_voxel.min()[i] = (voxel.min()[i] + voxel.max()[i]) / 2;
       switch (axis) {
       case Axis::X:
         axis = Axis::Y;

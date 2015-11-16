@@ -25,7 +25,7 @@
 #include <tuple>
 
 #include "core/constant.h"
-#include "core/vector.h"
+#include "core/vector3.h"
 
 namespace amber {
 namespace core {

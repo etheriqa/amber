@@ -24,7 +24,7 @@
 #include <limits>
 
 #include "core/writer.h"
-#include "core/vector.h"
+#include "core/vector3.h"
 
 namespace amber {
 namespace core {

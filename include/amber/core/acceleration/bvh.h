@@ -187,8 +187,8 @@ private:
       std::for_each(first, last, [&](auto const& object){
         auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
-          auto const& start = voxel.min[static_cast<size_t>(axis)];
-          auto const& end = voxel.max[static_cast<size_t>(axis)];
+          auto const& start = voxel.min()[static_cast<size_t>(axis)];
+          auto const& end = voxel.max()[static_cast<size_t>(axis)];
           if (start == end) {
             events.emplace_back(EventType::Planar, axis, start, object);
           } else {

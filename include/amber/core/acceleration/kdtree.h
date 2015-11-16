@@ -294,8 +294,8 @@ private:
       std::for_each(first, last, [&](auto const& object){
         auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
-          auto const& start = voxel.min[static_cast<size_t>(axis)];
-          auto const& end = voxel.max[static_cast<size_t>(axis)];
+          auto const& start = voxel.min()[static_cast<size_t>(axis)];
+          auto const& end = voxel.max()[static_cast<size_t>(axis)];
           if (start == end) {
             events.emplace_back(SplitPlane(axis, start),
                                 EventType::Planar,
@@ -387,11 +387,11 @@ private:
       auto const cost_left = cost(p_left, p_right, n_left + n_planar, n_right);
       auto const cost_right = cost(p_left, p_right, n_left, n_right + n_planar);
 
-      if (voxel.min[static_cast<size_t>(plane.axis)] == plane.position) {
+      if (voxel.min()[static_cast<size_t>(plane.axis)] == plane.position) {
         return std::make_tuple(cost_left, Side::Left);
       }
 
-      if (voxel.max[static_cast<size_t>(plane.axis)] == plane.position) {
+      if (voxel.max()[static_cast<size_t>(plane.axis)] == plane.position) {
         return std::make_tuple(cost_right, Side::Right);
       }
 
@@ -406,8 +406,8 @@ private:
     split_box(aabb_type const& voxel, SplitPlane const& plane) noexcept {
       auto left_voxel = voxel;
       auto right_voxel = voxel;
-      left_voxel.max[static_cast<size_t>(plane.axis)] = plane.position;
-      right_voxel.min[static_cast<size_t>(plane.axis)] = plane.position;
+      left_voxel.max()[static_cast<size_t>(plane.axis)] = plane.position;
+      right_voxel.min()[static_cast<size_t>(plane.axis)] = plane.position;
       return std::make_tuple(left_voxel, right_voxel);
     }
 

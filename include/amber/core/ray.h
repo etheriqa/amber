@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "core/vector.h"
+#include "core/vector3.h"
 #include "core/writer.h"
 
 namespace amber {

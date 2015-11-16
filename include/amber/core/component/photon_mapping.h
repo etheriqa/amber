@@ -23,7 +23,7 @@
 #include "core/aabb.h"
 #include "core/axis.h"
 #include "core/scene.h"
-#include "core/vector.h"
+#include "core/vector3.h"
 
 namespace amber {
 namespace core {
@@ -96,9 +96,9 @@ private:
       std::for_each(first, last, [&](auto const& photon){
         aabb += photon_aabb_type(photon.position);
       });
-      auto const x = aabb.max.x() - aabb.min.x();
-      auto const y = aabb.max.y() - aabb.min.y();
-      auto const z = aabb.max.z() - aabb.min.z();
+      auto const x = aabb.max().x() - aabb.min().x();
+      auto const y = aabb.max().y() - aabb.min().y();
+      auto const z = aabb.max().z() - aabb.min().z();
       Axis axis;
       if (x > y && x > z) {
         axis = Axis::X;
