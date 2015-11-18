@@ -34,10 +34,10 @@ namespace acceleration {
 
 template <
   typename Object,
-  size_t TraverseCost = 500,
-  size_t IntersectionCost = 100,
-  size_t LeafCapacity = 16,
-  size_t MaxDepth = 24
+  std::size_t TraverseCost = 500,
+  std::size_t IntersectionCost = 100,
+  std::size_t LeafCapacity = 16,
+  std::size_t MaxDepth = 24
 >
 class KDTree : public Acceleration<Object>
 {
@@ -128,7 +128,7 @@ private:
              std::move(build_event_list(first, last)),
              0) {}
 
-    Node(size_t n, aabb_type const& voxel, event_list_type events, size_t depth)
+    Node(std::size_t n, aabb_type const& voxel, event_list_type events, std::size_t depth)
       : m_left(nullptr),
         m_right(nullptr),
         m_objects(nullptr),
@@ -146,8 +146,8 @@ private:
         return;
       }
 
-      size_t n_left = 0;
-      size_t n_right = 0;
+      std::size_t n_left = 0;
+      std::size_t n_right = 0;
       for (auto const& pair : classification) {
         auto const& side = pair.second;
         switch (side) {
@@ -216,9 +216,9 @@ private:
       }
 
       auto const& ray_origin =
-        ray.origin[static_cast<size_t>(m_plane.axis)];
+        ray.origin[static_cast<std::size_t>(m_plane.axis)];
       auto const& ray_direction =
-        ray.direction[static_cast<size_t>(m_plane.axis)];
+        ray.direction[static_cast<std::size_t>(m_plane.axis)];
 
       if (ray_origin < m_plane.position && ray_direction <= 0) {
         return m_left == nullptr
@@ -292,8 +292,8 @@ private:
       std::for_each(first, last, [&](auto const& object){
         auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
-          auto const& start = voxel.min()[static_cast<size_t>(axis)];
-          auto const& end = voxel.max()[static_cast<size_t>(axis)];
+          auto const& start = voxel.min()[static_cast<std::size_t>(axis)];
+          auto const& end = voxel.max()[static_cast<std::size_t>(axis)];
           if (start == end) {
             events.emplace_back(SplitPlane(axis, start),
                                 EventType::Planar,
@@ -313,25 +313,25 @@ private:
     }
 
     static std::tuple<SplitPlane, Side>
-    find_plane(size_t n,
+    find_plane(std::size_t n,
                aabb_type const& voxel,
                event_list_type const& events) noexcept {
-      std::vector<size_t> n_left_set(3, 0);
-      std::vector<size_t> n_planar_set(3, 0);
-      std::vector<size_t> n_right_set(3, n);
+      std::vector<std::size_t> n_left_set(3, 0);
+      std::vector<std::size_t> n_planar_set(3, 0);
+      std::vector<std::size_t> n_right_set(3, n);
 
       real_type optimal_cost = IntersectionCost * n;
       SplitPlane optimal_plane;
       Side optimal_side = Side::None;
 
-      for (size_t i = 0; i < events.size();) {
+      for (std::size_t i = 0; i < events.size();) {
         auto const& plane = events[i].plane;
-        auto& n_left = n_left_set[static_cast<size_t>(plane.axis)];
-        auto& n_planar = n_planar_set[static_cast<size_t>(plane.axis)];
-        auto& n_right = n_right_set[static_cast<size_t>(plane.axis)];
-        size_t n_end_event = 0;
-        size_t n_planar_event = 0;
-        size_t n_start_event = 0;
+        auto& n_left = n_left_set[static_cast<std::size_t>(plane.axis)];
+        auto& n_planar = n_planar_set[static_cast<std::size_t>(plane.axis)];
+        auto& n_right = n_right_set[static_cast<std::size_t>(plane.axis)];
+        std::size_t n_end_event = 0;
+        std::size_t n_planar_event = 0;
+        std::size_t n_start_event = 0;
         while (i < events.size() && events[i].plane == plane) {
           switch (events[i].type) {
           case EventType::None:
@@ -373,9 +373,9 @@ private:
     static std::tuple<real_type, Side>
     surface_area_heuristic(aabb_type const& voxel,
                            SplitPlane const& plane,
-                           size_t n_left,
-                           size_t n_right,
-                           size_t n_planar) noexcept {
+                           std::size_t n_left,
+                           std::size_t n_right,
+                           std::size_t n_planar) noexcept {
       aabb_type left_voxel, right_voxel;
       std::tie(left_voxel, right_voxel) = split_box(voxel, plane);
 
@@ -385,11 +385,11 @@ private:
       auto const cost_left = cost(p_left, p_right, n_left + n_planar, n_right);
       auto const cost_right = cost(p_left, p_right, n_left, n_right + n_planar);
 
-      if (voxel.min()[static_cast<size_t>(plane.axis)] == plane.position) {
+      if (voxel.min()[static_cast<std::size_t>(plane.axis)] == plane.position) {
         return std::make_tuple(cost_left, Side::Left);
       }
 
-      if (voxel.max()[static_cast<size_t>(plane.axis)] == plane.position) {
+      if (voxel.max()[static_cast<std::size_t>(plane.axis)] == plane.position) {
         return std::make_tuple(cost_right, Side::Right);
       }
 
@@ -404,23 +404,23 @@ private:
     split_box(aabb_type const& voxel, SplitPlane const& plane) noexcept {
       auto left_voxel = voxel;
       auto right_voxel = voxel;
-      left_voxel.max()[static_cast<size_t>(plane.axis)] = plane.position;
-      right_voxel.min()[static_cast<size_t>(plane.axis)] = plane.position;
+      left_voxel.max()[static_cast<std::size_t>(plane.axis)] = plane.position;
+      right_voxel.min()[static_cast<std::size_t>(plane.axis)] = plane.position;
       return std::make_tuple(left_voxel, right_voxel);
     }
 
     static real_type
     cost(real_type p_left,
          real_type p_right,
-         size_t n_left,
-         size_t n_right) noexcept {
+         std::size_t n_left,
+         std::size_t n_right) noexcept {
       return lambda(n_left, n_right) *
         (TraverseCost +
          IntersectionCost * (p_left * n_left + p_right * n_right));
     }
 
     static real_type
-    lambda(size_t n_left, size_t n_right) noexcept {
+    lambda(std::size_t n_left, std::size_t n_right) noexcept {
       return n_left * n_right == 0 ? 0.8 : 1.0;
     }
 

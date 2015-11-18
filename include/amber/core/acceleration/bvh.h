@@ -34,8 +34,8 @@ namespace acceleration {
 
 template <
   typename Object,
-  size_t TraverseCost = 500,
-  size_t IntersectionCost = 100
+  std::size_t TraverseCost = 500,
+  std::size_t IntersectionCost = 100
 >
 class BVH : public Acceleration<Object>
 {
@@ -92,9 +92,9 @@ private:
              aabb(first, last),
              build_event_list(first, last)) {}
 
-    Node(size_t n, aabb_type const& voxel, event_list_type events)
+    Node(std::size_t n, aabb_type const& voxel, event_list_type events)
       : m_left(nullptr), m_right(nullptr), m_objects(nullptr), m_voxel(voxel) {
-      size_t n_left, n_right;
+      std::size_t n_left, n_right;
       event_list_type left_events, right_events;
       aabb_type left_voxel, right_voxel;
       std::tie(n_left, n_right, left_events, right_events, left_voxel, right_voxel) = split(n, events, voxel);
@@ -184,8 +184,8 @@ private:
       std::for_each(first, last, [&](auto const& object){
         auto const voxel = object.BoundingBox();
         for (auto const axis : {Axis::X, Axis::Y, Axis::Z}) {
-          auto const& start = voxel.min()[static_cast<size_t>(axis)];
-          auto const& end = voxel.max()[static_cast<size_t>(axis)];
+          auto const& start = voxel.min()[static_cast<std::size_t>(axis)];
+          auto const& end = voxel.max()[static_cast<std::size_t>(axis)];
           if (start == end) {
             events.emplace_back(EventType::Planar, axis, start, object);
           } else {
@@ -198,17 +198,17 @@ private:
       return events;
     }
 
-    static std::tuple<size_t, size_t,
+    static std::tuple<std::size_t, std::size_t,
                       event_list_type, event_list_type,
                       aabb_type, aabb_type>
-    split(size_t n,
+    split(std::size_t n,
           event_list_type const& events, aabb_type const& voxel) noexcept {
       auto const surface_area = voxel.SurfaceArea();
 
       real_type optimal_cost = IntersectionCost * n;
       Axis optimal_axis = Axis::None;
       bool optimal_left_including;
-      size_t optimal_n_left;
+      std::size_t optimal_n_left;
 
       for (auto const& axis : {Axis::X, Axis::Y, Axis::Z}) {
         std::vector<aabb_type> left_including_voxels(1),
@@ -243,7 +243,7 @@ private:
               right_including_voxels.back() + object_voxel);
           }
         }
-        for (size_t i = 1; i < n; i++) {
+        for (std::size_t i = 1; i < n; i++) {
           auto const cost = surface_area_heuristic(
             surface_area,
             left_including_voxels[i].SurfaceArea(),
@@ -258,7 +258,7 @@ private:
             optimal_n_left = i;
           }
         }
-        for (size_t i = 1; i < n; i++) {
+        for (std::size_t i = 1; i < n; i++) {
           auto const cost = surface_area_heuristic(
             surface_area,
             left_intersection_voxels[i].SurfaceArea(),
@@ -285,7 +285,7 @@ private:
                          typename Object::Hash,
                          typename Object::EqualTo> left_objects;
       aabb_type left_voxel, right_voxel;
-      size_t i = 0;
+      std::size_t i = 0;
       for (auto const& event : events) {
         if (event.axis != optimal_axis) {
           continue;
@@ -323,8 +323,8 @@ private:
     surface_area_heuristic(real_type surface_area,
                            real_type left_surface_area,
                            real_type right_surface_area,
-                           size_t n_left,
-                           size_t n_right) noexcept {
+                           std::size_t n_left,
+                           std::size_t n_right) noexcept {
       return
         TraverseCost +
         IntersectionCost *

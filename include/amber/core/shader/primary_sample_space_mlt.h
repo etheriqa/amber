@@ -54,7 +54,7 @@ private:
   struct Seed
   {
     component::PrimarySampleSpace<> pss_light, pss_eye;
-    size_t x, y;
+    std::size_t x, y;
     radiant_type power;
     radiant_value_type contribution;
 
@@ -78,7 +78,7 @@ private:
 
   struct State
   {
-    size_t x, y;
+    std::size_t x, y;
     radiant_type power;
     radiant_value_type contribution;
     radiant_value_type weight;
@@ -91,15 +91,15 @@ private:
         weight(0) {}
   };
 
-  size_t n_threads_, n_seeds_, n_mutations_;
+  std::size_t n_threads_, n_seeds_, n_mutations_;
   real_type p_large_step_;
   Progress progress_;
 
 public:
   PrimarySampleSpaceMLT(
-    size_t n_threads,
-    size_t n_seeds,
-    size_t n_mutations,
+    std::size_t n_threads,
+    std::size_t n_seeds,
+    std::size_t n_mutations,
     real_type p_large_step
   ) noexcept
   : n_threads_(n_threads),
@@ -132,7 +132,7 @@ public:
     progress_.total_job = n_seeds_;
 
     std::vector<Seed> seeds;
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
@@ -159,7 +159,7 @@ public:
     progress_.total_job = n_mutations_;
 
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         bdpt_type bdpt(scene);
         DefaultSampler<> sampler((std::random_device()()));
@@ -198,8 +198,8 @@ public:
         }
         buffer.at(state.x, state.y) += state.power * state.weight;
         std::lock_guard<std::mutex> lock(mtx);
-        for (size_t y = 0; y < camera.imageHeight(); y++) {
-          for (size_t x = 0; x < camera.imageWidth(); x++) {
+        for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+          for (std::size_t x = 0; x < camera.imageWidth(); x++) {
             image.at(x, y) += buffer.at(x, y) * camera.imageSize();
           }
         }

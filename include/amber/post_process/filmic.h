@@ -60,8 +60,8 @@ public:
 
     Normalizer<HDR>()(image);
 
-    for (size_t j = 0; j < height; j++) {
-      for (size_t i = 0; i < width; i++) {
+    for (std::size_t j = 0; j < height; j++) {
+      for (std::size_t i = 0; i < width; i++) {
         auto& p = image.at(i, j);
         p = map(p * exposure_) / map(HDR(kW));
       }

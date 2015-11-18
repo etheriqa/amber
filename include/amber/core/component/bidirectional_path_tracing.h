@@ -121,8 +121,8 @@ public:
   std::vector<Event> rayTracing(
     Sampler& sampler,
     Camera const& camera,
-    size_t x,
-    size_t y
+    std::size_t x,
+    std::size_t y
   ) const
   {
     ray_type ray;
@@ -174,8 +174,8 @@ public:
   {
     radiant_type power;
 
-    for (size_t s = 0; s <= light.size(); s++) {
-      for (size_t t = 0; t <= eye.size(); t++) {
+    for (std::size_t s = 0; s <= light.size(); s++) {
+      for (std::size_t t = 0; t <= eye.size(); t++) {
         auto const contribution = UnweightedContribution(light, eye, s, t);
         if (Max(contribution) == 0) {
           continue;
@@ -264,8 +264,8 @@ private:
   radiant_type UnweightedContribution(
     std::vector<Event> const& light,
     std::vector<Event> const& eye,
-    size_t s,
-    size_t t
+    std::size_t s,
+    std::size_t t
   ) const
   {
     if (s >= 2 && t >= 2) {
@@ -338,8 +338,8 @@ private:
   void CalculateLogProbabilities(
     std::vector<Event> const& light,
     std::vector<Event> const& eye,
-    size_t s,
-    size_t t
+    std::size_t s,
+    std::size_t t
   ) const
   {
     event_buffer_.clear();
@@ -365,13 +365,13 @@ private:
       event_buffer_.at(s).direction_i = direction;
     }
 
-    size_t const n_technique = s + t + 1;
+    std::size_t const n_technique = s + t + 1;
     probability_buffer_.resize(n_technique);
-    for (size_t i = 1; s > 0 && i < n_technique; i++) {
+    for (std::size_t i = 1; s > 0 && i < n_technique; i++) {
       probability_buffer_.at(i) +=
         event_buffer_.at(std::min(i, s) - 1).log_p_area;
     }
-    for (size_t i = 0; t > 0 && i < n_technique - 1; i++) {
+    for (std::size_t i = 0; t > 0 && i < n_technique - 1; i++) {
       probability_buffer_.at(i) +=
         event_buffer_.at(std::max(i, s)).log_p_area;
     }
@@ -380,7 +380,7 @@ private:
       radiant_value_type log_p_light = 0;
       auto p_russian_roulette =
         s == 0 ? 1 : event_buffer_.at(s - 1).p_russian_roulette;
-      for (size_t i = s + 1; i < n_technique; i++) {
+      for (std::size_t i = s + 1; i < n_technique; i++) {
         if (s == 0) {
           log_p_light +=
             std::log2(scene_.LightPDFArea(event_buffer_.front().object));
@@ -411,7 +411,7 @@ private:
       radiant_value_type log_p_eye = 0;
       auto p_russian_roulette =
         t == 0 ? 1 : event_buffer_.at(s).p_russian_roulette;
-      for (size_t i = s - 1; i < n_technique; i--) {
+      for (std::size_t i = s - 1; i < n_technique; i--) {
         if (t == 0) {
           log_p_eye += std::log2(kDiracDelta); // TODO
         } else {
@@ -438,7 +438,7 @@ private:
     }
     {
       // ignore contributions by a connection with specular surfaces
-      for (size_t i = 0; i < s + t; i++) {
+      for (std::size_t i = 0; i < s + t; i++) {
         auto const& object = event_buffer_.at(i).object;
         if (object && object.Surface() != SurfaceType::Specular) {
           continue;

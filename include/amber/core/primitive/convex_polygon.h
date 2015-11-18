@@ -49,7 +49,7 @@ public:
   ConvexPolygon(std::initializer_list<vector3_type> const& vertices) noexcept
   {
     auto const it = vertices.begin();
-    for (size_t i = 2; i < vertices.size(); i++) {
+    for (std::size_t i = 2; i < vertices.size(); i++) {
       triangles_.emplace_back(*std::next(it, i - 1), *std::next(it, i), *it);
     }
   }

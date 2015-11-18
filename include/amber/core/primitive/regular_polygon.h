@@ -41,7 +41,7 @@ private:
   using typename Primitive<RealType>::ray_type;
 
   vector3_type center_, u_, v_, w_;
-  size_t n_;
+  std::size_t n_;
   RealType angle_, long_radius_, short_radius_, surface_area_;
   aabb_type aabb_;
 
@@ -50,7 +50,7 @@ public:
     vector3_type const& center,
     vector3_type const& direction,
     vector3_type const& up,
-    size_t n,
+    std::size_t n,
     RealType radius
   ) noexcept
   : center_(center),
@@ -64,7 +64,7 @@ public:
     w_ = Normalize(direction);
     u_ = Normalize(Cross(up, w_));
     v_ = Normalize(Cross(w_, u_));
-    for (size_t i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < n; i++) {
       auto const theta = angle_ * i;
       aabb_ += aabb_type(
         center_ + long_radius_ * (u_ * std::sin(theta) + v_ * std::cos(theta))

@@ -33,8 +33,8 @@ namespace acceleration {
 
 template <
   typename Object,
-  size_t LeafCapacity = 16,
-  size_t MaxDepth = 24
+  std::size_t LeafCapacity = 16,
+  std::size_t MaxDepth = 24
 >
 class BSP : public Acceleration<Object>
 {
@@ -66,12 +66,12 @@ private:
     template <typename InputIterator>
     Node(InputIterator first,
          InputIterator last,
-         aabb_type const& voxel, Axis axis, size_t depth)
+         aabb_type const& voxel, Axis axis, std::size_t depth)
       : m_left(nullptr),
         m_right(nullptr),
         m_objects(nullptr),
         m_voxel(voxel) {
-      if (static_cast<size_t>(std::distance(first, last)) <= LeafCapacity ||
+      if (static_cast<std::size_t>(std::distance(first, last)) <= LeafCapacity ||
           depth > MaxDepth) {
         m_objects = new object_list_type(first, last);
         return;
@@ -79,7 +79,7 @@ private:
 
       auto left_voxel = voxel;
       auto right_voxel = voxel;
-      auto const i = static_cast<size_t>(axis);
+      auto const i = static_cast<std::size_t>(axis);
       left_voxel.max()[i] = (voxel.min()[i] + voxel.max()[i]) / 2;
       right_voxel.min()[i] = (voxel.min()[i] + voxel.max()[i]) / 2;
       switch (axis) {

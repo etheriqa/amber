@@ -46,8 +46,8 @@ public:
     const auto& height = hdr.height();
 
     ldr_image_type ldr(width, height);
-    for (size_t j = 0; j < height; j++) {
-      for (size_t i = 0; i < width; i++) {
+    for (std::size_t j = 0; j < height; j++) {
+      for (std::size_t i = 0; i < width; i++) {
         const auto& r = hdr.at(i, j).r();
         const auto& g = hdr.at(i, j).g();
         const auto& b = hdr.at(i, j).b();

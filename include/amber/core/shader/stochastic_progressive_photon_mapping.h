@@ -82,17 +82,17 @@ private:
     {}
   };
 
-  size_t n_threads_, n_photons_, n_passes_;
-  double initial_radius_, alpha_;
+  std::size_t n_threads_, n_photons_, n_passes_;
+  std::double_t initial_radius_, alpha_;
   Progress progress_;
 
 public:
   StochasticProgressivePhotonMapping(
-    size_t n_threads,
-    size_t n_photons,
-    size_t n_passes,
-    double initial_radius,
-    double alpha
+    std::size_t n_threads,
+    std::size_t n_photons,
+    std::size_t n_passes,
+    std::double_t initial_radius,
+    std::double_t alpha
   ) noexcept
   : n_threads_(n_threads),
     n_photons_(n_photons),
@@ -130,7 +130,7 @@ public:
       stats.radius = scene.SceneSize() * initial_radius_;
     }
 
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
         std::vector<photon_type> photons;
@@ -138,15 +138,15 @@ public:
         while (++progress_.current_job <= progress_.total_job) {
           // photon pass
           photons.clear();
-          for (size_t j = 0; j < n_photons_; j++) {
+          for (std::size_t j = 0; j < n_photons_; j++) {
             pm.PhotonTracing(1, std::back_inserter(photons), sampler);
           }
           auto const photon_map =
             pm.BuildPhotonMap(photons.begin(), photons.end());
 
           // distributed ray tracing pass
-          for (size_t y = 0; y < camera.imageHeight(); y++) {
-            for (size_t x = 0; x < camera.imageWidth(); x++) {
+          for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+            for (std::size_t x = 0; x < camera.imageWidth(); x++) {
               auto const hit_point = RayTracing(scene, camera, x, y, sampler);
               if (Max(hit_point.weight) == 0) {
                 continue;
@@ -164,8 +164,8 @@ public:
     }
 
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t y = 0; y < camera.imageHeight(); y++) {
-      for (size_t x = 0; x < camera.imageWidth(); x++) {
+    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
         auto& stats = statistics.at(x + y * camera.imageWidth());
         image.at(x, y) =
           stats.flux /
@@ -182,8 +182,8 @@ private:
   RayTracing(
     scene_type const& scene,
     camera_type const& camera,
-    size_t x,
-    size_t y,
+    std::size_t x,
+    std::size_t y,
     DefaultSampler<>& sampler
   ) const
   {

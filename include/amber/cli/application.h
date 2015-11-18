@@ -212,8 +212,8 @@ public:
         normalizer(image.downSample(vm.at("ssaa").as<size_type>()));
 
       cv::Mat mat(hdr_image.height(), hdr_image.width(), CV_32FC3);
-      for (size_t i = 0; i < hdr_image.height(); i++) {
-        for (size_t j = 0; j < hdr_image.width(); j++) {
+      for (std::size_t i = 0; i < hdr_image.height(); i++) {
+        for (std::size_t j = 0; j < hdr_image.width(); j++) {
           auto& rgb = mat.at<cv::Vec3f>(i, j);
           rgb[0] = hdr_image.at(j, i).b();
           rgb[1] = hdr_image.at(j, i).g();
@@ -233,8 +233,8 @@ public:
         gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())));
 
       cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC3);
-      for (size_t i = 0; i < ldr_image.height(); i++) {
-        for (size_t j = 0; j < ldr_image.width(); j++) {
+      for (std::size_t i = 0; i < ldr_image.height(); i++) {
+        for (std::size_t j = 0; j < ldr_image.width(); j++) {
           auto& rgb = mat.at<cv::Vec3b>(i, j);
           rgb[0] = ldr_image.at(j, i).b();
           rgb[1] = ldr_image.at(j, i).g();

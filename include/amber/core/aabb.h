@@ -182,7 +182,7 @@ AABB<std::double_t>::Intersect(
   std::double_t t_max
 ) const noexcept
 {
-  double t_min = kEPS;
+  std::double_t t_min = kEPS;
 
   auto const ray_origin =
     _mm256_setr_pd(ray.origin.x(), ray.origin.y(), ray.origin.z(), 0);
@@ -202,7 +202,7 @@ AABB<std::double_t>::Intersect(
   auto const t1 =
     _mm256_mul_pd(_mm256_sub_pd(aabb_max, ray_origin), inverse_ray_direction);
 
-  double t_mins[4], t_maxs[4];
+  std::double_t t_mins[4], t_maxs[4];
   _mm256_store_pd(t_mins, _mm256_min_pd(t0, t1));
   _mm256_store_pd(t_maxs, _mm256_max_pd(t0, t1));
 

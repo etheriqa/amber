@@ -29,24 +29,24 @@ namespace core {
 template <typename Radiant>
 class Image {
 private:
-  size_t width_, height_;
+  std::size_t width_, height_;
   std::vector<Radiant> pixels_;
 
 public:
-  Image(size_t width, size_t height) noexcept
+  Image(std::size_t width, std::size_t height) noexcept
     : width_(width), height_(height), pixels_(width * height) {}
 
-  size_t const& width() const noexcept { return width_; }
-  size_t const& height() const noexcept { return height_; }
+  std::size_t const& width() const noexcept { return width_; }
+  std::size_t const& height() const noexcept { return height_; }
 
-  Radiant& at(size_t x, size_t y) {
+  Radiant& at(std::size_t x, std::size_t y) {
     if (x >= width_ || y >= height_) {
       throw std::out_of_range("amber::Image::at: invalid coordinates");
     }
     return pixels_.at(x + y * width_);
   }
 
-  Radiant const& at(size_t x, size_t y) const {
+  Radiant const& at(std::size_t x, std::size_t y) const {
     if (x >= width_ || y >= height_) {
       throw std::out_of_range("amber::Image::at: invalid coordinates");
     }
@@ -57,14 +57,14 @@ public:
     return std::accumulate(pixels_.begin(), pixels_.end(), Radiant());
   }
 
-  Image<Radiant> downSample(size_t n) const {
+  Image<Radiant> downSample(std::size_t n) const {
     if ((width_ % n) * (height_ % n) > 0) {
       throw std::invalid_argument(
         "amber::Image::downSample: invalid n");
     }
     Image<Radiant> image(width_ / n, height_ / n);
-    for (size_t i = 0; i < width_; i++) {
-      for (size_t j = 0; j < height_; j++) {
+    for (std::size_t i = 0; i < width_; i++) {
+      for (std::size_t j = 0; j < height_; j++) {
         image.at(i / n, j / n) = at(i, j);
       }
     }

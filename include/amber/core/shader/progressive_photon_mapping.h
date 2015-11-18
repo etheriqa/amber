@@ -57,8 +57,8 @@ private:
     vector3_type normal;
     vector3_type direction;
     radiant_type weight;
-    size_t x;
-    size_t y;
+    std::size_t x;
+    std::size_t y;
     real_type n_photons;
     real_type radius;
     radiant_type flux;
@@ -81,17 +81,17 @@ private:
     {}
   };
 
-  size_t n_threads_, n_photons_, n_iterations_;
-  double initial_radius_, alpha_;
+  std::size_t n_threads_, n_photons_, n_iterations_;
+  std::double_t initial_radius_, alpha_;
   Progress progress_;
 
 public:
   ProgressivePhotonMapping(
-    size_t n_threads,
-    size_t n_photons,
-    size_t n_iterations,
-    double initial_radius,
-    double alpha
+    std::size_t n_threads,
+    std::size_t n_photons,
+    std::size_t n_iterations,
+    std::double_t initial_radius,
+    std::double_t alpha
   ) noexcept
   : n_threads_(n_threads),
     n_photons_(n_photons),
@@ -127,8 +127,8 @@ public:
     std::vector<HitPoint> hit_points;
     {
       DefaultSampler<> sampler((std::random_device()()));
-      for (size_t y = 0; y < camera.imageHeight(); y++) {
-        for (size_t x = 0; x < camera.imageWidth(); x++) {
+      for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+        for (std::size_t x = 0; x < camera.imageWidth(); x++) {
           RayTracing(
             scene,
             camera,
@@ -146,13 +146,13 @@ public:
     progress_.current_job = 0;
     progress_.total_job = n_iterations_;
 
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
         std::vector<photon_type> photons;
         while (++progress_.current_job <= progress_.total_job) {
           photons.clear();
-          for (size_t i = 0; i < n_photons_; i++) {
+          for (std::size_t i = 0; i < n_photons_; i++) {
             pm.PhotonTracing(1, std::back_inserter(photons), sampler);
           }
           ProgressiveRadianceEstimate(
@@ -195,8 +195,8 @@ private:
   RayTracing(
     scene_type const& scene,
     camera_type const& camera,
-    size_t x,
-    size_t y,
+    std::size_t x,
+    std::size_t y,
     OutputIterator output,
     DefaultSampler<>& sampler
   ) const
@@ -213,11 +213,11 @@ private:
   void
   RayTracing(
     scene_type const& scene,
-    size_t x,
-    size_t y,
+    std::size_t x,
+    std::size_t y,
     ray_type const& ray,
     radiant_type const& weight,
-    size_t depth,
+    std::size_t depth,
     OutputIterator output,
     DefaultSampler<>& sampler
   ) const

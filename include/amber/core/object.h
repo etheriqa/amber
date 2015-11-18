@@ -47,10 +47,10 @@ public:
 
   struct Hash
   {
-    size_t operator()(Object const& o) const noexcept {
+    std::size_t operator()(Object const& o) const noexcept {
       return
-        std::hash<size_t>()(reinterpret_cast<size_t>(o.primitive_)) +
-        std::hash<size_t>()(reinterpret_cast<size_t>(o.material_));
+        std::hash<std::size_t>()(reinterpret_cast<std::size_t>(o.primitive_)) +
+        std::hash<std::size_t>()(reinterpret_cast<std::size_t>(o.material_));
     }
   };
 

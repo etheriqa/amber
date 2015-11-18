@@ -52,8 +52,8 @@ public:
   T const& y() const noexcept { return values_[1]; }
   T const& z() const noexcept { return values_[2]; }
 
-  T& operator[](size_t pos) { return values_[pos]; }
-  T const& operator[](size_t pos) const { return values_[pos]; }
+  T& operator[](std::size_t pos) { return values_[pos]; }
+  T const& operator[](std::size_t pos) const { return values_[pos]; }
 
   template <typename U>
   operator Vector3<U>() const noexcept

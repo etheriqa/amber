@@ -47,11 +47,11 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  size_t n_threads_, n_samples_;
+  std::size_t n_threads_, n_samples_;
   Progress progress_;
 
 public:
-  LightTracing(size_t n_threads, size_t n_samples) noexcept
+  LightTracing(std::size_t n_threads, std::size_t n_samples) noexcept
   : n_threads_(n_threads),
     n_samples_(n_samples),
     progress_(1)
@@ -77,7 +77,7 @@ public:
     std::vector<std::thread> threads;
     std::mutex mtx;
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
         image_type buffer(camera.imageWidth(), camera.imageHeight());
@@ -85,8 +85,8 @@ public:
           Sample(scene, camera, buffer, sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
-        for (size_t y = 0; y < camera.imageHeight(); y++) {
-          for (size_t x = 0; x < camera.imageWidth(); x++) {
+        for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+          for (std::size_t x = 0; x < camera.imageWidth(); x++) {
             image.at(x, y) += buffer.at(x, y) / n_samples_;
           }
         }

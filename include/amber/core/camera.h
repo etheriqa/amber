@@ -68,9 +68,9 @@ public:
     v_ = Normalize(Cross(w_, u_));
   }
 
-  size_t const& imageWidth() const noexcept { return sensor_.ImageWidth(); }
-  size_t const& imageHeight() const noexcept { return sensor_.ImageHeight(); }
-  size_t imageSize() const noexcept { return sensor_.ImageSize(); }
+  std::size_t const& imageWidth() const noexcept { return sensor_.ImageWidth(); }
+  std::size_t const& imageHeight() const noexcept { return sensor_.ImageHeight(); }
+  std::size_t imageSize() const noexcept { return sensor_.ImageSize(); }
 
   void Write(std::ostream& os) const noexcept {
     os
@@ -82,8 +82,8 @@ public:
 
   std::tuple<ray_type, Radiant, radiant_value_type, vector3_type>
   GenerateRay(
-    size_t x,
-    size_t y,
+    std::size_t x,
+    std::size_t y,
     Sampler& sampler
   ) const
   {
@@ -103,7 +103,7 @@ public:
     );
   }
 
-  boost::optional<std::tuple<size_t, size_t>>
+  boost::optional<std::tuple<std::size_t, std::size_t>>
   ResponsePoint(
     vector3_type const& direction,
     vector3_type const& aperture_point

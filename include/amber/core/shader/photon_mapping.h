@@ -54,14 +54,14 @@ private:
   using photon_map_type = typename pm_type::photon_map_type;
   using photon_type     = typename pm_type::photon_type;
 
-  size_t n_threads_, n_photons_, k_nearest_photons_;
+  std::size_t n_threads_, n_photons_, k_nearest_photons_;
   Progress progress_;
 
 public:
   PhotonMapping(
-    size_t n_threads,
-    size_t n_photons,
-    size_t k_nearest_photons
+    std::size_t n_threads,
+    std::size_t n_photons,
+    std::size_t k_nearest_photons
   ) noexcept
   : n_threads_(n_threads),
     n_photons_(n_photons),
@@ -91,7 +91,7 @@ public:
     progress_.total_job = n_photons_;
 
     std::vector<photon_type> photons;
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         std::vector<photon_type> buffer;
         DefaultSampler<> sampler((std::random_device()()));
@@ -119,15 +119,15 @@ public:
     progress_.current_job = 0;
     progress_.total_job = camera.imageSize();
 
-    std::vector<size_t> pixels(camera.imageSize());
+    std::vector<std::size_t> pixels(camera.imageSize());
     std::iota(pixels.begin(), pixels.end(), 0);
     std::shuffle(pixels.begin(), pixels.end(), std::random_device());
 
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (size_t i = 0; i < n_threads_; i++) {
+    for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
         DefaultSampler<> sampler((std::random_device()()));
-        for (size_t j = progress_.current_job++;
+        for (std::size_t j = progress_.current_job++;
              j < progress_.total_job;
              j = progress_.current_job++) {
           auto const x = pixels.at(j) % camera.imageWidth();
@@ -152,7 +152,7 @@ private:
     scene_type const& scene,
     camera_type const& camera,
     photon_map_type const& photon_map,
-    size_t x, size_t y,
+    std::size_t x, std::size_t y,
     DefaultSampler<>& sampler
   ) const
   {
@@ -171,7 +171,7 @@ private:
     ray_type const& ray,
     radiant_type const& weight,
     DefaultSampler<>& sampler,
-    size_t depth = 0
+    std::size_t depth = 0
   ) const
   {
     hit_type hit;

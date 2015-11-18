@@ -59,8 +59,8 @@ public:
     const auto& height = image.height();
 
     hdr_value_type max = 0;
-    for (size_t j = 0; j < height; j++) {
-      for (size_t i = 0; i < width; i++) {
+    for (std::size_t j = 0; j < height; j++) {
+      for (std::size_t i = 0; i < width; i++) {
         const auto value = evaluator_(image.at(i, j));
         if (std::isfinite(value)) {
           max = std::max(max, value);
@@ -72,8 +72,8 @@ public:
       return image;
     }
 
-    for (size_t j = 0; j < height; j++) {
-      for (size_t i = 0; i < width; i++) {
+    for (std::size_t j = 0; j < height; j++) {
+      for (std::size_t i = 0; i < width; i++) {
         image.at(i, j) /= max;
       }
     }

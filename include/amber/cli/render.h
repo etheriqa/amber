@@ -66,7 +66,7 @@ render(
   auto image =
     std::async(std::launch::async, [&](){ return (*shader)(scene, camera); });
 
-  size_t phase = 0;
+  std::size_t phase = 0;
   while (image.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
     auto const& progress = shader->progress();
     if (progress.current_phase.load() > phase) {

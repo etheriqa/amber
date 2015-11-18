@@ -98,7 +98,7 @@ private:
     void AllocatePhotons(
       RandomAccessIterator first,
       RandomAccessIterator last,
-      size_t pos
+      std::size_t pos
     )
     {
       if (pos >= photons_.size()) {
@@ -129,8 +129,8 @@ private:
           return a.position.z() < b.position.z();
         }
       });
-      size_t const size = std::distance(first, last);
-      size_t left_size = 0, right_size = 0;
+      std::size_t const size = std::distance(first, last);
+      std::size_t left_size = 0, right_size = 0;
       while (left_size + right_size + 1 < size) {
         left_size = std::min(size - 1 - right_size, (left_size << 1) + 1);
         right_size = std::min(size - 1 - left_size, (right_size << 1) + 1);
@@ -145,7 +145,7 @@ private:
     std::vector<Photon>
     KNeighbours(
       photon_vector3_type const& point,
-      size_t k
+      std::size_t k
     ) const
     {
       return SearchNeighbours(
@@ -167,7 +167,7 @@ private:
     std::vector<Photon>
     SearchNeighbours(
       photon_vector3_type const& point,
-      size_t k,
+      std::size_t k,
       photon_real_type squared_radius
     ) const
     {
@@ -183,9 +183,9 @@ private:
     }
 
     void SearchNeighbours(
-      size_t pos,
+      std::size_t pos,
       photon_vector3_type const& point,
-      size_t k,
+      std::size_t k,
       photon_real_type& squared_radius
     ) const
     {
@@ -205,7 +205,7 @@ private:
         plane_distance = point.z() - photon.position.z();
         break;
       }
-      size_t near, far;
+      std::size_t near, far;
       if (plane_distance < 0) {
         near = pos * 2 + 1;
         far = pos * 2 + 2;
@@ -247,7 +247,7 @@ public:
 
   template <typename OutputIterator>
   void PhotonTracing(
-    size_t n_photon,
+    std::size_t n_photon,
     OutputIterator output,
     Sampler& sampler
   ) const

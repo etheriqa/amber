@@ -28,12 +28,12 @@ namespace core {
 
 struct Progress {
   std::string phase;
-  std::atomic<size_t> current_phase;
-  std::atomic<size_t> total_phase;
-  std::atomic<size_t> current_job;
-  std::atomic<size_t> total_job;
+  std::atomic<std::size_t> current_phase;
+  std::atomic<std::size_t> total_phase;
+  std::atomic<std::size_t> current_job;
+  std::atomic<std::size_t> total_job;
 
-  Progress(size_t total_phase) noexcept
+  Progress(std::size_t total_phase) noexcept
     : phase("none"),
       current_phase(0), total_phase(total_phase),
       current_job(0), total_job(0) {}
