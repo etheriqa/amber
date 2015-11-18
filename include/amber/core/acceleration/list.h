@@ -21,6 +21,7 @@
 #pragma once
 
 #include <limits>
+#include <numeric>
 #include <vector>
 
 #include "core/acceleration.h"
@@ -32,34 +33,50 @@ namespace acceleration {
 template <typename Object>
 class List : public Acceleration<Object>
 {
-public:
-  using object_type = Object;
-
-  using hit_type    = typename Object::hit_type;
-  using ray_type    = typename Object::ray_type;
-
 private:
-  using real_type   = typename Object::real_type;
+  using typename Acceleration<Object>::aabb_type;
+  using typename Acceleration<Object>::hit_type;
+  using typename Acceleration<Object>::ray_type;
+
+  using real_type = typename Object::real_type;
 
   std::vector<Object> objects_;
+  aabb_type bb_;
 
 public:
   template <typename InputIterator>
-  List(InputIterator first, InputIterator last) : objects_(first, last) {}
+  List(InputIterator first, InputIterator last)
+  : objects_(first, last),
+    bb_(std::accumulate(
+      first,
+      last,
+      aabb_type(),
+      [](auto const& acc, auto const& object){
+        return acc + object.BoundingBox();
+      }
+    ))
+  {}
 
   void Write(std::ostream& os) const noexcept
   {
     os << "List()";
   }
 
+  aabb_type const&
+  BoundingBox() const noexcept
+  {
+    return bb_;
+  }
+
   std::tuple<hit_type, Object>
   Cast(const ray_type& ray) const noexcept
   {
-    return
-      Acceleration<Object>::Traverse(objects_.begin(),
-                                     objects_.end(),
-                                     ray,
-                                     std::numeric_limits<real_type>::max());
+    return Acceleration<Object>::Traverse(
+      objects_.begin(),
+      objects_.end(),
+      ray,
+      std::numeric_limits<real_type>::max()
+    );
   }
 };
 

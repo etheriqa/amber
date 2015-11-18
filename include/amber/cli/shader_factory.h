@@ -110,9 +110,8 @@ public:
       return std::make_shared<ppm_type>(
         vm.at("threads").as<size_type>(),
         vm.at("photons").as<size_type>(),
-        vm.at("k").as<size_type>(),
         vm.at("passes").as<size_type>(),
-        0.01,
+        vm.at("initial-radius").as<real_type>(),
         vm.at("alpha").as<real_type>()
       );
     }
@@ -121,9 +120,8 @@ public:
       return std::make_shared<sppm_type>(
         vm.at("threads").as<size_type>(),
         vm.at("photons").as<size_type>(),
-        vm.at("k").as<size_type>(),
         vm.at("passes").as<size_type>(),
-        0.01,
+        vm.at("initial-radius").as<real_type>(),
         vm.at("alpha").as<real_type>()
       );
     }

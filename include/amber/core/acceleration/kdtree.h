@@ -41,14 +41,12 @@ template <
 >
 class KDTree : public Acceleration<Object>
 {
-public:
-  using object_type = Object;
-
-  using hit_type    = typename Object::hit_type;
-  using ray_type    = typename Object::ray_type;
-
 private:
-  using real_type   = typename Object::real_type;
+  using typename Acceleration<Object>::aabb_type;
+  using typename Acceleration<Object>::hit_type;
+  using typename Acceleration<Object>::ray_type;
+
+  using real_type = typename Object::real_type;
 
   enum struct Axis {
     None = -1,
@@ -488,6 +486,12 @@ public:
       << ", leaf_capacity=" << LeafCapacity
       << ", max_depth=" << MaxDepth
       << ")";
+  }
+
+  aabb_type const&
+  BoundingBox() const noexcept
+  {
+    return root_.m_voxel;
   }
 
   std::tuple<hit_type, Object>

@@ -39,13 +39,12 @@ template <
 class BSP : public Acceleration<Object>
 {
 public:
-  using object_type = Object;
-
-  using hit_type    = typename Object::hit_type;
-  using ray_type    = typename Object::ray_type;
-
 private:
-  using real_type   = typename Object::real_type;
+  using typename Acceleration<Object>::aabb_type;
+  using typename Acceleration<Object>::hit_type;
+  using typename Acceleration<Object>::ray_type;
+
+  using real_type = typename Object::real_type;
 
   enum struct Axis {
     X = 0,
@@ -54,7 +53,6 @@ private:
   };
 
   struct Node {
-    using aabb_type        = typename Object::aabb_type;
     using object_list_type = std::vector<Object>;
 
     Node *m_left, *m_right;
@@ -195,6 +193,12 @@ public:
       << "BSP(leaf_capacity=" << LeafCapacity
       << ", max_depth=" << MaxDepth
       << ")";
+  }
+
+  aabb_type const&
+  BoundingBox() const noexcept
+  {
+    return root_.m_voxel;
   }
 
   std::tuple<hit_type, Object>

@@ -96,7 +96,7 @@ public:
         std::vector<photon_type> buffer;
         DefaultSampler<> sampler((std::random_device()()));
         while (progress_.current_job++ < progress_.total_job) {
-          pm.photonTracing(n_photons_, std::back_inserter(buffer), sampler);
+          pm.PhotonTracing(n_photons_, std::back_inserter(buffer), sampler);
         }
         std::lock_guard<std::mutex> lock(mtx);
         std::move(buffer.begin(), buffer.end(), std::back_inserter(photons));
@@ -112,7 +112,7 @@ public:
     progress_.current_job = 0;
     progress_.total_job = 0;
 
-    auto const photon_map = pm.buildPhotonMap(photons.begin(), photons.end());
+    auto const photon_map = pm.BuildPhotonMap(photons.begin(), photons.end());
 
     progress_.phase = "Distributed Ray Tracing";
     progress_.current_phase = 3;
@@ -191,10 +191,8 @@ private:
     }
 
     if (object.Surface() == SurfaceType::Diffuse) {
-      auto const photons = photon_map.kNearestNeighbours(hit.position,
-        static_cast<real_type>(1),
-        k_nearest_photons_
-      );
+      auto const photons =
+        photon_map.KNeighbours(hit.position, k_nearest_photons_);
       return weight * filter(photons, hit, object, -ray.direction);
     }
 
@@ -227,6 +225,10 @@ private:
     vector3_type const& direction_o
   ) const
   {
+    if (photons.empty()) {
+      return radiant_type();
+    }
+
     // TODO sum up simply for now
     auto const squared_max_distance =
       SquaredLength(vector3_type(photons.back().position) - hit.position);

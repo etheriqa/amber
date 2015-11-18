@@ -29,16 +29,20 @@ namespace amber {
 namespace core {
 
 template <typename Object>
-struct Acceleration : public Writer {
+class Acceleration : public Writer
+{
+public:
   using object_type = Object;
 
-  using hit_type    = typename Object::hit_type;
-  using ray_type    = typename Object::ray_type;
+  using aabb_type = typename Object::aabb_type;
+  using hit_type  = typename Object::hit_type;
+  using ray_type  = typename Object::ray_type;
 
   virtual ~Acceleration() {}
 
-  virtual std::tuple<hit_type, Object>
-  Cast(ray_type const&) const noexcept = 0;
+  virtual aabb_type const& BoundingBox() const noexcept = 0;
+
+  virtual std::tuple<hit_type, Object> Cast(ray_type const&) const noexcept = 0;
 
   virtual bool
   TestVisibility(

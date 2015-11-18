@@ -46,7 +46,7 @@ add_custom_target(bdpt
 )
 
 add_custom_target(pssmlt
-    COMMAND time ./amber --shader pssmlt --output pssmlt --mutations 16777216
+    COMMAND time ./amber --shader pssmlt --output pssmlt --seeds 262144 --mutations 16777216
     COMMAND open pssmlt.png
     DEPENDS amber
 )
@@ -58,13 +58,13 @@ add_custom_target(pm
 )
 
 add_custom_target(ppm
-    COMMAND time ./amber --shader ppm --output ppm --photons 1048576 --passes 16
+    COMMAND time ./amber --shader ppm --output ppm --photons 262144 --passes 64
     COMMAND open ppm.png
     DEPENDS amber
 )
 
 add_custom_target(sppm
-    COMMAND time ./amber --shader sppm --output sppm --photons 1048576 --passes 16
+    COMMAND time ./amber --shader sppm --output sppm --photons 262144 --passes 64
     COMMAND open sppm.png
     DEPENDS amber
 )

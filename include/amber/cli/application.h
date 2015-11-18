@@ -96,11 +96,14 @@ public:
          po::value<size_type>()->default_value(512),
          "image height")
         ("help", "print this message")
+        ("initial-radius",
+         po::value<real_type>()->default_value(0.001),
+         "a parameter as a fraction of the scene's bounding box used in the density estimation method")
         ("k",
          po::value<size_type>()->default_value(16),
-         "a parameter of the k-nearest neighbours method used in the photon mapping algorithms")
+         "a parameter of the k-nearest neighbours method used in the photon mapping algorithm")
         ("mutations",
-         po::value<size_type>()->default_value(65536),
+         po::value<size_type>()->default_value(262144 * 16),
          "a number of mutations used in the MCMC algorithms")
         ("output",
          po::value<std::string>()->default_value("output"),
@@ -112,10 +115,10 @@ public:
          po::value<size_type>()->default_value(16),
          "a number of passes used in the progressive photon mapping algorithms")
         ("photons",
-         po::value<size_type>()->default_value(65536),
+         po::value<size_type>()->default_value(262144),
          "a number of emitted photons")
         ("samples",
-         po::value<size_type>()->default_value(65536),
+         po::value<size_type>()->default_value(262144),
          "a number of samples used in the light tracing algorithm")
         ("seeds",
          po::value<size_type>()->default_value(65536),

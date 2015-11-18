@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <mutex>
+
 #include "core/component/photon_mapping.h"
 #include "core/shader.h"
 #include "core/surface_type.h"
@@ -29,7 +31,8 @@ namespace core {
 namespace shader {
 
 template <typename Object>
-class StochasticProgressivePhotonMapping : public Shader<Object> {
+class StochasticProgressivePhotonMapping : public Shader<Object>
+{
 private:
   using typename Shader<Object>::camera_type;
   using typename Shader<Object>::image_type;
@@ -66,20 +69,20 @@ private:
 
   struct Statistics
   {
-    size_t n_photons;
-    radiant_type flux;
+    real_type n_photons;
     real_type radius;
-    std::atomic<bool> locked;
+    radiant_type flux;
+    std::mutex mtx;
 
     Statistics() noexcept
     : n_photons(),
-      flux(),
       radius(),
-      locked(false)
+      flux(),
+      mtx()
     {}
   };
 
-  size_t n_threads_, n_photons_, k_nearest_photons_, n_passes_;
+  size_t n_threads_, n_photons_, n_passes_;
   double initial_radius_, alpha_;
   Progress progress_;
 
@@ -87,14 +90,12 @@ public:
   StochasticProgressivePhotonMapping(
     size_t n_threads,
     size_t n_photons,
-    size_t k_nearest_photons,
     size_t n_passes,
     double initial_radius,
     double alpha
   ) noexcept
   : n_threads_(n_threads),
     n_photons_(n_photons),
-    k_nearest_photons_(k_nearest_photons),
     n_passes_(n_passes),
     initial_radius_(initial_radius),
     alpha_(alpha),
@@ -106,7 +107,6 @@ public:
     os
       << "StochasticProgressivePhotonMapping(n_threads=" << n_threads_
       << ", n_photons=" << n_photons_
-      << ", k_nearest_photons=" << k_nearest_photons_
       << ", n_passes=" << n_passes_
       << ", initial_radius=" << initial_radius_
       << ", alpha=" << alpha_
@@ -127,7 +127,7 @@ public:
 
     std::vector<Statistics> statistics(camera.imageSize());
     for (auto& stats : statistics) {
-      stats.radius = initial_radius_;
+      stats.radius = scene.SceneSize() * initial_radius_;
     }
 
     for (size_t i = 0; i < n_threads_; i++) {
@@ -139,20 +139,20 @@ public:
           // photon pass
           photons.clear();
           for (size_t j = 0; j < n_photons_; j++) {
-            pm.photonTracing(1, std::back_inserter(photons), sampler);
+            pm.PhotonTracing(1, std::back_inserter(photons), sampler);
           }
           auto const photon_map =
-            pm.buildPhotonMap(photons.begin(), photons.end());
+            pm.BuildPhotonMap(photons.begin(), photons.end());
 
           // distributed ray tracing pass
           for (size_t y = 0; y < camera.imageHeight(); y++) {
             for (size_t x = 0; x < camera.imageWidth(); x++) {
-              auto const hit_point = rayTracing(scene, camera, x, y, sampler);
+              auto const hit_point = RayTracing(scene, camera, x, y, sampler);
               if (Max(hit_point.weight) == 0) {
                 continue;
               }
               auto& stats = statistics.at(x + y * camera.imageWidth());
-              updateStatistics(photon_map, hit_point, stats);
+              UpdateStatistics(photon_map, hit_point, stats);
             }
           }
         }
@@ -178,7 +178,8 @@ public:
   }
 
 private:
-  HitPoint rayTracing(
+  HitPoint
+  RayTracing(
     scene_type const& scene,
     camera_type const& camera,
     size_t x,
@@ -227,35 +228,28 @@ private:
     return hit_point;
   }
 
-  void updateStatistics(
+  void
+  UpdateStatistics(
     photon_map_type const& photon_map,
     HitPoint const& hit_point,
     Statistics& stats
   ) const
   {
-    bool expected = false;
-    while (stats.locked.compare_exchange_strong(expected, true)) {}
+    std::lock_guard<std::mutex> lock(stats.mtx);
 
-    auto const photons = photon_map.kNearestNeighbours(
-      hit_point.position,
-      stats.radius,
-      k_nearest_photons_
-    );
+    auto const photons =
+      photon_map.RNeighbours(hit_point.position, stats.radius);
 
-    auto const n = stats.n_photons;
-    auto const m = photons.size();
-    stats.n_photons = n + m * alpha_;
-    if (stats.n_photons == 0) {
-      stats.locked = false;
-      return;
+    auto const n_photons = stats.n_photons + photons.size();
+    stats.n_photons += photons.size() * alpha_;
+
+    if (n_photons > 0) {
+      stats.radius *= std::sqrt(stats.n_photons / n_photons);
     }
 
-    stats.radius *= std::sqrt(1. * stats.n_photons / (n + m));
-
-    auto const flux_n = stats.flux;
-    radiant_type flux_m;
+    radiant_type flux;
     if (Dot(hit_point.direction, hit_point.normal) > 0) {
-      flux_m +=
+      flux +=
         hit_point.object.Radiance() *
         kPI * stats.radius * stats.radius * n_photons_;
     }
@@ -265,13 +259,13 @@ private:
         hit_point.direction,
         hit_point.normal
       );
-      flux_m += bsdf * photon.power;
+      flux += bsdf * photon.power;
     }
-    flux_m *= hit_point.weight;
-    stats.flux = (flux_n + flux_m) * (1. * stats.n_photons / (n + m));
-
-    stats.locked = false;
-    return;
+    flux *= hit_point.weight;
+    stats.flux += flux;
+    if (n_photons > 0) {
+      stats.flux *= stats.n_photons / n_photons;
+    }
   }
 };
 

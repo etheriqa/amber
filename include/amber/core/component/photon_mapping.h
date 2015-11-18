@@ -20,6 +20,9 @@
 
 #pragma once
 
+#include <mutex>
+#include <numeric>
+
 #include "core/aabb.h"
 #include "core/axis.h"
 #include "core/scene.h"
@@ -79,16 +82,25 @@ private:
   {
     std::vector<Photon> photons_;
 
-    template <typename RandomAccessIterator>
-    PhotonMap(RandomAccessIterator first, RandomAccessIterator last)
-      : photons_(std::distance(first, last)) {
-      allocatePhotons(first, last, 0);
-    }
+    std::mutex mutable search_buffer_mtx_;
+    std::vector<Photon> mutable search_buffer_;
 
     template <typename RandomAccessIterator>
-    void allocatePhotons(RandomAccessIterator first,
-                         RandomAccessIterator last,
-                         size_t pos) {
+    PhotonMap(RandomAccessIterator first, RandomAccessIterator last)
+    : photons_(std::distance(first, last))
+    {
+      AllocatePhotons(first, last, 0);
+    }
+
+    PhotonMap(PhotonMap const& photon_map) : photons_(photon_map.photons_) {}
+
+    template <typename RandomAccessIterator>
+    void AllocatePhotons(
+      RandomAccessIterator first,
+      RandomAccessIterator last,
+      size_t pos
+    )
+    {
       if (pos >= photons_.size()) {
         return;
       }
@@ -108,16 +120,16 @@ private:
         axis = Axis::Z;
       }
       std::sort(first, last, [&](auto const& a, auto const& b){
-          switch (axis) {
-          case Axis::X:
-            return a.position.x() < b.position.x();
-          case Axis::Y:
-            return a.position.y() < b.position.y();
-          case Axis::Z:
-            return a.position.z() < b.position.z();
-          }
+        switch (axis) {
+        case Axis::X:
+          return a.position.x() < b.position.x();
+        case Axis::Y:
+          return a.position.y() < b.position.y();
+        case Axis::Z:
+          return a.position.z() < b.position.z();
+        }
       });
-      const size_t size = std::distance(first, last);
+      size_t const size = std::distance(first, last);
       size_t left_size = 0, right_size = 0;
       while (left_size + right_size + 1 < size) {
         left_size = std::min(size - 1 - right_size, (left_size << 1) + 1);
@@ -126,26 +138,57 @@ private:
       auto const middle = first + left_size;
       photons_[pos] = *middle;
       photons_[pos].axis = axis;
-      allocatePhotons(first, middle, pos * 2 + 1);
-      allocatePhotons(middle + 1, last, pos * 2 + 2);
+      AllocatePhotons(first, middle, pos * 2 + 1);
+      AllocatePhotons(middle + 1, last, pos * 2 + 2);
     }
 
-    template <typename T>
-    std::vector<Photon> kNearestNeighbours(Vector3<T> const& point,
-                                           T radius,
-                                           size_t k) const {
-      std::vector<Photon> heap;
-      heap.reserve(k + 1);
-      kNearestNeighbours(heap, 0, point, radius * radius, k);
-      std::sort_heap(heap.begin(), heap.end(), PhotonComparator(point));
-      return heap;
+    std::vector<Photon>
+    KNeighbours(
+      photon_vector3_type const& point,
+      size_t k
+    ) const
+    {
+      return SearchNeighbours(
+        point,
+        k,
+        std::numeric_limits<photon_real_type>::max()
+      );
     }
 
-    void kNearestNeighbours(std::vector<Photon>& heap,
-                            size_t pos,
-                            photon_vector3_type const& point,
-                            photon_real_type squared_radius,
-                            size_t k) const {
+    std::vector<Photon>
+    RNeighbours(
+      photon_vector3_type const& point,
+      photon_real_type radius
+    ) const
+    {
+      return SearchNeighbours(point, photons_.size(), radius * radius);
+    }
+
+    std::vector<Photon>
+    SearchNeighbours(
+      photon_vector3_type const& point,
+      size_t k,
+      photon_real_type squared_radius
+    ) const
+    {
+      std::lock_guard<std::mutex> lock(search_buffer_mtx_);
+      search_buffer_.clear();
+      SearchNeighbours(0, point, k, squared_radius);
+      std::sort_heap(
+        search_buffer_.begin(),
+        search_buffer_.end(),
+        PhotonComparator(point)
+      );
+      return search_buffer_;
+    }
+
+    void SearchNeighbours(
+      size_t pos,
+      photon_vector3_type const& point,
+      size_t k,
+      photon_real_type& squared_radius
+    ) const
+    {
       if (pos >= photons_.size()) {
         return;
       }
@@ -170,20 +213,29 @@ private:
         near = pos * 2 + 2;
         far = pos * 2 + 1;
       }
-      kNearestNeighbours(heap, near, point, squared_radius, k);
-      if (heap.size() >= k) {
-        squared_radius = SquaredLength(heap.front().position - point);
+      SearchNeighbours(near, point, k, squared_radius);
+      if (SquaredLength(photon.position - point) < squared_radius) {
+        search_buffer_.push_back(photon);
+        std::push_heap(
+          search_buffer_.begin(),
+          search_buffer_.end(),
+          PhotonComparator(point)
+        );
+        while (search_buffer_.size() > k) {
+          std::pop_heap(
+            search_buffer_.begin(),
+            search_buffer_.end(),
+            PhotonComparator(point)
+          );
+          search_buffer_.pop_back();
+        }
+        if (search_buffer_.size() >= k) {
+          squared_radius =
+            SquaredLength(search_buffer_.front().position - point);
+        }
       }
       if (plane_distance * plane_distance < squared_radius) {
-        kNearestNeighbours(heap, far, point, squared_radius, k);
-      }
-      if (SquaredLength(photon.position - point) < squared_radius) {
-        heap.push_back(photon);
-        std::push_heap(heap.begin(), heap.end(), PhotonComparator(point));
-      }
-      while (heap.size() > k) {
-        std::pop_heap(heap.begin(), heap.end(), PhotonComparator(point));
-        heap.pop_back();
+        SearchNeighbours(far, point, k, squared_radius);
       }
     }
   };
@@ -194,9 +246,12 @@ public:
   explicit PhotonMapping(scene_type const& scene) noexcept : scene_(scene) {}
 
   template <typename OutputIterator>
-  void photonTracing(size_t n_photon,
-                     OutputIterator output,
-                     Sampler& sampler) const {
+  void PhotonTracing(
+    size_t n_photon,
+    OutputIterator output,
+    Sampler& sampler
+  ) const
+  {
     ray_type ray;
     radiant_type power;
     std::tie(ray, power, std::ignore, std::ignore, std::ignore) =
@@ -235,8 +290,11 @@ public:
   }
 
   template <typename RandomAccessIterator>
-  PhotonMap buildPhotonMap(RandomAccessIterator first,
-                           RandomAccessIterator last) const {
+  PhotonMap BuildPhotonMap(
+    RandomAccessIterator first,
+    RandomAccessIterator last
+  ) const
+  {
     return PhotonMap(first, last);
   }
 };

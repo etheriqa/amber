@@ -38,6 +38,7 @@ public:
   using radiant_type       = typename Object::radiant_type;
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
+  using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
   using acceleration_ptr   = std::shared_ptr<Acceleration<Object>>;
@@ -64,6 +65,12 @@ public:
   light_sampler_ptr const& light_sampler() const noexcept
   {
     return light_sampler_;
+  }
+
+  real_type SceneSize() const noexcept
+  {
+    auto const& bb = acceleration_->BoundingBox();
+    return Length(bb.max() - bb.min());
   }
 
   std::tuple<hit_type, Object> Cast(ray_type const& ray) const noexcept
