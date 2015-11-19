@@ -42,7 +42,6 @@ public:
   using vector3_type       = typename Object::vector3_type;
 
 private:
-
   struct Node
   {
     radiant_value_type partial_sum_power;
@@ -63,6 +62,7 @@ private:
 public:
   template <typename InputIterator>
   LightSampler(InputIterator first, InputIterator last) noexcept
+  : nodes_(), total_power_()
   {
     std::for_each(first, last, [&](auto const& object){
       if (object.Surface() != SurfaceType::Light) {
