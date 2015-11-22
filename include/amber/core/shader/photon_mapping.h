@@ -192,7 +192,7 @@ private:
 
     if (object.Surface() == SurfaceType::Diffuse) {
       auto const photons =
-        photon_map.KNeighbours(hit.position, k_nearest_photons_);
+        photon_map.SearchKNeighbours(hit.position, k_nearest_photons_);
       return weight * filter(photons, hit, object, -ray.direction);
     }
 

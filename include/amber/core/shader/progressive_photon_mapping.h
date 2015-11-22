@@ -272,7 +272,7 @@ private:
       std::lock_guard<std::mutex> lock(hit_point.mtx);
 
       auto const photons =
-        photon_map.RNeighbours(hit_point.position, hit_point.radius);
+        photon_map.SearchRNeighbours(hit_point.position, hit_point.radius);
 
       auto const n_photons = hit_point.n_photons + photons.size();
       hit_point.n_photons += photons.size() * alpha_;
