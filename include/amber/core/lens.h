@@ -37,10 +37,10 @@ public:
 
   virtual ~Lens() {}
 
-  virtual RealType SensorDistance() const noexcept = 0;
+  virtual RealType const SensorDistance() const noexcept = 0;
 
   virtual
-  vector3_type // direction
+  vector3_type const // direction
   Outgoing(
     vector3_type const&, // sensor_point
     vector3_type const&, // aperture_point
@@ -49,7 +49,7 @@ public:
   ) const noexcept = 0;
 
   virtual
-  vector3_type // sensor_point
+  vector3_type const // sensor_point
   Incoming(
     vector3_type const&, // direction
     vector3_type const&, // aperture_point

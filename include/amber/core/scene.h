@@ -89,7 +89,14 @@ public:
     return light_sampler_->PDFArea(object);
   }
 
-  std::tuple<ray_type, radiant_type, Object, radiant_value_type, vector3_type>
+  std::tuple<
+    ray_type,
+    radiant_type,
+    Object,
+    radiant_value_type,
+    radiant_value_type,
+    vector3_type
+  >
   GenerateLightRay(Sampler& sampler) const
   {
     return light_sampler_->GenerateLightRay(sampler);

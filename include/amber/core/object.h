@@ -22,7 +22,8 @@
 
 #include <functional>
 
-#include "core/surface_type.h"
+#include "core/material.h"
+#include "core/primitive.h"
 
 namespace amber {
 namespace core {
@@ -114,9 +115,19 @@ public:
     return material_->Surface();
   }
 
-  Radiant Radiance() const noexcept
+  Radiant
+  Irradiance() const noexcept
   {
-    return material_->Radiance();
+    return material_->Irradiance();
+  }
+
+  Radiant
+  Radiance(
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return material_->Radiance(direction_o, normal);
   }
 
   Radiant
@@ -127,6 +138,16 @@ public:
   ) const noexcept
   {
     return material_->BSDF(direction_i, direction_o, normal);
+  }
+
+  Radiant
+  AdjointBSDF(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return material_->AdjointBSDF(direction_i, direction_o, normal);
   }
 
   radiant_value_type
@@ -189,7 +210,7 @@ public:
 
   Radiant power() const noexcept
   {
-    return Radiance() * SurfaceArea() * kPI;
+    return Irradiance() * SurfaceArea();
   }
 };
 

@@ -44,11 +44,28 @@ public:
 
   virtual SurfaceType Surface() const noexcept = 0;
 
-  virtual Radiant Radiance() const noexcept { return Radiant(); }
+  virtual
+  Radiant
+  Irradiance() const noexcept { return Radiant(); }
+
+  virtual
+  Radiant
+  Radiance(
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept { return Radiant(); }
 
   virtual
   Radiant
   BSDF(
+    vector3_type const&,
+    vector3_type const&,
+    vector3_type const&
+  ) const noexcept = 0;
+
+  virtual
+  Radiant
+  AdjointBSDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&

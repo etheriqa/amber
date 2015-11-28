@@ -33,6 +33,16 @@ public:
   using typename Material<Radiant, RealType>::scatter_type;
   using typename Material<Radiant, RealType>::vector3_type;
 
+  Radiant
+  AdjointBSDF(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    return this->BSDF(direction_i, direction_o, normal);
+  }
+
   radiant_value_type
   PDFLight(
     vector3_type const& direction_i,
@@ -40,7 +50,7 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    return pdf(direction_i, direction_o, normal);
+    return PDF(direction_i, direction_o, normal);
   }
 
   radiant_value_type
@@ -50,7 +60,7 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    return pdf(direction_i, direction_o, normal);
+    return PDF(direction_i, direction_o, normal);
   }
 
   scatter_type
@@ -78,7 +88,7 @@ public:
     vector3_type const& normal
   ) const
   {
-    return distribution(direction_o, normal);
+    return Distribution(direction_o, normal);
   }
 
   std::vector<scatter_type>
@@ -87,13 +97,13 @@ public:
     vector3_type const& normal
   ) const
   {
-    return distribution(direction_o, normal);
+    return Distribution(direction_o, normal);
   }
 
 protected:
   virtual
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&
@@ -107,12 +117,12 @@ protected:
     Sampler& sampler
   ) const
   {
-    return this->SampleScatter(distribution(direction_o, normal), sampler);
+    return this->SampleScatter(Distribution(direction_o, normal), sampler);
   }
 
   virtual
   std::vector<scatter_type>
-  distribution(
+  Distribution(
     vector3_type const&,
     vector3_type const&
   ) const

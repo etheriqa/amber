@@ -63,7 +63,7 @@ public:
   }
 
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&

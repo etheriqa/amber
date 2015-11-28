@@ -158,8 +158,8 @@ private:
   {
     ray_type ray;
     radiant_type weight;
-    std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, sampler);
+    std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
+      camera.GenerateEyeRay(x, y, sampler);
 
     return estimatePower(scene, photon_map, ray, weight, sampler);
   }
@@ -183,11 +183,7 @@ private:
     }
 
     if (object.Surface() == SurfaceType::Light) {
-      if (Dot(hit.normal, ray.direction) < 0) {
-        return weight * object.Radiance();
-      } else {
-        return radiant_type();
-      }
+      return weight * object.Radiance(-ray.direction, hit.normal);
     }
 
     if (object.Surface() == SurfaceType::Diffuse) {

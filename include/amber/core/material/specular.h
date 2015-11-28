@@ -61,12 +61,12 @@ public:
     if (signed_cos_i * signed_cos_o <= 0) {
       return Radiant();
     } else {
-      return ks_ * kDiracDelta / std::abs(signed_cos_i);
+      return ks_ * kDiracDelta;
     }
   }
 
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&
@@ -76,7 +76,7 @@ public:
   }
 
   std::vector<scatter_type>
-  distribution(
+  Distribution(
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const

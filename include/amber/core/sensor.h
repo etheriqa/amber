@@ -51,18 +51,22 @@ public:
   std::size_t const& ImageWidth() const noexcept { return resolution_width_; }
   std::size_t const& ImageHeight() const noexcept { return resolution_height_; }
 
-  std::size_t ImageSize() const noexcept
+  std::size_t const ImageSize() const noexcept
   {
     return resolution_width_ * resolution_height_;
   }
 
-  RealType SensorArea() const noexcept
+  RealType const SensorArea() const noexcept
   {
-    return sensor_width_ * sensor_height_ / ImageSize();
+    return sensor_width_ * sensor_height_;
   }
 
   std::tuple<RealType, RealType>
-  sampleLocalPoint(std::size_t x, std::size_t y, Sampler& sampler) const noexcept
+  SampleLocalPoint(
+    std::size_t x,
+    std::size_t y,
+    Sampler& sampler
+  ) const noexcept
   {
     auto const x_normalized =
       (x + Uniform<RealType>(sampler)) / resolution_width_;
@@ -75,7 +79,10 @@ public:
   }
 
   boost::optional<std::tuple<std::size_t, std::size_t>>
-  responsePoint(RealType x, RealType y) const noexcept
+  ResponsePoint(
+    RealType x,
+    RealType y
+  ) const noexcept
   {
     std::size_t const x_image =
       std::floor((x / sensor_width_ + RealType(0.5)) * resolution_width_);

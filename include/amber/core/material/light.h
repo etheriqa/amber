@@ -45,7 +45,20 @@ public:
     return SurfaceType::Light;
   }
 
-  Radiant Radiance() const noexcept { return radiance_; }
+  Radiant Irradiance() const noexcept { return radiance_ * kPI; }
+
+  Radiant
+  Radiance(
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    if (Dot(direction_o, normal) <= 0) {
+      return Radiant();
+    } else {
+      return radiance_;
+    }
+  }
 
   Radiant
   BSDF(
@@ -58,7 +71,7 @@ public:
   }
 
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&
@@ -69,15 +82,15 @@ public:
 
   scatter_type
   Sample(
-    vector3_type const& direction_i,
+    vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler& sampler
   ) const
   {
-    auto const w = Dot(direction_i, normal) > 0 ? normal : -normal;
-    vector3_type direction_o;
-    std::tie(direction_o, std::ignore) = HemispherePSA(w, sampler);
-    return scatter_type(direction_o, Radiant(0));
+    auto const w = Dot(direction_o, normal) > 0 ? normal : -normal;
+    vector3_type direction_i;
+    std::tie(direction_i, std::ignore) = HemispherePSA(w, sampler);
+    return scatter_type(direction_i, Radiant());
   }
 };
 

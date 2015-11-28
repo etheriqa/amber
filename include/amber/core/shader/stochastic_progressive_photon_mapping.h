@@ -190,8 +190,8 @@ private:
     HitPoint hit_point;
 
     ray_type ray;
-    std::tie(ray, hit_point.weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, sampler);
+    std::tie(ray, hit_point.weight, std::ignore, std::ignore, std::ignore, std::ignore) =
+      camera.GenerateEyeRay(x, y, sampler);
 
     for (;;) {
       hit_type hit;
@@ -247,12 +247,9 @@ private:
       stats.radius *= std::sqrt(stats.n_photons / n_photons);
     }
 
-    radiant_type flux;
-    if (Dot(hit_point.direction, hit_point.normal) > 0) {
-      flux +=
-        hit_point.object.Radiance() *
-        kPI * stats.radius * stats.radius * n_photons_;
-    }
+    auto flux =
+      hit_point.object.Radiance(hit_point.direction, hit_point.normal) *
+      kPI * stats.radius * stats.radius * n_photons_;
     for (auto const& photon : photons) {
       auto const bsdf = hit_point.object.BSDF(
         photon.direction,

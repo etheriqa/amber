@@ -20,434 +20,720 @@
 
 #pragma once
 
-#include <algorithm>
-#include <cmath>
+#include <iterator>
+#include <mutex>
+#include <tuple>
 #include <vector>
 
+#include <boost/optional.hpp>
+
+#include "core/camera.h"
 #include "core/constant.h"
 #include "core/geometry.h"
-#include "core/sampler.h"
 #include "core/scene.h"
-#include "core/surface_type.h"
 
 namespace amber {
 namespace core {
 namespace component {
 
-template <typename Object>
+template <typename Radiant, typename RealType>
+struct BDPTEvent
+{
+  using object_type        = Object<Radiant, RealType>;
+  using radiant_value_type = typename Radiant::value_type;
+  using vector3_type       = Vector3<RealType>;
+
+  object_type object;
+  vector3_type position;
+  vector3_type normal;
+  vector3_type direction;
+  Radiant weight;
+  radiant_value_type geometry_factor;
+  radiant_value_type p_backward;
+  radiant_value_type p_forward;
+};
+
+template <typename Radiant, typename RealType>
+RealType
+GeometryFactor(
+  BDPTEvent<Radiant, RealType> const& x,
+  BDPTEvent<Radiant, RealType> const& y
+) noexcept
+{
+  return core::GeometryFactor(x.position, y.position, x.normal, y.normal);
+}
+
+template <typename Radiant>
+struct BDPTContribution
+{
+  Radiant measurement;
+  boost::optional<std::tuple<std::size_t, std::size_t>> pixel;
+
+  BDPTContribution() noexcept : measurement(), pixel(boost::none) {}
+
+  BDPTContribution(Radiant const& measurement) noexcept
+  : measurement(measurement), pixel(boost::none) {}
+
+  BDPTContribution(
+    Radiant const& measurement,
+    std::tuple<std::size_t, std::size_t> const& pixel
+  ) noexcept
+  : measurement(measurement), pixel(pixel) {}
+};
+
+template <typename Radiant, typename RealType>
 class BidirectionalPathTracing
 {
 public:
-  using scene_type         = Scene<Object>;
+  using event_type        = BDPTEvent<Radiant, RealType>;
+  using contribution_type = BDPTContribution<Radiant>;
+
+  using camera_type = Camera<Radiant, RealType>;
+  using scene_type  = Scene<Object<Radiant, RealType>>;
 
 private:
-  using hit_type           = typename Object::hit_type;
-  using radiant_type       = typename Object::radiant_type;
-  using radiant_value_type = typename Object::radiant_type::value_type;
-  using ray_type           = typename Object::ray_type;
-  using real_type          = typename Object::real_type;
-  using vector3_type       = typename Object::vector3_type;
+  using hit_type           = Hit<RealType>;
+  using object_type        = Object<Radiant, RealType>;
+  using radiant_value_type = typename Radiant::value_type;
+  using ray_type           = Ray<RealType>;
+  using scatter_type       = Scatter<Radiant, RealType>;
+  using vector3_type       = Vector3<RealType>;
 
-  struct Event
+private:
+  struct PathGenerationPolicy
   {
-    Object object;
-    vector3_type position;
-    vector3_type normal;
-    vector3_type direction_i;
-    vector3_type direction_o;
-    radiant_value_type p_russian_roulette;
-    radiant_value_type log_p_area;
-    radiant_type weight;
+    virtual
+    scatter_type
+    Scatter(
+      object_type const& object,
+      vector3_type const& direction_o,
+      vector3_type const& normal,
+      Sampler& sampler
+    ) const = 0;
+
+    virtual
+    radiant_value_type
+    PDFForward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const = 0;
+
+    virtual
+    radiant_value_type
+    PDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const = 0;
+
+    virtual
+    Radiant
+    BSDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const = 0;
   };
 
-  scene_type scene_;
-  std::vector<Event> mutable event_buffer_;
-  std::vector<radiant_value_type> mutable probability_buffer_;
+  struct LightPathGenerationPolicy : public PathGenerationPolicy
+  {
+    scatter_type
+    Scatter(
+      object_type const& object,
+      vector3_type const& direction_o,
+      vector3_type const& normal,
+      Sampler& sampler
+    ) const
+    {
+      return object.SampleImportance(direction_o, normal, sampler);
+    }
+
+    radiant_value_type
+    PDFForward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.PDFImportance(direction_i, direction_o, normal);
+    }
+
+    radiant_value_type
+    PDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.PDFLight(direction_i, direction_o, normal);
+    }
+
+    Radiant
+    BSDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.BSDF(direction_i, direction_o, normal);
+    }
+  };
+
+  struct EyePathGenerationPolicy : public PathGenerationPolicy
+  {
+    scatter_type
+    Scatter(
+      object_type const& object,
+      vector3_type const& direction_o,
+      vector3_type const& normal,
+      Sampler& sampler
+    ) const
+    {
+      return object.SampleLight(direction_o, normal, sampler);
+    }
+
+    radiant_value_type
+    PDFForward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.PDFLight(direction_i, direction_o, normal);
+    }
+
+    radiant_value_type
+    PDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.PDFImportance(direction_i, direction_o, normal);
+    }
+
+    Radiant
+    BSDFBackward(
+      object_type const& object,
+      vector3_type const& direction_i,
+      vector3_type const& direction_o,
+      vector3_type const& normal
+    ) const
+    {
+      return object.AdjointBSDF(direction_i, direction_o, normal);
+    }
+  };
+
+  std::mutex                      mutable buffer_mtx_;
+  std::vector<radiant_value_type> mutable buffer_geometry_factor_;
+  std::vector<radiant_value_type> mutable buffer_p_light_;
+  std::vector<radiant_value_type> mutable buffer_p_importance_;
+  std::vector<radiant_value_type> mutable buffer_probability_;
 
 public:
-  explicit BidirectionalPathTracing(scene_type const& scene) noexcept
-  : scene_(scene),
-    event_buffer_(),
-    probability_buffer_()
+  BidirectionalPathTracing() noexcept
+  : buffer_mtx_(),
+    buffer_geometry_factor_(),
+    buffer_p_light_(),
+    buffer_p_importance_(),
+    buffer_probability_()
   {}
 
-  std::vector<Event> lightTracing(
+  std::vector<event_type>
+  GenerateLightPath(
+    scene_type const& scene,
+    camera_type const& camera,
     Sampler& sampler
   ) const
   {
+    std::vector<event_type> events;
     ray_type ray;
-    Object light;
-    radiant_type weight;
-    radiant_value_type p_area;
-    radiant_value_type p_psa = 1 / kPI;
+    Radiant weight;
     vector3_type normal;
-    std::tie(ray, weight, light, p_area, normal) =
-      scene_.GenerateLightRay(sampler);
 
-    Event event;
-    event.object             = light;
-    event.position           = ray.origin;
-    event.normal             = normal;
-    event.direction_i        = ray.direction;
-    event.direction_o        = vector3_type();
-    event.p_russian_roulette = 1;
-    event.log_p_area         = std::log2(p_area);
-    event.weight             = weight;
+    {
+      object_type object;
+      radiant_value_type p_psa;
+      std::tie(ray, weight, object, std::ignore, p_psa, normal) =
+        scene.GenerateLightRay(sampler);
 
-    return tracing(
-      event, p_psa, sampler,
-      [](
-        auto const& object,
-        auto const& direction_o,
-        auto const& normal,
-        auto& sampler
-      )
-      {
-        return object.SampleImportance(direction_o, normal, sampler);
-      },
-      [](
-        auto const& object,
-        auto const& direction_i,
-        auto const& direction_o,
-        auto const& normal
-      )
-      {
-        return object.PDFImportance(direction_i, direction_o, normal);
-      }
-    );
-  }
-
-  template <typename Camera>
-  std::vector<Event> rayTracing(
-    Sampler& sampler,
-    Camera const& camera,
-    std::size_t x,
-    std::size_t y
-  ) const
-  {
-    ray_type ray;
-    radiant_type weight;
-    radiant_value_type p_area;
-    radiant_value_type p_psa = 1;
-    vector3_type normal;
-    std::tie(ray, weight, p_area, normal) = camera.GenerateRay(x, y, sampler);
-
-    Event event;
-    event.object             = Object();
-    event.position           = ray.origin;
-    event.normal             = normal;
-    event.direction_i        = ray.direction;
-    event.direction_o        = vector3_type();
-    event.p_russian_roulette = 1;
-    event.log_p_area         = std::log2(p_area);
-    event.weight             = weight;
-
-    return tracing(
-      event, p_psa, sampler,
-      [](
-        auto const& object,
-        auto const& direction_o,
-        auto const& normal,
-        auto& sampler
-      )
-      {
-        return object.SampleLight(direction_o, normal, sampler);
-      },
-      [](
-        auto const& object,
-        auto const& direction_i,
-        auto const& direction_o,
-        auto const& normal
-      )
-      {
-        return object.PDFLight(direction_i, direction_o, normal);
-      }
-    );
-  }
-
-  template <typename MIS>
-  radiant_type connect(
-    std::vector<Event> const& light,
-    std::vector<Event> const& eye,
-    MIS const& mis
-  ) const
-  {
-    radiant_type power;
-
-    for (std::size_t s = 0; s <= light.size(); s++) {
-      for (std::size_t t = 0; t <= eye.size(); t++) {
-        auto const contribution = UnweightedContribution(light, eye, s, t);
-        if (Max(contribution) == 0) {
-          continue;
-        }
-        CalculateLogProbabilities(light, eye, s, t);
-        auto const weight = mis(
-          probability_buffer_.begin(),
-          probability_buffer_.end(),
-          probability_buffer_.at(s)
-        );
-        power += contribution * weight;
-      }
-    }
-
-    return power;
-  }
-
-private:
-  real_type
-  GeometryFactor(
-    Event const& x,
-    Event const& y
-  ) const noexcept
-  {
-    return core::GeometryFactor(x.position, y.position, x.normal, y.normal);
-  }
-
-  template <typename Sample, typename PDF>
-  std::vector<Event> tracing(
-    Event event,
-    radiant_value_type p_psa,
-    Sampler& sampler,
-    Sample const& sample,
-    PDF const& pdf
-  ) const
-  {
-    std::vector<Event> events;
-    events.reserve(16);
-    events.push_back(event);
-
-    ray_type ray(event.position, event.direction_i);
-    radiant_type weight(1);
-    hit_type hit;
-    Object object;
-
-    for (;;) {
-      std::tie(hit, object) = scene_.Cast(ray);
-      if (!hit) {
-        break;
-      }
-
-      auto const scatter = sample(object, -ray.direction, hit.normal, sampler);
-      auto const geometry_factor = core::GeometryFactor(
-        ray.direction,
-        hit.distance * hit.distance,
-        event.normal,
-        hit.normal
-      );
-      auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, Max(scatter.weight));
-
-      event.object              = object;
-      event.position            = hit.position;
-      event.normal              = hit.normal;
-      event.direction_i         = scatter.direction;
-      event.direction_o         = -ray.direction;
-      event.p_russian_roulette  = p_russian_roulette;
-      event.log_p_area         += std::log2(p_psa * geometry_factor);
-      event.weight             *= weight;
+      event_type event;
+      event.object          = object;
+      event.position        = ray.origin;
+      event.normal          = normal;
+      event.direction       = vector3_type();
+      event.weight          = weight;
+      event.geometry_factor = std::numeric_limits<RealType>::quiet_NaN();
+      event.p_backward      = std::numeric_limits<RealType>::quiet_NaN();
+      event.p_forward       = p_psa;
       events.push_back(event);
-
-      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
-        break;
-      }
-
-      ray = ray_type(hit.position, scatter.direction);
-      weight = scatter.weight / p_russian_roulette;
-      p_psa =
-        pdf(event.object, event.direction_i, event.direction_o, event.normal) *
-        p_russian_roulette;
     }
+
+    ExtendPath(
+      LightPathGenerationPolicy(),
+      scene,
+      ray,
+      weight,
+      normal,
+      std::back_inserter(events),
+      sampler
+    );
 
     return events;
   }
 
-  radiant_type UnweightedContribution(
-    std::vector<Event> const& light,
-    std::vector<Event> const& eye,
-    std::size_t s,
-    std::size_t t
+  std::vector<event_type>
+  GenerateEyePath(
+    scene_type const& scene,
+    camera_type const& camera,
+    std::size_t x,
+    std::size_t y,
+    Sampler& sampler
   ) const
   {
-    if (s >= 2 && t >= 2) {
-      auto const& l = light.at(s - 1);
-      auto const& e = eye.at(t - 1);
-      if (l.object.Surface() == SurfaceType::Specular) {
-        return radiant_type();
-      }
-      if (e.object.Surface() == SurfaceType::Specular) {
-        return radiant_type();
-      }
-      ray_type const ray(l.position, e.position - l.position);
-      if (!scene_.TestVisibility(ray, e.object)) {
-        return radiant_type();
-      }
-      auto const direction_le = Normalize(e.position - l.position);
-      return
-        l.weight *
-        l.object.BSDF(l.direction_o, direction_le, l.normal) *
-        GeometryFactor(l, e) *
-        e.object.BSDF(-direction_le, e.direction_o, e.normal) *
-        e.weight;
-    } else if (s == 0 && t >= 2) {
-      // zero light subpath vertices
-      auto const& l = eye.at(t - 1);
-      auto const& e = eye.at(t - 2);
-      if (l.object.Surface() != SurfaceType::Light) {
-        return radiant_type();
-      }
-      if (Dot(e.position - l.position, l.normal) <= 0) {
-        return radiant_type();
-      }
-      return l.object.Radiance() * l.weight;
-    } else if (s == 1 && t >= 2) {
-      // one light subpath vertex
-      auto const& l = light.at(s - 1);
-      auto const& e = eye.at(t - 1);
-      if (e.object.Surface() == SurfaceType::Specular) {
-        return radiant_type();
-      }
-      if (Dot(e.position - l.position, l.normal) <= 0) {
-        return radiant_type();
-      }
-      ray_type const ray(l.position, e.position - l.position);
-      if (!scene_.TestVisibility(ray, e.object)) {
-        return radiant_type();
-      }
-      auto const direction_le = Normalize(e.position - l.position);
-      return
-        l.weight *
-        (1 / kPI) *
-        GeometryFactor(l, e) *
-        e.object.BSDF(-direction_le, e.direction_o, e.normal) *
-        e.weight;
-    } else if (s >= 2 && t == 0) {
-      // zero eye subpath vertices
-      // TODO make eye diffuse
-    } else if (s >= 2 && t == 1) {
-      // one eye subpath vertex
-      // TODO make eye diffuse
-    } else if (s == 1 && t == 1) {
-      // one light subpath vertex and one eye subpath vertex
-      // TODO make eye diffuse
+    std::vector<event_type> events;
+    ray_type ray;
+    Radiant weight;
+    vector3_type normal;
+
+    {
+      object_type object;
+      radiant_value_type p_psa;
+      std::tie(ray, weight, object, std::ignore, p_psa, normal) =
+        camera.GenerateEyeRay(x, y, sampler);
+
+      event_type event;
+      event.object          = object;
+      event.position        = ray.origin;
+      event.normal          = normal;
+      event.direction       = vector3_type();
+      event.weight          = weight;
+      event.geometry_factor = std::numeric_limits<RealType>::quiet_NaN();
+      event.p_backward      = std::numeric_limits<RealType>::quiet_NaN();
+      event.p_forward       = p_psa;
+      events.push_back(event);
     }
 
-    return radiant_type();
+    ExtendPath(
+      EyePathGenerationPolicy(),
+      scene,
+      ray,
+      weight,
+      normal,
+      std::back_inserter(events),
+      sampler
+    );
+
+    return events;
   }
 
-  // caution: this function is not thread-safe
-  void CalculateLogProbabilities(
-    std::vector<Event> const& light,
-    std::vector<Event> const& eye,
+  template <typename MIS>
+  std::tuple<Radiant, std::vector<contribution_type>>
+  Connect(
+    scene_type const& scene,
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    MIS mis
+  ) const
+  {
+    std::lock_guard<std::mutex> lock(buffer_mtx_);
+
+    Radiant measurement;
+    std::vector<contribution_type> light_image;
+
+    for (std::size_t s = 0; s <= light_path.size(); s++) {
+      for (std::size_t t = 0; t <= eye_path.size(); t++) {
+        auto contribution = UnweightedContribution(
+          scene,
+          camera,
+          s == 0 ? nullptr : &light_path.at(s - 1),
+          t == 0 ? nullptr : &eye_path.at(t - 1)
+        );
+
+        if (Max(contribution.measurement) == 0) {
+          continue;
+        }
+
+        contribution.measurement *=
+          MISWeight(scene, camera, light_path, eye_path, s, t, mis);
+
+        if (contribution.pixel) {
+          contribution.measurement /= camera.imageSize();
+          light_image.emplace_back(contribution);
+        } else {
+          measurement += contribution.measurement;
+        }
+      }
+    }
+
+    return std::make_tuple(measurement, light_image);
+  }
+
+private:
+  template <typename OutputIterator>
+  void
+  ExtendPath(
+    PathGenerationPolicy const& policy,
+    scene_type const& scene,
+    ray_type& ray,
+    Radiant& weight,
+    vector3_type& normal,
+    OutputIterator output,
+    Sampler& sampler
+  ) const
+  {
+    for (;;) {
+      hit_type hit;
+      object_type object;
+      std::tie(hit, object) = scene.Cast(ray);
+      if (!hit) {
+        break;
+      }
+
+      auto const scatter =
+        policy.Scatter(object, -ray.direction, hit.normal, sampler);
+      auto const direction_o = -ray.direction;
+      auto const& direction_i = scatter.direction;
+
+      auto const p_forward =
+        policy.PDFForward(object, direction_i, direction_o, hit.normal);
+      auto const p_backward =
+        policy.PDFBackward(object, direction_o, direction_i, hit.normal);
+      auto const bsdf =
+        policy.BSDFBackward(object, direction_o, direction_i, hit.normal);
+      auto const p_russian_roulette_backward =
+        std::min<radiant_value_type>(1, Max(bsdf / p_backward));
+      auto const p_russian_roulette_forward =
+        std::min<radiant_value_type>(1, Max(scatter.weight));
+
+      auto const geometry_factor = core::GeometryFactor(
+        direction_o,
+        hit.distance * hit.distance,
+        normal,
+        hit.normal
+      );
+
+      event_type event;
+      event.object          = object;
+      event.position        = hit.position;
+      event.normal          = hit.normal;
+      event.direction       = direction_o;
+      event.weight          = weight;
+      event.geometry_factor = geometry_factor;
+      event.p_backward      = p_backward * p_russian_roulette_backward;
+      event.p_forward       = p_forward * p_russian_roulette_forward;
+      output = event;
+
+      if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette_forward) {
+        break;
+      }
+
+      ray = ray_type(hit.position, scatter.direction);
+      normal = hit.normal;
+      weight *= scatter.weight / p_russian_roulette_forward;
+    }
+  }
+
+  contribution_type
+  UnweightedContribution(
+    scene_type const& scene,
+    camera_type const& camera,
+    event_type const* const light_end,
+    event_type const* const eye_end
+  ) const
+  {
+    if (light_end == nullptr && eye_end == nullptr) {
+      return contribution_type();
+    }
+
+    if (light_end == nullptr) {
+      // s = 0; the eye subpath intersects a light source
+      if (eye_end->object.Surface() != SurfaceType::Light) {
+        return contribution_type();
+      }
+      return
+        eye_end->object.Radiance(eye_end->direction, eye_end->normal) *
+        eye_end->weight;
+    }
+
+    if (eye_end == nullptr) {
+      // t = 0; the light subpath intersects the aperture
+      if (light_end->object.Surface() != SurfaceType::Eye) {
+        return contribution_type();
+      }
+      auto const response =
+        camera.Response(light_end->direction, light_end->position);
+      if (!response) {
+        return contribution_type();
+      }
+      return contribution_type(
+        std::get<2>(*response) * light_end->weight,
+        std::make_tuple(std::get<0>(*response), std::get<1>(*response))
+      );
+    }
+
+    {
+      auto const surface = light_end->object.Surface();
+      if (surface == SurfaceType::Specular || surface == SurfaceType::Eye) {
+        return contribution_type();
+      }
+    }
+
+    {
+      auto const surface = eye_end->object.Surface();
+      if (surface == SurfaceType::Specular ||
+          (eye_end->geometry_factor > 0 && surface == SurfaceType::Eye)) {
+        return contribution_type();
+      }
+    }
+
+    contribution_type contribution(Radiant(1));
+
+    ray_type const ray(
+      light_end->position,
+      eye_end->position - light_end->position
+    );
+
+    if (std::isnan(light_end->geometry_factor)) {
+      // s = 1
+      if (Dot(ray.direction, light_end->normal) <= 0) {
+        return contribution_type();
+      }
+      contribution.measurement *=
+        light_end->object.Radiance(ray.direction, light_end->normal) /
+        scene.LightPDFArea(light_end->object);
+    } else {
+      // s > 1
+      contribution.measurement *=
+        light_end->weight *
+        light_end->object.AdjointBSDF(
+          ray.direction,
+          light_end->direction,
+          light_end->normal
+        );
+    }
+
+    if (std::isnan(eye_end->geometry_factor)) {
+      // t = 1
+      auto const response = camera.Response(-ray.direction, eye_end->position);
+      if (!response) {
+        return contribution_type();
+      }
+      contribution.measurement *= std::get<2>(*response) / camera.PDFArea();
+      contribution.pixel =
+        std::make_tuple(std::get<0>(*response), std::get<1>(*response));
+    } else {
+      // t > 1
+      contribution.measurement *=
+        eye_end->weight *
+        eye_end->object.BSDF(
+          -ray.direction,
+          eye_end->direction,
+          eye_end->normal
+        );
+    }
+
+    if (!scene.TestVisibility(ray, eye_end->object)) {
+      return contribution_type();
+    }
+
+    contribution.measurement *= GeometryFactor(*light_end, *eye_end);
+
+    return contribution;
+  }
+
+  template <typename MIS>
+  radiant_value_type
+  MISWeight(
+    scene_type const& scene,
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t s,
+    std::size_t t,
+    MIS mis
+  ) const
+  {
+    auto const n_techniques = s + t + 1;
+
+    UpdateGeometryFactorBuffer(light_path, eye_path, s, t);
+    UpdateLightProbabilityBuffer(camera, light_path, eye_path, s, t);
+    UpdateImportanceProbabilityBuffer(light_path, eye_path, s, t);
+
+    buffer_probability_.resize(n_techniques);
+    buffer_probability_.at(s) = 1;
+
+    for (std::size_t i = s - 1; i < n_techniques; i--) {
+      auto& p = buffer_probability_.at(i);
+      p = buffer_probability_.at(i + 1);
+
+      if (i == n_techniques - 2) {
+        p *= camera.PDFArea();
+      } else {
+        p *= buffer_p_light_.at(i) * buffer_geometry_factor_.at(i);
+      }
+
+      if (i == 0) {
+        p /= scene.LightPDFArea(light_path.front().object);
+      } else {
+        p /= buffer_p_importance_.at(i - 1) * buffer_geometry_factor_.at(i - 1);
+      }
+    }
+
+    for (std::size_t i = s + 1; i < n_techniques; i++) {
+      auto& p = buffer_probability_.at(i);
+      p = buffer_probability_.at(i - 1);
+
+      if (i == 1) {
+        p *= scene.LightPDFArea(eye_path.back().object);
+      } else {
+        p *= buffer_p_importance_.at(i - 2) * buffer_geometry_factor_.at(i - 2);
+      }
+
+      if (i == n_techniques - 1) {
+        p /= camera.PDFArea();
+      } else {
+        p /= buffer_p_light_.at(i - 1) * buffer_geometry_factor_.at(i - 1);
+      }
+    }
+
+    for (std::size_t i = 1; i + 1 < s; i++) {
+      auto const surface = light_path.at(i).object.Surface();
+      if (surface == SurfaceType::Specular || surface == SurfaceType::Eye) {
+        buffer_probability_.at(i) = 0;
+        buffer_probability_.at(i + 1) = 0;
+      }
+    }
+    for (std::size_t i = 1; i + 1 < t; i++) {
+      auto const surface = eye_path.at(i).object.Surface();
+      if (surface == SurfaceType::Specular || surface == SurfaceType::Eye) {
+        buffer_probability_.at(n_techniques - i - 1) = 0;
+        buffer_probability_.at(n_techniques - i - 2) = 0;
+      }
+    }
+
+    return mis(buffer_probability_.begin(), buffer_probability_.end());
+  }
+
+  void
+  UpdateGeometryFactorBuffer(
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
     std::size_t s,
     std::size_t t
   ) const
   {
-    event_buffer_.clear();
-    probability_buffer_.clear();
+    buffer_geometry_factor_.clear();
 
-    // reorder pairs of directions (direction_i and direction_o) by actual light
-    // flow
-    std::transform(
-      light.begin(),
-      light.begin() + s,
-      std::back_inserter(event_buffer_),
-      [](auto event){
-        std::swap(event.direction_i, event.direction_o);
-        return event;
-      });
-    std::copy(eye.rend() - t, eye.rend(), std::back_inserter(event_buffer_));
+    if (s >= 2) {
+      for (std::size_t i = 1; i <= s - 1; i++) {
+        buffer_geometry_factor_.push_back(light_path.at(i).geometry_factor);
+      }
+    }
 
-    if (s > 0 && t > 0) {
-      auto const direction = Normalize(
-        event_buffer_.at(s).position - event_buffer_.at(s - 1).position
+    if (s >= 1 && t >= 1) {
+      buffer_geometry_factor_.push_back(
+        GeometryFactor(light_path.at(s - 1), eye_path.at(t - 1))
       );
-      event_buffer_.at(s - 1).direction_o = direction;
-      event_buffer_.at(s).direction_i = direction;
     }
 
-    std::size_t const n_technique = s + t + 1;
-    probability_buffer_.resize(n_technique);
-    for (std::size_t i = 1; s > 0 && i < n_technique; i++) {
-      probability_buffer_.at(i) +=
-        event_buffer_.at(std::min(i, s) - 1).log_p_area;
-    }
-    for (std::size_t i = 0; t > 0 && i < n_technique - 1; i++) {
-      probability_buffer_.at(i) +=
-        event_buffer_.at(std::max(i, s)).log_p_area;
-    }
-    {
-      // extend light subpath
-      radiant_value_type log_p_light = 0;
-      auto p_russian_roulette =
-        s == 0 ? 1 : event_buffer_.at(s - 1).p_russian_roulette;
-      for (std::size_t i = s + 1; i < n_technique; i++) {
-        if (s == 0) {
-          log_p_light +=
-            std::log2(scene_.LightPDFArea(event_buffer_.front().object));
-        } else {
-          auto& event = event_buffer_.at(i - 2);
-          auto const bsdf = event.object.BSDF(
-            event.direction_i,
-            event.direction_o,
-            event.normal
-          );
-          auto const pdf = event.object.PDFImportance(
-            event.direction_o,
-            event.direction_i,
-            event.normal
-          );
-          auto const geometry_factor =
-            GeometryFactor(event, event_buffer_.at(i - 1));
-          log_p_light +=
-            std::log2(pdf * p_russian_roulette * geometry_factor);
-          p_russian_roulette =
-            std::min<radiant_value_type>(1, Max(bsdf / pdf));
-        }
-        probability_buffer_.at(i) += log_p_light;
+    if (t >= 2) {
+      for (std::size_t i = t - 1; i >= 1; i--) {
+        buffer_geometry_factor_.push_back(eye_path.at(i).geometry_factor);
       }
     }
-    {
-      // extend eye subpath
-      radiant_value_type log_p_eye = 0;
-      auto p_russian_roulette =
-        t == 0 ? 1 : event_buffer_.at(s).p_russian_roulette;
-      for (std::size_t i = s - 1; i < n_technique; i--) {
-        if (t == 0) {
-          log_p_eye += std::log2(kDiracDelta); // TODO
-        } else {
-          auto& event = event_buffer_.at(i + 1);
-          auto const bsdf = event.object.BSDF(
-            event.direction_i,
-            event.direction_o,
-            event.normal
-          );
-          auto const pdf = event.object.PDFLight(
-            event.direction_i,
-            event.direction_o,
-            event.normal
-          );
-          auto const geometry_factor =
-            GeometryFactor(event, event_buffer_.at(i));
-          log_p_eye +=
-            std::log2(pdf * p_russian_roulette * geometry_factor);
-          p_russian_roulette =
-            std::min<radiant_value_type>(1, Max(bsdf / pdf));
-        }
-        probability_buffer_.at(i) += log_p_eye;
+  }
+
+  void
+  UpdateLightProbabilityBuffer(
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t s,
+    std::size_t t
+  ) const
+  {
+    buffer_p_light_.clear();
+
+    if (s >= 2) {
+      for (std::size_t i = 1; i <= s - 1; i++) {
+        buffer_p_light_.push_back(light_path.at(i).p_backward);
       }
     }
-    {
-      // ignore contributions by a connection with specular surfaces
-      for (std::size_t i = 0; i < s + t; i++) {
-        auto const& object = event_buffer_.at(i).object;
-        if (object && object.Surface() != SurfaceType::Specular) {
-          continue;
-        }
-        probability_buffer_.at(i) =
-          -std::numeric_limits<radiant_value_type>::infinity();
-        probability_buffer_.at(i + 1) =
-          -std::numeric_limits<radiant_value_type>::infinity();
+
+    if (s >= 1 && t >= 1) {
+      auto const& light = light_path.at(s - 1);
+      auto const& eye = eye_path.at(t - 1);
+      auto const incident = Normalize(light.position - eye.position);
+      auto const& exitant = eye.direction;
+      auto const& normal = eye.normal;
+      auto const bsdf = eye.object.BSDF(incident, exitant, normal);
+      auto const pdf = eye.object.PDFLight(incident, exitant, normal);
+      auto const p_russian_roulette =
+        std::min<radiant_value_type>(1, Max(bsdf / pdf));
+      buffer_p_light_.push_back(pdf * p_russian_roulette);
+    }
+
+    if (t >= 2) {
+      for (std::size_t i = t - 2; i <= t - 2; i--) {
+        buffer_p_light_.push_back(eye_path.at(i).p_forward);
       }
+    } else {
+      auto const& z0 = t > 0 ? eye_path.at(0) : light_path.at(s + t - 1);
+      auto const& z1 = t > 1 ? eye_path.at(1) : light_path.at(s + t - 2);
+      buffer_p_light_.back() =
+        camera.PDFDirection(Normalize(z1.position - z0.position));
+    }
+  }
+
+  void
+  UpdateImportanceProbabilityBuffer(
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t s,
+    std::size_t t
+  ) const
+  {
+    buffer_p_importance_.clear();
+
+    if (s >= 2) {
+      for (std::size_t i = 0; i <= s - 2; i++) {
+        buffer_p_importance_.push_back(light_path.at(i).p_forward);
+      }
+    }
+
+    if (s >= 1 && t >= 1) {
+      auto const& light = light_path.at(s - 1);
+      auto const& eye = eye_path.at(t - 1);
+      auto const incident = Normalize(eye.position - light.position);
+      auto const& exitant = light.direction;
+      auto const& normal = light.normal;
+      auto const bsdf = light.object.AdjointBSDF(incident, exitant, normal);
+      auto const pdf = light.object.PDFImportance(incident, exitant, normal);
+      auto const p_russian_roulette =
+        std::min<radiant_value_type>(1, Max(bsdf / pdf));
+      buffer_p_importance_.push_back(pdf * p_russian_roulette);
+    }
+
+    if (t >= 2) {
+      for (std::size_t i = t - 1; i >= 1; i--) {
+        buffer_p_importance_.push_back(eye_path.at(i).p_backward);
+      }
+    }
+
+    if (s < 2) {
+      // XXX
+      buffer_p_importance_.front() = 1 / kPI;
     }
   }
 };

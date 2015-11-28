@@ -51,7 +51,7 @@ private:
 
 public:
   explicit Refraction(radiant_value_type ior) noexcept
-    : ior_(ior), r0_(fresnel(ior)) {}
+    : ior_(ior), r0_(Fresnel(ior)) {}
 
   SurfaceType Surface() const noexcept
   {
@@ -65,27 +65,61 @@ public:
     vector3_type const& normal
   ) const noexcept
   {
-    auto const signed_cos_alpha = Dot(direction_i, normal);
-    auto const cos_alpha = std::abs(signed_cos_alpha);
+    auto const signed_cos_alpha = Dot(direction_o, normal);
     auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
     auto const squared_cos_beta =
       1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
 
     if (squared_cos_beta < 0) {
       // total reflection
-      return Radiant(kReflectance * kDiracDelta / cos_alpha);
+      return Radiant(kReflectance * kDiracDelta);
     }
 
-    auto const signed_cos_o = Dot(direction_o, normal);
-    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
-    auto const rho_t = 1 - rho_r;
+    // transmittance is needed to scale by relative IOR
+    auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_t = (1 - rho_r) / (ior * ior);
+    auto const rho = rho_r + rho_t;
 
-    if (signed_cos_alpha * signed_cos_o > 0) {
+    auto const signed_cos_i = Dot(direction_i, normal);
+
+    if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
-      return Radiant(rho_r * kReflectance * kDiracDelta / cos_alpha);
+      return Radiant(rho_r / rho * kReflectance * kDiracDelta);
     } else {
       // refraction
-      return Radiant(rho_t * kTransmittance * kDiracDelta / cos_alpha);
+      return Radiant(rho_t / rho * kTransmittance * kDiracDelta);
+    }
+  }
+
+  Radiant
+  AdjointBSDF(
+    vector3_type const& direction_i,
+    vector3_type const& direction_o,
+    vector3_type const& normal
+  ) const noexcept
+  {
+    auto const signed_cos_alpha = Dot(direction_o, normal);
+    auto const ior = signed_cos_alpha > 0 ? 1 / ior_ : ior_;
+    auto const squared_cos_beta =
+      1 - (1 - signed_cos_alpha * signed_cos_alpha) * (ior * ior);
+
+    if (squared_cos_beta < 0) {
+      // total reflection
+      return Radiant(kReflectance * kDiracDelta);
+    }
+
+    // no scaling is required unlike light transport
+    auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_t = 1 - rho_r;
+
+    auto const signed_cos_i = Dot(direction_i, normal);
+
+    if (signed_cos_alpha * signed_cos_i > 0) {
+      // partial reflection
+      return Radiant(rho_r * kReflectance * kDiracDelta);
+    } else {
+      // refraction
+      return Radiant(rho_t * kTransmittance * kDiracDelta);
     }
   }
 
@@ -107,7 +141,7 @@ public:
     }
 
     // transmittance is needed to scale by relative IOR
-    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
     auto const rho_t = (1 - rho_r) / (ior * ior);
     auto const rho = rho_r + rho_t;
 
@@ -140,7 +174,7 @@ public:
     }
 
     // no scaling is required unlike light transport
-    auto const rho_r = schlick(r0_, std::abs(signed_cos_alpha));
+    auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
     auto const rho_t = 1 - rho_r;
 
     auto const signed_cos_i = Dot(direction_i, normal);
@@ -182,7 +216,7 @@ public:
       normal;
 
     // transmittance is needed to scale by relative IOR
-    auto const rho_r = schlick(r0_, cos_alpha);
+    auto const rho_r = Schlick(r0_, cos_alpha);
     auto const rho_t = (1 - rho_r) / (ior * ior);
 
     return {
@@ -221,7 +255,7 @@ public:
       normal;
 
     // no scaling is required unlike light transport
-    auto const rho_r = schlick(r0_, cos_alpha);
+    auto const rho_r = Schlick(r0_, cos_alpha);
     auto const rho_t = 1 - rho_r;
 
     return {
@@ -233,11 +267,11 @@ public:
   }
 
 private:
-  static RealType fresnel(RealType ior) noexcept {
+  static RealType Fresnel(RealType ior) noexcept {
     return std::pow((ior - 1) / (ior + 1), 2);
   }
 
-  static RealType schlick(RealType r0, RealType cos_theta) noexcept {
+  static RealType Schlick(RealType r0, RealType cos_theta) noexcept {
     return r0 + (1 - r0) * std::pow(1 - cos_theta, 5);
   }
 };

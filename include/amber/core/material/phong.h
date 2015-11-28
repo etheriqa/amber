@@ -81,7 +81,7 @@ public:
   }
 
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const& direction_i,
     vector3_type const& direction_o,
     vector3_type const& normal
@@ -115,14 +115,14 @@ public:
 
     if (Uniform(rho, sampler) < rho_d) {
       // sample from the diffuse component
-      auto const direction_i = sampleDiffuse(direction_o, normal, sampler);
+      auto const direction_i = SampleDiffuse(direction_o, normal, sampler);
       return scatter_type(
         direction_i,
         kd_ / rho_d * rho
       );
     } else {
       // sample from the specular component
-      auto const direction_i = sampleSpecular(direction_o, normal, sampler);
+      auto const direction_i = SampleSpecular(direction_o, normal, sampler);
       return scatter_type(
         direction_i,
         ks_ / rho_s * rho *
@@ -133,7 +133,7 @@ public:
 
 private:
   vector3_type
-  sampleDiffuse(
+  SampleDiffuse(
     vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler& sampler
@@ -144,7 +144,7 @@ private:
   }
 
   vector3_type
-  sampleSpecular(
+  SampleSpecular(
     vector3_type const& direction_o,
     vector3_type const& normal,
     Sampler& sampler

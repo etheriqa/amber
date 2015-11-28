@@ -50,11 +50,11 @@ public:
     vector3_type const&
   ) const noexcept
   {
-    return Radiant();
+    return Radiant(kDiracDelta);
   }
 
   radiant_value_type
-  pdf(
+  PDF(
     vector3_type const&,
     vector3_type const&,
     vector3_type const&
@@ -64,13 +64,14 @@ public:
   }
 
   std::vector<scatter_type>
-  distribution(
+  Distribution(
     vector3_type const& direction_o,
     vector3_type const& normal
   ) const
   {
     return {
-      scatter_type(direction_o, Radiant(1)),
+      // behave as transparent
+      scatter_type(-direction_o, Radiant(1)),
     };
   }
 };

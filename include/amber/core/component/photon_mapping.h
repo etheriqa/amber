@@ -76,7 +76,7 @@ public:
   {
     ray_type ray;
     radiant_type power;
-    std::tie(ray, power, std::ignore, std::ignore, std::ignore) =
+    std::tie(ray, power, std::ignore, std::ignore, std::ignore, std::ignore) =
       scene_.GenerateLightRay(sampler);
     power /= n_photon;
 

@@ -110,7 +110,7 @@ private:
   {
     ray_type ray;
     radiant_type weight;
-    std::tie(ray, weight, std::ignore, std::ignore, std::ignore) =
+    std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
       scene.GenerateLightRay(sampler);
 
     for (;;) {
@@ -121,11 +121,13 @@ private:
         break;
       }
 
-      if (object.Surface() == SurfaceType::Eye &&
-          Dot(ray.direction, hit.normal) < 0) {
-        auto const point = camera.ResponsePoint(ray.direction, hit.position);
-        if (point) {
-          image.at(std::get<0>(*point), std::get<1>(*point)) += weight;
+      if (object.Surface() == SurfaceType::Eye) {
+        auto const response = camera.Response(-ray.direction, hit.position);
+        if (response) {
+          auto const& x = std::get<0>(*response);
+          auto const& y = std::get<1>(*response);
+          auto const& sensor_weight = std::get<2>(*response);
+          image.at(x, y) += weight * sensor_weight;
         }
       }
 

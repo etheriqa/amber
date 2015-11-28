@@ -86,20 +86,29 @@ public:
   radiant_value_type
   PDFArea(Object const& object) const noexcept
   {
-    return Sum(object.Radiance()) * kPI / total_power_;
+    return Sum(object.Irradiance()) / total_power_;
   }
 
-  std::tuple<ray_type, Radiant, Object, radiant_value_type, vector3_type>
+  std::tuple<
+    ray_type,           // generated ray
+    Radiant,            // weight
+    Object,             // light object
+    radiant_value_type, // probability in the area measure
+    radiant_value_type, // probability in the projected solid angle measure
+    vector3_type        // normal vector
+  >
   GenerateLightRay(Sampler& sampler) const
   {
     auto const light = SampleLight(sampler);
     auto const ray = light.SamplePoint(sampler);
     auto const p_area = PDFArea(light);
+    auto const p_psa = static_cast<radiant_value_type>(1 / kPI);
     return std::make_tuple(
       ray_type(ray.origin, std::get<0>(HemispherePSA(ray.direction, sampler))),
-      light.Radiance() * kPI / p_area,
+      light.Irradiance() / kPI / p_area / p_psa,
       light,
       p_area,
+      p_psa,
       ray.direction
     );
   }

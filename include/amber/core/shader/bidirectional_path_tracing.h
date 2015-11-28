@@ -48,7 +48,9 @@ private:
   using real_type          = typename Object::real_type;
   using vector3_type       = typename Object::vector3_type;
 
-  using bdpt_type = component::BidirectionalPathTracing<Object>;
+  using bdpt_type =
+    component::BidirectionalPathTracing<radiant_type, real_type>;
+  using bdpt_contribution_type = typename bdpt_type::contribution_type;
 
   std::size_t n_threads_, spp_;
   Progress progress_;
@@ -82,24 +84,35 @@ public:
     image_type image(camera.imageWidth(), camera.imageHeight());
     for (std::size_t i = 0; i < n_threads_; i++) {
       threads.emplace_back([&](){
-        bdpt_type bdpt(scene);
+        bdpt_type bdpt;
         DefaultSampler<> sampler((std::random_device()()));
         image_type buffer(camera.imageWidth(), camera.imageHeight());
         while (progress_.current_job++ < progress_.total_job) {
           for (std::size_t y = 0; y < camera.imageHeight(); y++) {
             for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-              buffer.at(x, y) += bdpt.connect(
-                bdpt.lightTracing(sampler),
-                bdpt.rayTracing(sampler, camera, x, y),
+              radiant_type measurement;
+              std::vector<bdpt_contribution_type> light_image;
+              std::tie(measurement, light_image) = bdpt.Connect(
+                scene,
+                camera,
+                bdpt.GenerateLightPath(scene, camera, sampler),
+                bdpt.GenerateEyePath(scene, camera, x, y, sampler),
                 component::PowerHeuristic<radiant_value_type>()
-                ) / spp_;
+              );
+              for (auto const& contribution : light_image) {
+                auto const& x_light_image = std::get<0>(*contribution.pixel);
+                auto const& y_light_image = std::get<1>(*contribution.pixel);
+                buffer.at(x_light_image, y_light_image) +=
+                  contribution.measurement;
+              }
+              buffer.at(x, y) += measurement;
             }
           }
         }
         std::lock_guard<std::mutex> lock(mtx);
         for (std::size_t y = 0; y < camera.imageHeight(); y++) {
           for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y);
+            image.at(x, y) += buffer.at(x, y) / spp_;
           }
         }
       });

@@ -91,10 +91,6 @@ public:
     auto const aperture = core::primitive::RegularPolygon<real_type>(
       origin, axis, up, n_blades, radius
     );
-    objects.emplace_back(
-      &aperture,
-      new core::material::Eye<radiant_type, real_type>
-    );
     auto const lens = core::lens::Thin<real_type>(focus_distance);
     auto const sensor = core::Sensor<radiant_type, real_type>(
       option.width * option.ssaa,
@@ -103,6 +99,7 @@ public:
     auto const camera = core::Camera<radiant_type, real_type>(
       sensor, &lens, &aperture, origin, axis, up
     );
+    objects.push_back(camera.aperture());
 
     ShaderFactory<object_type>::shader_ptr shader;
     try {

@@ -177,9 +177,9 @@ public:
     for (auto const& hit_point : hit_points) {
       auto& pixel = image.at(hit_point.x, hit_point.y);
 
-      if (Dot(hit_point.normal, hit_point.direction) > 0) {
-        pixel += hit_point.weight * hit_point.object.Radiance();
-      }
+      pixel +=
+        hit_point.weight *
+        hit_point.object.Radiance(hit_point.direction, hit_point.normal);
 
       pixel +=
         hit_point.weight * hit_point.flux /
@@ -203,8 +203,8 @@ private:
   {
     ray_type ray;
     radiant_type weight;
-    std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, sampler);
+    std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
+      camera.GenerateEyeRay(x, y, sampler);
 
     RayTracing(scene, x, y, ray, weight, 0, output, sampler);
   }

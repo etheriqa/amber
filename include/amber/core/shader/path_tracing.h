@@ -115,8 +115,8 @@ private:
   {
     ray_type ray;
     radiant_type weight;
-    std::tie(ray, weight, std::ignore, std::ignore) =
-      camera.GenerateRay(x, y, sampler);
+    std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
+      camera.GenerateEyeRay(x, y, sampler);
 
     radiant_type power;
 
@@ -128,10 +128,7 @@ private:
         break;
       }
 
-      if (object.Surface() == SurfaceType::Light &&
-          Dot(hit.normal, ray.direction) < 0) {
-        power += weight * object.Radiance();
-      }
+      power += weight * object.Radiance(-ray.direction, hit.normal);
 
       auto const scatter =
         object.SampleLight(-ray.direction, hit.normal, sampler);
