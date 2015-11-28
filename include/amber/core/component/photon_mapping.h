@@ -57,8 +57,6 @@ private:
     photon_vector3_type position;
     photon_vector3_type direction;
     radiant_type power;
-
-    operator photon_vector3_type() const noexcept { return position; }
   };
 
   scene_type scene_;
@@ -118,7 +116,11 @@ public:
     RandomAccessIterator last
   ) const
   {
-    return photon_map_type(first, last);
+    return photon_map_type(
+      first,
+      last,
+      [](auto const& photon){ return photon.position; }
+    );
   }
 };
 

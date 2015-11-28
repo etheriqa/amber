@@ -41,6 +41,8 @@ private:
   using aabb_type    = AABB<RealType>;
   using vector3_type = Vector3<RealType>;
 
+  using position_func = std::function<vector3_type(T)>;
+
   struct Node : public T
   {
     Axis axis;
@@ -53,18 +55,25 @@ private:
   struct Comparator
   {
     vector3_type point;
+    position_func position;
 
-    explicit Comparator(vector3_type const& point) noexcept : point(point) {}
+    Comparator(
+      vector3_type const& point,
+      position_func position
+    ) noexcept
+    : point(point), position(position) {}
 
     bool operator()(T const& a, T const& b) const noexcept
     {
       return
-        SquaredLength(static_cast<vector3_type>(a) - point) <
-        SquaredLength(static_cast<vector3_type>(b) - point);
+        SquaredLength(position(a) - point) <
+        SquaredLength(position(b) - point);
     }
   };
 
   std::vector<Node> nodes_;
+
+  position_func position_;
 
   std::mutex     mutable search_buffer_mtx_;
   std::vector<T> mutable search_buffer_;
@@ -75,7 +84,17 @@ public:
     RandomAccessIterator first,
     RandomAccessIterator last
   )
+  : KDTree(first, last, [](T const& x){ return static_cast<vector3_type>(x); })
+  {}
+
+  template <typename RandomAccessIterator>
+  KDTree(
+    RandomAccessIterator first,
+    RandomAccessIterator last,
+    position_func position
+  )
   : nodes_(std::distance(first, last)),
+    position_(position),
     search_buffer_mtx_(),
     search_buffer_()
   {
@@ -123,7 +142,7 @@ public:
     std::sort_heap(
       search_buffer_.begin(),
       search_buffer_.end(),
-      Comparator(search_point)
+      Comparator(search_point, position_)
     );
 
     return search_buffer_;
@@ -148,8 +167,8 @@ private:
         first,
         last,
         aabb_type(),
-        [](auto const& bb, auto const& value) {
-          return bb + static_cast<aabb_type>(static_cast<vector3_type>(value));
+        [&](auto const& bb, auto const& value) {
+          return bb + static_cast<aabb_type>(position_(value));
         }
       );
       auto const x = bb.max().x() - bb.min().x();
@@ -164,17 +183,14 @@ private:
       }
     }
 
-    std::sort(first, last, [axis](auto const& a, auto const& b){
+    std::sort(first, last, [&](auto const& a, auto const& b){
       switch (axis) {
       case Axis::X:
-        return
-          static_cast<vector3_type>(a).x() < static_cast<vector3_type>(b).x();
+        return position_(a).x() < position_(b).x();
       case Axis::Y:
-        return
-          static_cast<vector3_type>(a).y() < static_cast<vector3_type>(b).y();
+        return position_(a).y() < position_(b).y();
       case Axis::Z:
-        return
-          static_cast<vector3_type>(a).z() < static_cast<vector3_type>(b).z();
+        return position_(a).z() < position_(b).z();
       }
     });
 
@@ -207,7 +223,7 @@ private:
     }
 
     auto const& node = nodes_.at(pos);
-    auto const node_point = static_cast<vector3_type>(node);
+    auto const node_point = position_(node);
 
     RealType plane_distance;
     switch (node.axis) {
@@ -232,22 +248,21 @@ private:
       std::push_heap(
         search_buffer_.begin(),
         search_buffer_.end(),
-        Comparator(search_point)
+        Comparator(search_point, position_)
       );
 
       while (search_buffer_.size() > k) {
         std::pop_heap(
           search_buffer_.begin(),
           search_buffer_.end(),
-          Comparator(search_point)
+          Comparator(search_point, position_)
         );
         search_buffer_.pop_back();
       }
 
       if (search_buffer_.size() >= k) {
-        squared_radius = SquaredLength(
-          static_cast<vector3_type>(search_buffer_.front()) - search_point
-        );
+        squared_radius =
+          SquaredLength(position_(search_buffer_.front()) - search_point);
       }
     }
 
