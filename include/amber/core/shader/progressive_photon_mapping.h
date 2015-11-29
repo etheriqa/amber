@@ -155,7 +155,7 @@ public:
           for (std::size_t i = 0; i < n_photons_; i++) {
             pm.PhotonTracing(1, std::back_inserter(photons), sampler);
           }
-          ProgressiveRadianceEstimate(
+          ProgressiveDensityEstimate(
             hit_points.begin(),
             hit_points.end(),
             pm.BuildPhotonMap(photons.begin(), photons.end())
@@ -206,7 +206,7 @@ private:
     std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
       camera.GenerateEyeRay(x, y, sampler);
 
-    RayTracing(scene, x, y, ray, weight, 0, output, sampler);
+    RayTracing(scene, x, y, ray, weight, 1, output, sampler);
   }
 
   template <typename OutputIterator>
@@ -247,7 +247,8 @@ private:
       return;
     }
 
-    if (depth > 10) { // FIXME rewrite with Russian roulette
+    auto const p_russian_roulette = RussianRouletteProbability(depth);
+    if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
       return;
     }
 
@@ -255,14 +256,14 @@ private:
       object.DistributionImportance(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
       auto const new_ray = ray_type(hit.position, scatter.direction);
-      auto const new_weight = weight * scatter.weight;
+      auto const new_weight = weight * scatter.weight / p_russian_roulette;
       RayTracing(scene, x, y, new_ray, new_weight, depth + 1, output, sampler);
     }
   }
 
   template <typename ForwardIterator>
   void
-  ProgressiveRadianceEstimate(
+  ProgressiveDensityEstimate(
     ForwardIterator first,
     ForwardIterator last,
     photon_map_type const& photon_map
@@ -295,6 +296,12 @@ private:
         hit_point.flux *= hit_point.n_photons / n_photons;
       }
     });
+  }
+
+  radiant_value_type
+  RussianRouletteProbability(std::size_t path_length) const noexcept
+  {
+    return path_length < 8 ? 1 : std::pow(0.5, path_length - 8);
   }
 };
 

@@ -132,8 +132,7 @@ public:
              j = progress_.current_job++) {
           auto const x = pixels.at(j) % camera.imageWidth();
           auto const y = pixels.at(j) / camera.imageWidth();
-          auto const power =
-            rendering(scene, camera, photon_map, x, y, sampler);
+          auto const power = Render(scene, camera, photon_map, x, y, sampler);
           std::lock_guard<std::mutex> lock(mtx);
           image.at(x, y) += power;
         }
@@ -148,7 +147,7 @@ public:
 
 private:
   radiant_type
-  rendering(
+  Render(
     scene_type const& scene,
     camera_type const& camera,
     photon_map_type const& photon_map,
@@ -161,17 +160,17 @@ private:
     std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
       camera.GenerateEyeRay(x, y, sampler);
 
-    return estimatePower(scene, photon_map, ray, weight, sampler);
+    return DensityEstimate(scene, photon_map, ray, weight, sampler);
   }
 
   radiant_type
-  estimatePower(
+  DensityEstimate(
     scene_type const& scene,
     photon_map_type const& photon_map,
     ray_type const& ray,
     radiant_type const& weight,
     DefaultSampler<>& sampler,
-    std::size_t depth = 0
+    std::size_t depth = 1
   ) const
   {
     hit_type hit;
@@ -189,10 +188,11 @@ private:
     if (object.Surface() == SurfaceType::Diffuse) {
       auto const photons =
         photon_map.SearchKNeighbours(hit.position, k_nearest_photons_);
-      return weight * filter(photons, hit, object, -ray.direction);
+      return weight * Filter(photons, hit, object, -ray.direction);
     }
 
-    if (depth > 10) { // FIXME rewrite with Russian roulette
+    auto const p_russian_roulette = RussianRouletteProbability(depth);
+    if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
       return radiant_type();
     }
 
@@ -200,11 +200,11 @@ private:
 
     auto const scatters = object.DistributionLight(-ray.direction, hit.normal);
     for (auto const& scatter : scatters) {
-      power += estimatePower(
+      power += DensityEstimate(
         scene,
         photon_map,
         ray_type(hit.position, scatter.direction),
-        weight * scatter.weight,
+        weight * scatter.weight / p_russian_roulette,
         sampler,
         depth + 1
       );
@@ -214,7 +214,7 @@ private:
   }
 
   radiant_type
-  filter(
+  Filter(
     std::vector<photon_type> const& photons,
     hit_type const& hit,
     Object const& object,
@@ -235,6 +235,12 @@ private:
       power += bsdf * photon.power;
     }
     return power / kPI / squared_max_distance;
+  }
+
+  radiant_value_type
+  RussianRouletteProbability(std::size_t path_length) const noexcept
+  {
+    return path_length < 8 ? 1 : std::pow(0.5, path_length - 8);
   }
 };
 

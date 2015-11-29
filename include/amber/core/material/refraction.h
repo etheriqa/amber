@@ -30,8 +30,8 @@
 
 namespace {
 
-std::double_t const kReflectance = 0.95;
-std::double_t const kTransmittance = 0.95;
+std::double_t const kReflectance = 1;
+std::double_t const kTransmittance = 1;
 
 }
 
