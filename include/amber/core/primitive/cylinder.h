@@ -32,7 +32,8 @@ template <typename RealType>
 class Cylinder : public Primitive<RealType>
 {
 public:
-  using vector3_type = Vector3<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
 private:
   using typename Primitive<RealType>::aabb_type;
@@ -41,7 +42,8 @@ private:
 
   using disk_type = Disk<RealType>;
 
-  vector3_type center_, normal_;
+  vector3_type center_;
+  unit_vector3_type normal_;
   RealType radius_, height_;
 
 public:
@@ -118,10 +120,10 @@ public:
     std::tie(u, v) = OrthonormalBasis(normal_);
 
     RealType x, y;
-    std::tie(x, y) = sampler->Circle<RealType>();
+    std::tie(x, y) = Circle<RealType>(sampler);
 
-    auto const origin = center_ + normal_ * height + normal * radius_;
     auto const normal = u * x + v * y;
+    auto const origin = center_ + normal_ * height + normal * radius_;
 
     return ray_type(origin, normal);
   }

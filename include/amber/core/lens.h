@@ -30,8 +30,9 @@ template <typename RealType>
 class Lens : public Writer
 {
 public:
-  using ray_type     = Ray<RealType>;
-  using vector3_type = Vector3<RealType>;
+  using ray_type          = Ray<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
   RealType static constexpr kFocalLength = 0.050;
 
@@ -40,21 +41,21 @@ public:
   virtual RealType const SensorDistance() const noexcept = 0;
 
   virtual
-  vector3_type const // direction
+  unit_vector3_type const // direction
   Outgoing(
-    vector3_type const&, // sensor_point
-    vector3_type const&, // aperture_point
-    vector3_type const&, // origin
-    vector3_type const&  // axis
+    vector3_type const&,     // sensor_point
+    vector3_type const&,     // aperture_point
+    vector3_type const&,     // origin
+    unit_vector3_type const& // axis
   ) const noexcept = 0;
 
   virtual
   vector3_type const // sensor_point
   Incoming(
-    vector3_type const&, // direction
+    unit_vector3_type const&, // direction
     vector3_type const&, // aperture_point
     vector3_type const&, // origin
-    vector3_type const&  // axis
+    unit_vector3_type const&  // axis
   ) const noexcept = 0;
 };
 

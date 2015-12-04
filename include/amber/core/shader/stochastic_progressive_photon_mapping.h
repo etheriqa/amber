@@ -43,19 +43,21 @@ private:
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
   using real_type          = typename Object::real_type;
-  using vector3_type       = typename Object::vector3_type;
+  using unit_vector3_type  = typename Object::unit_vector3_type;
 
   using pm_type = typename component::PhotonMapping<Object>;
 
   using photon_map_type = typename pm_type::photon_map_type;
   using photon_type     = typename pm_type::photon_type;
 
+  using vector3_type = Vector3<real_type>;
+
   struct HitPoint
   {
     Object object;
     vector3_type position;
-    vector3_type normal;
-    vector3_type direction;
+    unit_vector3_type normal;
+    unit_vector3_type direction;
     radiant_type weight;
 
     HitPoint() noexcept

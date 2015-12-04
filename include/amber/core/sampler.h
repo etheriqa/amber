@@ -96,7 +96,7 @@ Circle(Sampler& sampler)
  * based on the ordinary *solid angle* measure.
  */
 template <typename RealType>
-Vector3<RealType> const
+UnitVector3<RealType> const
 SphereSA(Sampler& sampler)
 {
   auto const r0 = Uniform<RealType>(-1, 1, sampler);
@@ -104,7 +104,7 @@ SphereSA(Sampler& sampler)
   auto const cos_theta = r0;
   auto const sin_theta = std::sqrt(1 - r0 * r0);
   auto const phi = 2 * static_cast<RealType>(kPI) * r1;
-  return Vector3<RealType>(
+  return UnitVector3<RealType>(
     cos_theta * std::cos(phi),
     cos_theta * std::sin(phi),
     sin_theta
@@ -116,11 +116,11 @@ SphereSA(Sampler& sampler)
  * based on the ordinary *solid angle* measure.
  */
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
+std::tuple<UnitVector3<RealType> const, RealType const>
 HemisphereSA(
-  Vector3<RealType> const& u,
-  Vector3<RealType> const& v,
-  Vector3<RealType> const& w,
+  UnitVector3<RealType> const& u,
+  UnitVector3<RealType> const& v,
+  UnitVector3<RealType> const& w,
   Sampler& sampler
 ) {
   auto const r0 = Uniform<RealType>(sampler);
@@ -129,18 +129,20 @@ HemisphereSA(
   auto const sin_theta = std::sqrt(1 - r0 * r0);
   auto const phi = 2 * static_cast<RealType>(kPI) * r1;
   return std::make_tuple(
-    u * sin_theta * std::cos(phi) +
-    v * sin_theta * std::sin(phi) +
-    w * cos_theta,
+    static_cast<UnitVector3<RealType>>(
+      u * sin_theta * std::cos(phi) +
+      v * sin_theta * std::sin(phi) +
+      w * cos_theta
+    ),
     cos_theta
   );
 }
 
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
-HemisphereSA(Vector3<RealType> const& w, Sampler& sampler)
+std::tuple<UnitVector3<RealType> const, RealType const>
+HemisphereSA(UnitVector3<RealType> const& w, Sampler& sampler)
 {
-  Vector3<RealType> u, v;
+  UnitVector3<RealType> u, v;
   std::tie(u, v) = OrthonormalBasis(w);
   return HemisphereSA(u, v, w, sampler);
 }
@@ -150,11 +152,11 @@ HemisphereSA(Vector3<RealType> const& w, Sampler& sampler)
  * based on the *projected solid angle* measure (proportional to the cosine).
  */
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
+std::tuple<UnitVector3<RealType> const, RealType const>
 HemispherePSA(
-  Vector3<RealType> const& u,
-  Vector3<RealType> const& v,
-  Vector3<RealType> const& w,
+  UnitVector3<RealType> const& u,
+  UnitVector3<RealType> const& v,
+  UnitVector3<RealType> const& w,
   Sampler& sampler
 ) {
   auto const r0 = Uniform<RealType>(sampler);
@@ -163,28 +165,30 @@ HemispherePSA(
   auto const sin_theta = std::sqrt(1 - r0);
   auto const phi = 2 * static_cast<RealType>(kPI) * r1;
   return std::make_tuple(
-    u * sin_theta * std::cos(phi) +
-    v * sin_theta * std::sin(phi) +
-    w * cos_theta,
+    static_cast<UnitVector3<RealType>>(
+      u * sin_theta * std::cos(phi) +
+      v * sin_theta * std::sin(phi) +
+      w * cos_theta
+    ),
     cos_theta
   );
 }
 
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
-HemispherePSA(const Vector3<RealType>& w, Sampler& sampler)
+std::tuple<UnitVector3<RealType> const, RealType const>
+HemispherePSA(UnitVector3<RealType> const& w, Sampler& sampler)
 {
-  Vector3<RealType> u, v;
+  UnitVector3<RealType> u, v;
   std::tie(u, v) = OrthonormalBasis(w);
   return HemispherePSA(u, v, w, sampler);
 }
 
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
+std::tuple<UnitVector3<RealType> const, RealType const>
 CosinePower(
-  Vector3<RealType> const& u,
-  Vector3<RealType> const& v,
-  Vector3<RealType> const& w,
+  UnitVector3<RealType> const& u,
+  UnitVector3<RealType> const& v,
+  UnitVector3<RealType> const& w,
   RealType exponent,
   Sampler& sampler
 )
@@ -195,18 +199,20 @@ CosinePower(
   auto const sin_theta = std::sqrt(1 - cos_theta * cos_theta);
   auto const phi = 2 * static_cast<RealType>(kPI) * r1;
   return std::make_tuple(
-    u * sin_theta * std::cos(phi) +
-    v * sin_theta * std::sin(phi) +
-    w * cos_theta,
+    static_cast<UnitVector3<RealType>>(
+      u * sin_theta * std::cos(phi) +
+      v * sin_theta * std::sin(phi) +
+      w * cos_theta
+    ),
     cos_theta
   );
 }
 
 template <typename RealType>
-std::tuple<Vector3<RealType> const, RealType const>
-CosinePower(Vector3<RealType> const& w, RealType exponent, Sampler& sampler)
+std::tuple<UnitVector3<RealType> const, RealType const>
+CosinePower(UnitVector3<RealType> const& w, RealType exponent, Sampler& sampler)
 {
-  Vector3<RealType> u, v;
+  UnitVector3<RealType> u, v;
   std::tie(u, v) = OrthonormalBasis(w);
   return CosinePower(u, v, w, exponent, sampler);
 }

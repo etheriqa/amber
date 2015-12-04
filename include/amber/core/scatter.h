@@ -26,14 +26,15 @@ namespace amber {
 namespace core {
 
 template <typename Radiant, typename RealType>
-struct Scatter {
-  using vector3_type       = Vector3<RealType>;
+struct Scatter
+{
+  using unit_vector3_type = UnitVector3<RealType>;
 
-  vector3_type direction;
+  unit_vector3_type direction;
   Radiant weight;
 
   Scatter(
-    vector3_type const& direction,
+    unit_vector3_type const& direction,
     Radiant const& weight
   ) noexcept
   : direction(direction),

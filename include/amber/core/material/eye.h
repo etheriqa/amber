@@ -33,7 +33,7 @@ class Eye : public SymmetricBSDF<Radiant, RealType>
 private:
   using typename Material<Radiant, RealType>::radiant_value_type;
   using typename Material<Radiant, RealType>::scatter_type;
-  using typename Material<Radiant, RealType>::vector3_type;
+  using typename Material<Radiant, RealType>::unit_vector3_type;
 
 public:
   Eye() noexcept {}
@@ -45,9 +45,9 @@ public:
 
   Radiant
   BSDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept
   {
     return Radiant(kDiracDelta);
@@ -55,9 +55,9 @@ public:
 
   radiant_value_type
   PDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept
   {
     return kDiracDelta;
@@ -65,8 +65,8 @@ public:
 
   std::vector<scatter_type>
   Distribution(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
     return {

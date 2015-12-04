@@ -31,6 +31,7 @@ class Thin : public Lens<RealType>
 {
 private:
   using typename Lens<RealType>::ray_type;
+  using typename Lens<RealType>::unit_vector3_type;
   using typename Lens<RealType>::vector3_type;
 
   RealType focal_length_, image_distance_, sensor_distance_;
@@ -56,12 +57,12 @@ public:
       << ")" << std::endl;
   }
 
-  vector3_type const
+  unit_vector3_type const
   Outgoing(
     vector3_type const& sensor_point,
     vector3_type const& aperture_point,
     vector3_type const& origin,
-    vector3_type const& axis
+    unit_vector3_type const& axis
   ) const noexcept
   {
     auto const ratio = image_distance_ / focal_length_;
@@ -71,10 +72,10 @@ public:
 
   vector3_type const
   Incoming(
-    vector3_type const& direction,
+    unit_vector3_type const& direction,
     vector3_type const& aperture_point,
     vector3_type const& origin,
-    vector3_type const& axis
+    unit_vector3_type const& axis
   ) const noexcept
   {
     auto const ratio = sensor_distance_ / image_distance_;

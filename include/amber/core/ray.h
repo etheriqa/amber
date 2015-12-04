@@ -29,14 +29,19 @@ namespace core {
 template <typename RealType>
 struct Ray : public Writer
 {
-  using vector3_type = Vector3<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
-  vector3_type origin, direction;
+  vector3_type origin;
+  unit_vector3_type direction;
 
   Ray() noexcept : origin(), direction() {}
 
   Ray(vector3_type const& origin, vector3_type const& direction) noexcept
-  : origin(origin), direction(Normalize(direction)) {}
+  : Ray(origin, Normalize(direction)) {}
+
+  Ray(vector3_type const& origin, unit_vector3_type const& direction) noexcept
+  : origin(origin), direction(direction) {}
 
   void Write(std::ostream& os) const noexcept
   {

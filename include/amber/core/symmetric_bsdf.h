@@ -31,13 +31,13 @@ class SymmetricBSDF : public Material<Radiant, RealType>
 public:
   using typename Material<Radiant, RealType>::radiant_value_type;
   using typename Material<Radiant, RealType>::scatter_type;
-  using typename Material<Radiant, RealType>::vector3_type;
+  using typename Material<Radiant, RealType>::unit_vector3_type;
 
   Radiant
   AdjointBSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return this->BSDF(direction_i, direction_o, normal);
@@ -45,9 +45,9 @@ public:
 
   radiant_value_type
   PDFLight(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return PDF(direction_i, direction_o, normal);
@@ -55,9 +55,9 @@ public:
 
   radiant_value_type
   PDFImportance(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return PDF(direction_i, direction_o, normal);
@@ -65,8 +65,8 @@ public:
 
   scatter_type
   SampleLight(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -75,8 +75,8 @@ public:
 
   scatter_type
   SampleImportance(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const {
     return Sample(direction_o, normal, sampler);
@@ -84,8 +84,8 @@ public:
 
   std::vector<scatter_type>
   DistributionLight(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
     return Distribution(direction_o, normal);
@@ -93,8 +93,8 @@ public:
 
   std::vector<scatter_type>
   DistributionImportance(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
     return Distribution(direction_o, normal);
@@ -104,16 +104,16 @@ protected:
   virtual
   radiant_value_type
   PDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept = 0;
 
   virtual
   scatter_type
   Sample(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -123,8 +123,8 @@ protected:
   virtual
   std::vector<scatter_type>
   Distribution(
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const
   {
     throw std::logic_error("specularScatters is not implemented");

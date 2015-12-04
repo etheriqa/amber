@@ -50,12 +50,13 @@ private:
   using radiant_value_type  = typename Object::radiant_value_type;
   using ray_type            = typename Object::ray_type;
 
-  using photon_vector3_type = Vector3<photon_real_type>;
+  using photon_unit_vector3_type = UnitVector3<photon_real_type>;
+  using photon_vector3_type      = Vector3<photon_real_type>;
 
   struct Photon
   {
     photon_vector3_type position;
-    photon_vector3_type direction;
+    photon_unit_vector3_type direction;
     radiant_type power;
   };
 

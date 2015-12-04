@@ -39,7 +39,7 @@ class LightSampler
 public:
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
-  using vector3_type       = typename Object::vector3_type;
+  using unit_vector3_type  = typename Object::unit_vector3_type;
 
 private:
   struct Node
@@ -95,7 +95,7 @@ public:
     Object,             // light object
     radiant_value_type, // probability in the area measure
     radiant_value_type, // probability in the projected solid angle measure
-    vector3_type        // normal vector
+    unit_vector3_type   // normal vector
   >
   GenerateLightRay(Sampler& sampler) const
   {

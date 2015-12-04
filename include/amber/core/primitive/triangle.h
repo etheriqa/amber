@@ -33,7 +33,8 @@ template <typename RealType>
 class Triangle : public Primitive<RealType>
 {
 public:
-  using vector3_type = Vector3<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
 private:
   using typename Primitive<RealType>::aabb_type;
@@ -41,7 +42,7 @@ private:
   using typename Primitive<RealType>::ray_type;
 
   vector3_type v0_, v1_, v2_;
-  vector3_type normal_;
+  unit_vector3_type normal_;
 
 public:
   Triangle(

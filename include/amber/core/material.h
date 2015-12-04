@@ -37,7 +37,7 @@ class Material
 public:
   using radiant_value_type = typename Radiant::value_type;
   using scatter_type       = Scatter<Radiant, RealType>;
-  using vector3_type       = Vector3<RealType>;
+  using unit_vector3_type  = UnitVector3<RealType>;
 
 public:
   virtual ~Material() {}
@@ -51,47 +51,47 @@ public:
   virtual
   Radiant
   Radiance(
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept { return Radiant(); }
 
   virtual
   Radiant
   BSDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept = 0;
 
   virtual
   Radiant
   AdjointBSDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept = 0;
 
   virtual
   radiant_value_type
   PDFLight(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept = 0;
 
   virtual
   radiant_value_type
   PDFImportance(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept = 0;
 
   virtual
   scatter_type
   SampleLight(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -101,8 +101,8 @@ public:
   virtual
   scatter_type
   SampleImportance(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -112,8 +112,8 @@ public:
   virtual
   std::vector<scatter_type>
   DistributionLight(
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const
   {
     throw std::logic_error("distributionLight it not implemented");
@@ -122,8 +122,8 @@ public:
   virtual
   std::vector<scatter_type>
   DistributionImportance(
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const
   {
     throw std::logic_error("distributionImportance it not implemented");

@@ -41,12 +41,13 @@ struct BDPTEvent
 {
   using object_type        = Object<Radiant, RealType>;
   using radiant_value_type = typename Radiant::value_type;
+  using unit_vector3_type  = UnitVector3<RealType>;
   using vector3_type       = Vector3<RealType>;
 
   object_type object;
   vector3_type position;
-  vector3_type normal;
-  vector3_type direction;
+  unit_vector3_type normal;
+  unit_vector3_type direction;
   Radiant weight;
   radiant_value_type geometry_factor;
   radiant_value_type p_backward;
@@ -97,7 +98,7 @@ private:
   using radiant_value_type = typename Radiant::value_type;
   using ray_type           = Ray<RealType>;
   using scatter_type       = Scatter<Radiant, RealType>;
-  using vector3_type       = Vector3<RealType>;
+  using unit_vector3_type  = UnitVector3<RealType>;
 
 private:
   struct PathGenerationPolicy
@@ -106,8 +107,8 @@ private:
     scatter_type
     Scatter(
       object_type const& object,
-      vector3_type const& direction_o,
-      vector3_type const& normal,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal,
       Sampler& sampler
     ) const = 0;
 
@@ -115,27 +116,27 @@ private:
     radiant_value_type
     PDFForward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const = 0;
 
     virtual
     radiant_value_type
     PDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const = 0;
 
     virtual
     Radiant
     BSDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const = 0;
   };
 
@@ -144,8 +145,8 @@ private:
     scatter_type
     Scatter(
       object_type const& object,
-      vector3_type const& direction_o,
-      vector3_type const& normal,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal,
       Sampler& sampler
     ) const
     {
@@ -155,9 +156,9 @@ private:
     radiant_value_type
     PDFForward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.PDFImportance(direction_i, direction_o, normal);
@@ -166,9 +167,9 @@ private:
     radiant_value_type
     PDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.PDFLight(direction_i, direction_o, normal);
@@ -177,9 +178,9 @@ private:
     Radiant
     BSDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.BSDF(direction_i, direction_o, normal);
@@ -191,8 +192,8 @@ private:
     scatter_type
     Scatter(
       object_type const& object,
-      vector3_type const& direction_o,
-      vector3_type const& normal,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal,
       Sampler& sampler
     ) const
     {
@@ -202,9 +203,9 @@ private:
     radiant_value_type
     PDFForward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.PDFLight(direction_i, direction_o, normal);
@@ -213,9 +214,9 @@ private:
     radiant_value_type
     PDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.PDFImportance(direction_i, direction_o, normal);
@@ -224,9 +225,9 @@ private:
     Radiant
     BSDFBackward(
       object_type const& object,
-      vector3_type const& direction_i,
-      vector3_type const& direction_o,
-      vector3_type const& normal
+      unit_vector3_type const& direction_i,
+      unit_vector3_type const& direction_o,
+      unit_vector3_type const& normal
     ) const
     {
       return object.AdjointBSDF(direction_i, direction_o, normal);
@@ -258,7 +259,7 @@ public:
     std::vector<event_type> events;
     ray_type ray;
     Radiant weight;
-    vector3_type normal;
+    unit_vector3_type normal;
 
     {
       object_type object;
@@ -270,7 +271,7 @@ public:
       event.object          = object;
       event.position        = ray.origin;
       event.normal          = normal;
-      event.direction       = vector3_type();
+      event.direction       = unit_vector3_type();
       event.weight          = weight;
       event.geometry_factor = std::numeric_limits<RealType>::quiet_NaN();
       event.p_backward      = std::numeric_limits<RealType>::quiet_NaN();
@@ -303,7 +304,7 @@ public:
     std::vector<event_type> events;
     ray_type ray;
     Radiant weight;
-    vector3_type normal;
+    unit_vector3_type normal;
 
     {
       object_type object;
@@ -315,7 +316,7 @@ public:
       event.object          = object;
       event.position        = ray.origin;
       event.normal          = normal;
-      event.direction       = vector3_type();
+      event.direction       = unit_vector3_type();
       event.weight          = weight;
       event.geometry_factor = std::numeric_limits<RealType>::quiet_NaN();
       event.p_backward      = std::numeric_limits<RealType>::quiet_NaN();
@@ -387,7 +388,7 @@ private:
     scene_type const& scene,
     ray_type& ray,
     Radiant& weight,
-    vector3_type& normal,
+    unit_vector3_type& normal,
     OutputIterator output,
     Sampler& sampler
   ) const

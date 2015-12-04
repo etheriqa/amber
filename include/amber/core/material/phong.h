@@ -34,7 +34,7 @@ class Phong : public SymmetricBSDF<Radiant, RealType>
 private:
   using typename Material<Radiant, RealType>::radiant_value_type;
   using typename Material<Radiant, RealType>::scatter_type;
-  using typename Material<Radiant, RealType>::vector3_type;
+  using typename Material<Radiant, RealType>::unit_vector3_type;
 
   Radiant kd_;
   Radiant ks_;
@@ -58,9 +58,9 @@ public:
 
   Radiant
   BSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const signed_cos_i = Dot(direction_i, normal);
@@ -82,9 +82,9 @@ public:
 
   radiant_value_type
   PDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const rho_d = Sum(kd_);
@@ -104,8 +104,8 @@ public:
 
   scatter_type
   Sample(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -132,10 +132,10 @@ public:
   }
 
 private:
-  vector3_type
+  unit_vector3_type
   SampleDiffuse(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -143,10 +143,10 @@ private:
     return std::get<0>(HemispherePSA(w, sampler));
   }
 
-  vector3_type
+  unit_vector3_type
   SampleSpecular(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {

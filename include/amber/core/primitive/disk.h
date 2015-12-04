@@ -33,14 +33,16 @@ template <typename RealType>
 class Disk : public Primitive<RealType>
 {
 public:
-  using vector3_type = Vector3<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
 private:
   using typename Primitive<RealType>::aabb_type;
   using typename Primitive<RealType>::hit_type;
   using typename Primitive<RealType>::ray_type;
 
-  vector3_type center_, normal_;
+  vector3_type center_;
+  unit_vector3_type normal_;
   RealType radius_;
 
 public:

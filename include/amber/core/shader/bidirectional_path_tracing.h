@@ -46,7 +46,7 @@ private:
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
   using real_type          = typename Object::real_type;
-  using vector3_type       = typename Object::vector3_type;
+  using unit_vector3_type  = typename Object::unit_vector3_type;
 
   using bdpt_type =
     component::BidirectionalPathTracing<radiant_type, real_type>;

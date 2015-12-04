@@ -45,7 +45,7 @@ class Refraction : public Material<Radiant, RealType>
 private:
   using typename Material<Radiant, RealType>::radiant_value_type;
   using typename Material<Radiant, RealType>::scatter_type;
-  using typename Material<Radiant, RealType>::vector3_type;
+  using typename Material<Radiant, RealType>::unit_vector3_type;
 
   radiant_value_type ior_, r0_;
 
@@ -60,9 +60,9 @@ public:
 
   Radiant
   BSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -93,9 +93,9 @@ public:
 
   Radiant
   AdjointBSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -125,9 +125,9 @@ public:
 
   radiant_value_type
   PDFLight(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -158,9 +158,9 @@ public:
 
   radiant_value_type
   PDFImportance(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -190,8 +190,8 @@ public:
 
   std::vector<scatter_type>
   DistributionLight(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -210,10 +210,11 @@ public:
 
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const cos_beta = std::sqrt(squared_cos_beta);
-    auto const direction_t =
+    auto const direction_t = static_cast<unit_vector3_type>(
       -ior * direction_o +
       ((signed_cos_alpha < 0 ? 1 : -1) * cos_beta + ior * signed_cos_alpha) *
-      normal;
+      normal
+    );
 
     // transmittance is needed to scale by relative IOR
     auto const rho_r = Schlick(r0_, cos_alpha);
@@ -229,8 +230,8 @@ public:
 
   std::vector<scatter_type>
   DistributionImportance(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
     auto const signed_cos_alpha = Dot(direction_o, normal);
@@ -249,10 +250,11 @@ public:
 
     auto const cos_alpha = std::abs(signed_cos_alpha);
     auto const cos_beta = std::sqrt(squared_cos_beta);
-    auto const direction_t =
+    auto const direction_t = static_cast<unit_vector3_type>(
       -ior * direction_o +
       ((signed_cos_alpha < 0 ? 1 : -1) * cos_beta + ior * signed_cos_alpha) *
-      normal;
+      normal
+    );
 
     // no scaling is required unlike light transport
     auto const rho_r = Schlick(r0_, cos_alpha);

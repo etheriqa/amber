@@ -39,7 +39,7 @@ public:
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
   using real_type          = typename Object::real_type;
-  using vector3_type       = typename Object::vector3_type;
+  using unit_vector3_type  = typename Object::unit_vector3_type;
 
   using acceleration_ptr   = std::shared_ptr<Acceleration<Object>>;
   using light_sampler_ptr  = std::shared_ptr<component::LightSampler<Object>>;
@@ -95,7 +95,7 @@ public:
     Object,
     radiant_value_type,
     radiant_value_type,
-    vector3_type
+    unit_vector3_type
   >
   GenerateLightRay(Sampler& sampler) const
   {

@@ -33,14 +33,16 @@ template <typename RealType>
 class RegularPolygon : public Primitive<RealType>
 {
 public:
-  using vector3_type = Vector3<RealType>;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
 private:
   using typename Primitive<RealType>::aabb_type;
   using typename Primitive<RealType>::hit_type;
   using typename Primitive<RealType>::ray_type;
 
-  vector3_type center_, u_, v_, w_;
+  vector3_type center_;
+  unit_vector3_type u_, v_, w_;
   std::size_t n_;
   RealType angle_, long_radius_, short_radius_, surface_area_;
   aabb_type aabb_;

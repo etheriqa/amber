@@ -98,6 +98,36 @@ public:
 };
 
 template <typename T>
+class UnitVector3 : public Vector3<T>
+{
+public:
+  UnitVector3() noexcept : Vector3<T>() {}
+
+  UnitVector3(T const& x, T const& y, T const& z) noexcept
+  : Vector3<T>(x, y, z) {}
+
+  template <typename U>
+  explicit UnitVector3(Vector3<U> const& v) noexcept
+  : Vector3<T>(v.x(), v.y(), v.z()) {}
+
+  template <typename U>
+  operator UnitVector3<U>() const noexcept
+  {
+    return UnitVector3<U>(this->x(), this->y(), this->z());
+  }
+
+  UnitVector3<T> const& operator+() const noexcept
+  {
+    return *this;
+  }
+
+  UnitVector3<T> const operator-() const noexcept
+  {
+    return UnitVector3<T>(-this->x(), -this->y(), -this->z());
+  }
+};
+
+template <typename T>
 T const
 Dot(Vector3<T> const& u, Vector3<T> const& v) noexcept
 {
@@ -119,10 +149,11 @@ Length(Vector3<T> const& v) noexcept
 }
 
 template <typename T>
-Vector3<T> const
+UnitVector3<T> const
 Normalize(Vector3<T> const& v) noexcept
 {
-  return v / Length(v);
+  auto const length = Length(v);
+  return UnitVector3<T>(v.x() / length, v.y() / length, v.z() / length);
 }
 
 template <typename T>
@@ -137,8 +168,8 @@ Cross(Vector3<T> const& u, Vector3<T> const& v) noexcept
 }
 
 template <typename T>
-std::tuple<Vector3<T> const, Vector3<T> const>
-OrthonormalBasis(Vector3<T> const& w) noexcept
+std::tuple<UnitVector3<T> const, UnitVector3<T> const>
+OrthonormalBasis(UnitVector3<T> const& w) noexcept
 {
   auto const u = Normalize(Cross(
     w,

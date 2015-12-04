@@ -33,7 +33,7 @@ class Light : public SymmetricBSDF<Radiant, RealType>
 private:
   using typename Material<Radiant, RealType>::radiant_value_type;
   using typename Material<Radiant, RealType>::scatter_type;
-  using typename Material<Radiant, RealType>::vector3_type;
+  using typename Material<Radiant, RealType>::unit_vector3_type;
 
   Radiant radiance_;
 
@@ -49,8 +49,8 @@ public:
 
   Radiant
   Radiance(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     if (Dot(direction_o, normal) <= 0) {
@@ -62,9 +62,9 @@ public:
 
   Radiant
   BSDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept
   {
     return Radiant();
@@ -72,9 +72,9 @@ public:
 
   radiant_value_type
   PDF(
-    vector3_type const&,
-    vector3_type const&,
-    vector3_type const&
+    unit_vector3_type const&,
+    unit_vector3_type const&,
+    unit_vector3_type const&
   ) const noexcept
   {
     return 1 / kPI;
@@ -82,13 +82,13 @@ public:
 
   scatter_type
   Sample(
-    vector3_type const& direction_o,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
     auto const w = Dot(direction_o, normal) > 0 ? normal : -normal;
-    vector3_type direction_i;
+    unit_vector3_type direction_i;
     std::tie(direction_i, std::ignore) = HemispherePSA(w, sampler);
     return scatter_type(direction_i, Radiant());
   }

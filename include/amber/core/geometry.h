@@ -26,24 +26,26 @@ namespace amber {
 namespace core {
 
 template <typename RealType>
-Vector3<RealType> const
+UnitVector3<RealType> const
 PerfectReflection(
-  Vector3<RealType> const& incident,
-  Vector3<RealType> const& normal
+  UnitVector3<RealType> const& incident,
+  UnitVector3<RealType> const& normal
 ) noexcept
 {
   return PerfectReflection(incident, normal, Dot(incident, normal));
 }
 
 template <typename RealType>
-Vector3<RealType> const
+UnitVector3<RealType> const
 PerfectReflection(
-  Vector3<RealType> const& incident,
-  Vector3<RealType> const& normal,
+  UnitVector3<RealType> const& incident,
+  UnitVector3<RealType> const& normal,
   RealType signed_cos_theta
 ) noexcept
 {
-  return 2 * signed_cos_theta * normal - incident;
+  return static_cast<UnitVector3<RealType>>(
+    2 * signed_cos_theta * normal - incident
+  );
 }
 
 template <typename RealType>

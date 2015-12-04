@@ -49,13 +49,15 @@ public:
   using radiant_value_type = typename Radiant::value_type;
   using ray_type           = Ray<RealType>;
   using sensor_type        = Sensor<Radiant, RealType>;
+  using unit_vector3_type  = UnitVector3<RealType>;
   using vector3_type       = Vector3<RealType>;
 
 private:
   sensor_type sensor_;
   lens_type const* lens_;
   object_type aperture_;
-  vector3_type origin_, u_, v_, w_;
+  vector3_type origin_;
+  unit_vector3_type u_, v_, w_;
 
 public:
   Camera(
@@ -109,7 +111,7 @@ public:
   }
 
   radiant_value_type const
-  PDFDirection(vector3_type const& direction) const noexcept
+  PDFDirection(unit_vector3_type const& direction) const noexcept
   {
     return
       imageSize() *
@@ -124,7 +126,7 @@ public:
     object_type,        // eye object
     radiant_value_type, // probability in the area measure
     radiant_value_type, // probability in the projected solid angle measure
-    vector3_type        // normal vector
+    unit_vector3_type   // normal vector
   >
   GenerateEyeRay(
     std::size_t x,
@@ -162,7 +164,7 @@ public:
 
   boost::optional<std::tuple<std::size_t, std::size_t, radiant_value_type>>
   Response(
-    vector3_type const& direction,
+    unit_vector3_type const& direction,
     vector3_type const& aperture_point
   ) const noexcept
   {

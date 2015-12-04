@@ -32,24 +32,34 @@ namespace core {
 template <typename RealType>
 struct Hit : public Writer
 {
-  using real_type    = RealType;
+  using unit_vector3_type = UnitVector3<RealType>;
+  using vector3_type      = Vector3<RealType>;
 
-  using hit_type     = Hit<real_type>;
-  using vector3_type = Vector3<real_type>;
-
-  vector3_type position, normal;
-  real_type distance;
+  vector3_type position;
+  unit_vector3_type normal;
+  RealType distance;
 
   Hit() noexcept
-  : position(vector3_type()),
-    normal(vector3_type()),
-    distance(std::numeric_limits<real_type>::quiet_NaN())
+  : position(),
+    normal(),
+    distance(std::numeric_limits<RealType>::quiet_NaN())
   {}
 
-  Hit(const vector3_type& p, const vector3_type& n, real_type d) noexcept
-  : position(p),
-    normal(Normalize(n)),
-    distance(d)
+  Hit(
+    vector3_type const& position,
+    vector3_type const& normal,
+    RealType distance
+  ) noexcept
+  : Hit(position, Normalize(normal), distance) {}
+
+  Hit(
+    vector3_type const& position,
+    unit_vector3_type const& normal,
+    RealType distance
+  ) noexcept
+  : position(position),
+    normal(normal),
+    distance(distance)
   {}
 
   operator bool() const noexcept

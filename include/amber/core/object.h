@@ -44,7 +44,7 @@ public:
 
   using radiant_value_type = typename material_type::radiant_value_type;
   using scatter_type       = typename material_type::scatter_type;
-  using vector3_type       = typename material_type::vector3_type;
+  using unit_vector3_type  = typename material_type::unit_vector3_type;
 
   struct Hash
   {
@@ -123,8 +123,8 @@ public:
 
   Radiant
   Radiance(
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return material_->Radiance(direction_o, normal);
@@ -132,9 +132,9 @@ public:
 
   Radiant
   BSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return material_->BSDF(direction_i, direction_o, normal);
@@ -142,9 +142,9 @@ public:
 
   Radiant
   AdjointBSDF(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return material_->AdjointBSDF(direction_i, direction_o, normal);
@@ -152,9 +152,9 @@ public:
 
   radiant_value_type
   PDFLight(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return material_->PDFLight(direction_i, direction_o, normal);
@@ -162,9 +162,9 @@ public:
 
   radiant_value_type
   PDFImportance(
-    vector3_type const& direction_i,
-    vector3_type const& direction_o,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept
   {
     return material_->PDFImportance(direction_i, direction_o, normal);
@@ -172,8 +172,8 @@ public:
 
   scatter_type
   SampleLight(
-    vector3_type const& direction_i,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -182,8 +182,8 @@ public:
 
   scatter_type
   SampleImportance(
-    vector3_type const& direction_i,
-    vector3_type const& normal,
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& normal,
     Sampler& sampler
   ) const
   {
@@ -192,8 +192,8 @@ public:
 
   std::vector<scatter_type>
   DistributionLight(
-    vector3_type const& direction_i,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& normal
   ) const
   {
     return material_->DistributionLight(direction_i, normal);
@@ -201,8 +201,8 @@ public:
 
   std::vector<scatter_type>
   DistributionImportance(
-    vector3_type const& direction_i,
-    vector3_type const& normal
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& normal
   ) const
   {
     return material_->DistributionImportance(direction_i, normal);
