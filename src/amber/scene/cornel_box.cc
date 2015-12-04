@@ -18,7 +18,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-
 #include "core/material/lambertian.h"
 #include "core/material/light.h"
 #include "core/material/phong.h"
@@ -89,7 +88,7 @@ CornelBox()
       vector3_type(-1, -1, -1),
       vector3_type( 1, -1, -1),
     }),
-    new Phong(radiant_type(.1), radiant_type(.5), 256)
+    new Phong(radiant_type(), radiant_type(.95), 16)
   );
   // floor
   objects.emplace_back(
