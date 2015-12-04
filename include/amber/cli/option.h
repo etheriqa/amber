@@ -20,16 +20,37 @@
 
 #pragma once
 
-#include <vector>
-
-#include "core/rgb.h"
-#include "core/object.h"
+#include <cmath>
+#include <string>
 
 namespace amber {
-namespace scene {
+namespace cli {
 
-std::vector<core::Object<core::RGB<std::float_t>, std::double_t>>
-CornelBox();
+struct CommandLineOption
+{
+  std::string acceleration;
+  std::double_t alpha;
+  std::double_t exposure;
+  std::size_t height;
+  bool help;
+  std::double_t initial_radius;
+  std::size_t k;
+  std::size_t n_mutations;
+  std::string output;
+  std::double_t p_large;
+  std::size_t n_passes;
+  std::size_t n_photons;
+  std::size_t n_samples;
+  std::size_t n_seeds;
+  std::string shader;
+  std::size_t spp;
+  std::size_t ssaa;
+  std::size_t n_threads;
+  std::size_t width;
+};
+
+CommandLineOption
+ParseCommandLineOption(int argc, char** argv);
 
 }
 }

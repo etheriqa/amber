@@ -21,10 +21,8 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
-#include <boost/program_options.hpp>
-
+#include "cli/option.h"
 #include "core/shader/bidirectional_path_tracing.h"
 #include "core/shader/light_tracing.h"
 #include "core/shader/path_tracing.h"
@@ -64,69 +62,67 @@ private:
 
 public:
   shader_ptr
-  operator()(boost::program_options::variables_map const& vm) const
+  operator()(CommandLineOption const& option) const
   {
-    auto const shader = vm.at("shader").as<std::string>();
-
-    if (shader == "pt") {
+    if (option.shader == "pt") {
       return std::make_shared<pt_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("spp").as<size_type>()
+        option.n_threads,
+        option.spp
       );
     }
 
-    if (shader == "lt") {
+    if (option.shader == "lt") {
       return std::make_shared<lt_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("samples").as<size_type>()
+        option.n_threads,
+        option.n_samples
       );
     }
 
-    if (shader == "bdpt") {
+    if (option.shader == "bdpt") {
       return std::make_shared<bdpt_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("spp").as<size_type>()
+        option.n_threads,
+        option.spp
       );
     }
 
-    if (shader == "pssmlt") {
+    if (option.shader == "pssmlt") {
       return std::make_shared<pssmlt_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("seeds").as<size_type>(),
-        vm.at("mutations").as<size_type>(),
-        vm.at("p-large").as<real_type>()
+        option.n_threads,
+        option.n_seeds,
+        option.n_mutations,
+        option.p_large
       );
     }
 
-    if (shader == "pm") {
+    if (option.shader == "pm") {
       return std::make_shared<pm_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("photons").as<size_type>(),
-        vm.at("k").as<size_type>()
+        option.n_threads,
+        option.n_photons,
+        option.k
       );
     }
 
-    if (shader == "ppm") {
+    if (option.shader == "ppm") {
       return std::make_shared<ppm_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("photons").as<size_type>(),
-        vm.at("passes").as<size_type>(),
-        vm.at("initial-radius").as<real_type>(),
-        vm.at("alpha").as<real_type>()
+        option.n_threads,
+        option.n_photons,
+        option.n_passes,
+        option.initial_radius,
+        option.alpha
       );
     }
 
-    if (shader == "sppm") {
+    if (option.shader == "sppm") {
       return std::make_shared<sppm_type>(
-        vm.at("threads").as<size_type>(),
-        vm.at("photons").as<size_type>(),
-        vm.at("passes").as<size_type>(),
-        vm.at("initial-radius").as<real_type>(),
-        vm.at("alpha").as<real_type>()
+        option.n_threads,
+        option.n_photons,
+        option.n_passes,
+        option.initial_radius,
+        option.alpha
       );
     }
 
-    throw UnknownShaderError(shader);
+    throw UnknownShaderError(option.shader);
   }
 };
 

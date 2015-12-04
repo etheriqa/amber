@@ -20,16 +20,27 @@
 
 #pragma once
 
-#include <vector>
+#include <cmath>
+#include <string>
 
+#include "core/image.h"
 #include "core/rgb.h"
-#include "core/object.h"
 
 namespace amber {
-namespace scene {
+namespace cli {
 
-std::vector<core::Object<core::RGB<std::float_t>, std::double_t>>
-CornelBox();
+void
+ExportEXR(
+  core::Image<core::RGB<std::float_t>> const& image,
+  std::string const& filename
+);
+
+void
+ExportPNG(
+  core::Image<core::RGB<std::float_t>> const& image,
+  std::string const& filename,
+  std::double_t const exposure
+);
 
 }
 }

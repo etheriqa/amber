@@ -176,6 +176,7 @@ public:
 };
 
 template <>
+inline
 std::tuple<bool, std::double_t, std::double_t>
 AABB<std::double_t>::Intersect(
   Ray<std::double_t> const& ray,

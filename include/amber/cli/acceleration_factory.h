@@ -21,10 +21,8 @@
 #pragma once
 
 #include <memory>
-#include <string>
 
-#include <boost/program_options.hpp>
-
+#include "cli/option.h"
 #include "core/acceleration/bsp.h"
 #include "core/acceleration/bvh.h"
 #include "core/acceleration/kdtree.h"
@@ -54,34 +52,31 @@ private:
   using bvh_type    = core::acceleration::BVH<Object>;
 
 public:
-
   template <typename InputIterator>
   acceleration_ptr
   operator()(
     InputIterator first,
     InputIterator last,
-    boost::program_options::variables_map const& vm
+    CommandLineOption const& option
   ) const
   {
-    auto const acceleration = vm.at("acceleration").as<std::string>();
-
-    if (acceleration == "list") {
+    if (option.acceleration == "list") {
       return std::make_shared<list_type>(first, last);
     }
 
-    if (acceleration == "bsp") {
+    if (option.acceleration == "bsp") {
       return std::make_shared<bsp_type>(first, last);
     }
 
-    if (acceleration == "kdtree") {
+    if (option.acceleration == "kdtree") {
       return std::make_shared<kdtree_type>(first, last);
     }
 
-    if (acceleration == "bvh") {
+    if (option.acceleration == "bvh") {
       return std::make_shared<bvh_type>(first, last);
     }
 
-    throw UnknownAccelerationError(acceleration);
+    throw UnknownAccelerationError(option.acceleration);
   }
 };
 

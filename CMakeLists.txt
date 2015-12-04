@@ -4,13 +4,19 @@ project(amber CXX)
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_FLAGS "-std=c++1y -pedantic -Wall -Wno-unused-local-typedef -mavx")
+set(CMAKE_CXX_FLAGS "-std=c++1y -pedantic -Wall -mavx")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 include_directories(include/amber)
 
-add_executable(amber src/main.cc)
+add_executable(amber
+    src/amber/cli/export.cc
+    src/amber/cli/option.cc
+    src/amber/scene/cornel_box.cc
+    src/amber/scene/cornel_box_complex.cc
+    src/main.cc
+)
 
 target_link_libraries(amber pthread)
 

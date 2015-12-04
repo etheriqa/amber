@@ -22,12 +22,10 @@
 
 #include <iostream>
 #include <string>
-#include <thread>
-
-#include <boost/program_options.hpp>
-#include <opencv2/opencv.hpp>
 
 #include "cli/acceleration_factory.h"
+#include "cli/export.h"
+#include "cli/option.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
 #include "core/camera.h"
@@ -38,8 +36,6 @@
 #include "core/rgb.h"
 #include "core/scene.h"
 #include "core/vector3.h"
-#include "post_process/filmic.h"
-#include "post_process/gamma.h"
 #include "scene/cornel_box.h"
 #include "scene/cornel_box_complex.h"
 
@@ -78,86 +74,12 @@ public:
     std::cerr << "amber: a global illumination renderer" << std::endl;
     std::cerr << std::endl;
 
-    boost::program_options::options_description description("options");
-    boost::program_options::variables_map vm;
-    {
-      namespace po = boost::program_options;
-      description.add_options()
-        ("acceleration",
-         po::value<std::string>()->default_value("kdtree"),
-         "acceleration structure to use (list, bsp, kdtree, bvh)")
-        ("alpha",
-         po::value<real_type>()->default_value(0.7),
-         "a parameter used in the progressive photon mapping algoritms")
-        ("exposure",
-         po::value<real_type>()->default_value(1),
-         "relative exposure value")
-        ("height",
-         po::value<size_type>()->default_value(512),
-         "image height")
-        ("help", "print this message")
-        ("initial-radius",
-         po::value<real_type>()->default_value(0.001),
-         "a parameter as a fraction of the scene's bounding box used in the density estimation method")
-        ("k",
-         po::value<size_type>()->default_value(16),
-         "a parameter of the k-nearest neighbours method used in the photon mapping algorithm")
-        ("mutations",
-         po::value<size_type>()->default_value(262144 * 16),
-         "a number of mutations used in the MCMC algorithms")
-        ("output",
-         po::value<std::string>()->default_value("output"),
-         "an output filename without an extension")
-        ("p-large",
-         po::value<real_type>()->default_value(0.5),
-         "a large step probability used in the primary sample space method")
-        ("passes",
-         po::value<size_type>()->default_value(16),
-         "a number of passes used in the progressive photon mapping algorithms")
-        ("photons",
-         po::value<size_type>()->default_value(262144),
-         "a number of emitted photons")
-        ("samples",
-         po::value<size_type>()->default_value(262144),
-         "a number of samples used in the light tracing algorithm")
-        ("seeds",
-         po::value<size_type>()->default_value(65536),
-         "a number of seed states used in the MCMC algorithms")
-        ("shader",
-         po::value<std::string>(),
-         "rendering algorithm to use (pt, lt, bdpt, pssmlt, pm, ppm, sppm)")
-        ("spp",
-         po::value<size_type>()->default_value(16),
-         "samples per pixel")
-        ("ssaa",
-         po::value<size_type>()->default_value(1),
-         "a level of supersampling anti-aliasing")
-        ("threads",
-         po::value<size_type>()
-           ->default_value(std::thread::hardware_concurrency()),
-         "a number of threads")
-        ("width",
-         po::value<size_type>()->default_value(512),
-         "image width")
-        ;
-
-      try {
-        po::store(po::parse_command_line(argc_, argv_, description), vm);
-      } catch (po::error_with_option_name const& e) {
-        std::cerr << e.what() << std::endl;
-        return -1;
-      }
-
-      po::notify(vm);
-    }
-
-    if (vm.count("help") || !vm.count("shader")) {
-      std::cerr << description << std::endl;
+    auto const option = ParseCommandLineOption(argc_, argv_);
+    if (option.help) {
       return 0;
     }
 
-    std::vector<object_type> objects;
-    scene::cornel_box(std::back_inserter(objects));
+    auto objects = scene::CornelBox();
 
     vector3_type const origin(0, 0, 4);
     vector3_type const axis(0, 0, -1);
@@ -175,8 +97,8 @@ public:
     );
     auto const lens = core::lens::Thin<real_type>(focus_distance);
     auto const sensor = core::Sensor<radiant_type, real_type>(
-      vm.at("width").as<size_type>() * vm.at("ssaa").as<size_type>(),
-      vm.at("height").as<size_type>() * vm.at("ssaa").as<size_type>()
+      option.width * option.ssaa,
+      option.height * option.ssaa
     );
     auto const camera = core::Camera<radiant_type, real_type>(
       sensor, &lens, &aperture, origin, axis, up
@@ -184,7 +106,7 @@ public:
 
     ShaderFactory<object_type>::shader_ptr shader;
     try {
-      shader = ShaderFactory<object_type>()(vm);
+      shader = ShaderFactory<object_type>()(option);
     } catch (UnknownShaderError const& e) {
       std::cerr << e.what() << std::endl;
       return -1;
@@ -192,8 +114,11 @@ public:
 
     AccelerationFactory<object_type>::acceleration_ptr acceleration;
     try {
-      acceleration =
-        AccelerationFactory<object_type>()(objects.begin(), objects.end(), vm);
+      acceleration = AccelerationFactory<object_type>()(
+        objects.begin(),
+        objects.end(),
+        option
+      );
     } catch (UnknownAccelerationError const& e) {
       std::cerr << e.what() << std::endl;
       return -1;
@@ -205,43 +130,15 @@ public:
     std::cerr << "Total Power = " << image.totalPower() << std::endl;
 
     {
-      auto const filename = vm.at("output").as<std::string>() + ".exr";
+      auto const filename = option.output + ".exr";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      post_process::Normalizer<radiant_type> normalizer;
-      auto const hdr_image =
-        normalizer(image.downSample(vm.at("ssaa").as<size_type>()));
-
-      cv::Mat mat(hdr_image.height(), hdr_image.width(), CV_32FC3);
-      for (std::size_t i = 0; i < hdr_image.height(); i++) {
-        for (std::size_t j = 0; j < hdr_image.width(); j++) {
-          auto& rgb = mat.at<cv::Vec3f>(i, j);
-          rgb[0] = hdr_image.at(j, i).b();
-          rgb[1] = hdr_image.at(j, i).g();
-          rgb[2] = hdr_image.at(j, i).r();
-        }
-      }
-      cv::imwrite(filename, mat);
+      ExportEXR(image.downSample(option.ssaa), filename);
     }
 
     {
-      auto const filename = vm.at("output").as<std::string>() + ".png";
+      auto const filename = option.output + ".png";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      post_process::Filmic<radiant_type>
-        filmic(vm.at("exposure").as<std::double_t>());
-      post_process::Gamma<radiant_type> gamma;
-      auto const ldr_image =
-        gamma(filmic(image.downSample(vm.at("ssaa").as<size_type>())));
-
-      cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC3);
-      for (std::size_t i = 0; i < ldr_image.height(); i++) {
-        for (std::size_t j = 0; j < ldr_image.width(); j++) {
-          auto& rgb = mat.at<cv::Vec3b>(i, j);
-          rgb[0] = ldr_image.at(j, i).b();
-          rgb[1] = ldr_image.at(j, i).g();
-          rgb[2] = ldr_image.at(j, i).r();
-        }
-      }
-      cv::imwrite(filename, mat);
+      ExportPNG(image.downSample(option.ssaa), filename, option.exposure);
     }
 
     return 0;

@@ -20,154 +20,16 @@
 
 #pragma once
 
-#include "core/material/lambertian.h"
-#include "core/material/light.h"
-#include "core/material/phong.h"
-#include "core/material/refraction.h"
-#include "core/material/specular.h"
-#include "core/primitive/convex_polygon.h"
-#include "core/primitive/Sphere.h"
+#include <vector>
+
+#include "core/rgb.h"
+#include "core/object.h"
 
 namespace amber {
 namespace scene {
 
-template <typename OutputIterator,
-          typename Object = typename OutputIterator::container_type::value_type>
-void cornel_box_complex(OutputIterator output) {
-  using radiant_type  = typename Object::radiant_type;
-  using real_type     = typename Object::real_type;
-  using vector3_type  = typename Object::vector3_type;
-
-  using ConvexPolygon = core::primitive::ConvexPolygon<real_type>;
-  using Sphere        = core::primitive::Sphere<real_type>;
-
-  using Lambertian    = core::material::Lambertian<radiant_type, real_type>;
-  using Light         = core::material::Light<radiant_type, real_type>;
-  using Phong         = core::material::Phong<radiant_type, real_type>;
-  using Refraction    = core::material::Refraction<radiant_type, real_type>;
-  using Specular      = core::material::Specular<radiant_type, real_type>;
-
-  // light source
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 0.001, 1,  0.001),
-      vector3_type( 0.001, 1, -0.001),
-      vector3_type(-0.001, 1, -0.001),
-      vector3_type(-0.001, 1,  0.001),
-    }),
-    new Light(radiant_type(10, 10, 10))
-  );
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 0.25, 3,  0.25),
-      vector3_type( 0.25, 3, -0.25),
-      vector3_type(-0.25, 3, -0.25),
-      vector3_type(-0.25, 3,  0.25),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  // left
-  output = Object(
-    new ConvexPolygon({
-      vector3_type(-1,  1,  1),
-      vector3_type(-1, -1,  1),
-      vector3_type(-1, -1, -1),
-      vector3_type(-1,  1, -1),
-    }),
-    new Lambertian(radiant_type(.5, .0, .0))
-  );
-  // right
-  output = Object(
-    new ConvexPolygon({
-      vector3_type(1,  1,  1),
-      vector3_type(1,  1, -1),
-      vector3_type(1, -1, -1),
-      vector3_type(1, -1,  1),
-    }),
-    new Lambertian(radiant_type(.0, .5, .0))
-  );
-  // back
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1,  1, -1),
-      vector3_type(-1,  1, -1),
-      vector3_type(-1, -1, -1),
-      vector3_type( 1, -1, -1),
-    }),
-    new Phong(radiant_type(.1), radiant_type(.5), 256)
-  );
-  // floor
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1, -1,  1),
-      vector3_type( 1, -1, -1),
-      vector3_type(-1, -1, -1),
-      vector3_type(-1, -1,  1),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  // ceiling
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1.00, 1,  1.00),
-      vector3_type( 1.00, 1, -1.00),
-      vector3_type( 0.25, 1, -1.00),
-      vector3_type( 0.25, 1,  1.00),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1.00, 1,  1.00),
-      vector3_type( 1.00, 1, -1.00),
-      vector3_type( 0.25, 1, -1.00),
-      vector3_type( 0.25, 1,  1.00),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  output = Object(
-    new ConvexPolygon({
-      vector3_type(-1.00, 1,  1.00),
-      vector3_type(-1.00, 1, -1.00),
-      vector3_type(-0.25, 1, -1.00),
-      vector3_type(-0.25, 1,  1.00),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1.00, 1,  1.00),
-      vector3_type(-1.00, 1,  1.00),
-      vector3_type(-1.00, 1,  0.25),
-      vector3_type( 1.00, 1,  0.25),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  output = Object(
-    new ConvexPolygon({
-      vector3_type( 1.00, 1, -1.00),
-      vector3_type(-1.00, 1, -1.00),
-      vector3_type(-1.00, 1, -0.25),
-      vector3_type( 1.00, 1, -0.25),
-    }),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  // diffuse Sphere
-  output = Object(
-    new Sphere(vector3_type( 0.4, -0.6, -0.5), 0.4),
-    new Lambertian(radiant_type(.5, .5, .5))
-  );
-  // specular Sphere
-  output = Object(
-    new Sphere(vector3_type(-0.4, -0.7,  0.1), 0.3),
-    new Specular(radiant_type(.95, .95, .95))
-  );
-  // refraction Sphere
-  output = Object(
-    new Sphere(vector3_type( 0.1, -0.8,  0.6), 0.2),
-    new Refraction(1.5)
-  );
-}
+std::vector<core::Object<core::RGB<std::float_t>, std::double_t>>
+CornelBoxComplex();
 
 }
 }
