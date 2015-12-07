@@ -23,11 +23,15 @@
 #include <numeric>
 #include <vector>
 
+#include <boost/operators.hpp>
+
 namespace amber {
 namespace core {
 
 template <typename Radiant>
-class Image {
+class Image
+: private boost::addable<Image<Radiant>>
+{
 private:
   std::size_t width_, height_;
   std::vector<Radiant> pixels_;
@@ -38,6 +42,19 @@ public:
 
   std::size_t const& width() const noexcept { return width_; }
   std::size_t const& height() const noexcept { return height_; }
+
+  Image<Radiant>& operator+=(Image<Radiant> const& rhs)
+  {
+    if (rhs.width_ != width_ || rhs.height_ != height_) {
+      throw std::out_of_range("amber::Image::operator+=: invalid dimensions");
+    }
+
+    for (std::size_t i = 0; i < width_ * height_; i++) {
+      pixels_[i] += rhs.pixels_[i];
+    }
+
+    return *this;
+  }
 
   Radiant& at(std::size_t x, std::size_t y) {
     if (x >= width_ || y >= height_) {
