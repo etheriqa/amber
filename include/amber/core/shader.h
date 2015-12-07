@@ -21,8 +21,8 @@
 #pragma once
 
 #include "core/camera.h"
+#include "core/context.h"
 #include "core/image.h"
-#include "core/progress.h"
 #include "core/scene.h"
 #include "core/writer.h"
 
@@ -30,7 +30,8 @@ namespace amber {
 namespace core {
 
 template <typename Object>
-class Shader : public Writer {
+class Shader : public Writer
+{
 public:
   using camera_type = Camera<typename Object::radiant_type,
                              typename Object::real_type>;
@@ -39,8 +40,12 @@ public:
 
   virtual ~Shader() {}
 
-  virtual Progress const& progress() const noexcept = 0;
-  virtual image_type operator()(scene_type const&, camera_type const&) = 0;
+  virtual image_type
+  operator()(
+    scene_type const&,
+    camera_type const&,
+    Context&
+  ) = 0;
 };
 
 }

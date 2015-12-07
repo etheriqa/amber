@@ -22,8 +22,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <mutex>
-#include <thread>
 #include <vector>
 
 #include "core/component/photon_mapping.h"
@@ -56,94 +54,50 @@ private:
 
   using vector3_type = Vector3<real_type>;
 
-  std::size_t n_threads_, n_photons_, k_nearest_photons_;
-  Progress progress_;
+  std::size_t n_photons_, k_nearest_photons_;
 
 public:
   PhotonMapping(
-    std::size_t n_threads,
     std::size_t n_photons,
     std::size_t k_nearest_photons
   ) noexcept
-  : n_threads_(n_threads),
-    n_photons_(n_photons),
-    k_nearest_photons_(k_nearest_photons),
-    progress_(3) {}
+  : n_photons_(n_photons)
+  , k_nearest_photons_(k_nearest_photons)
+  {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "PhotonMapping(n_threads=" << n_threads_
-      << ", n_photons=" << n_photons_
+      << "PhotonMapping(n_photons=" << n_photons_
       << ", k_nearest_photons=" << k_nearest_photons_
       << ")";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
+    DefaultSampler<> sampler((std::random_device()()));
     pm_type pm(scene);
-    std::vector<std::thread> threads;
-    std::mutex mtx;
 
-    progress_.phase = "Photon Tracing";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = n_photons_;
-
+    // photon tracing
     std::vector<photon_type> photons;
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        std::vector<photon_type> buffer;
-        DefaultSampler<> sampler((std::random_device()()));
-        while (progress_.current_job++ < progress_.total_job) {
-          pm.PhotonTracing(n_photons_, std::back_inserter(buffer), sampler);
-        }
-        std::lock_guard<std::mutex> lock(mtx);
-        std::move(buffer.begin(), buffer.end(), std::back_inserter(photons));
-      });
+    for (size_t i = 0; i < n_photons_; i++) {
+      pm.PhotonTracing(n_photons_, std::back_inserter(photons), sampler);
     }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
-    }
-
-    progress_.phase = "Photon Map Building";
-    progress_.current_phase = 2;
-    progress_.current_job = 0;
-    progress_.total_job = 0;
-
     auto const photon_map = pm.BuildPhotonMap(photons.begin(), photons.end());
 
-    progress_.phase = "Distributed Ray Tracing";
-    progress_.current_phase = 3;
-    progress_.current_job = 0;
-    progress_.total_job = camera.imageSize();
-
-    std::vector<std::size_t> pixels(camera.imageSize());
-    std::iota(pixels.begin(), pixels.end(), 0);
-    std::shuffle(pixels.begin(), pixels.end(), std::random_device());
-
+    // distributed ray tracing
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        DefaultSampler<> sampler((std::random_device()()));
-        for (std::size_t j = progress_.current_job++;
-             j < progress_.total_job;
-             j = progress_.current_job++) {
-          auto const x = pixels.at(j) % camera.imageWidth();
-          auto const y = pixels.at(j) / camera.imageWidth();
-          auto const power = Render(scene, camera, photon_map, x, y, sampler);
-          std::lock_guard<std::mutex> lock(mtx);
-          image.at(x, y) += power;
-        }
-      });
+    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        image.at(x, y) += Render(scene, camera, photon_map, x, y, sampler);
+      }
     }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
-    }
+
     return image;
   }
 

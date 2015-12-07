@@ -20,7 +20,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <iterator>
 #include <mutex>
+#include <vector>
 
 #include "core/component/photon_mapping.h"
 #include "core/shader.h"
@@ -83,49 +86,35 @@ private:
     {}
   };
 
-  std::size_t n_threads_, n_photons_, n_iterations_;
   std::double_t initial_radius_, alpha_;
-  Progress progress_;
 
 public:
   ProgressivePhotonMapping(
-    std::size_t n_threads,
-    std::size_t n_photons,
-    std::size_t n_iterations,
     std::double_t initial_radius,
     std::double_t alpha
   ) noexcept
-  : n_threads_(n_threads),
-    n_photons_(n_photons),
-    n_iterations_(n_iterations),
-    initial_radius_(initial_radius),
-    alpha_(alpha),
-    progress_(3)
+  : initial_radius_(initial_radius)
+  , alpha_(alpha)
   {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "ProgressivePhotonMapping(n_threads=" << n_threads_
-      << ", n_photons=" << n_photons_
-      << ", n_iterations=" << n_iterations_
-      << ", initial_radius=" << initial_radius_
+      << "ProgressivePhotonMapping(initial_radius=" << initial_radius_
       << ", alpha=" << alpha_
       << ")";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
-    pm_type pm(scene);
-    std::vector<std::thread> threads;
+    auto const n_photons = camera.imageSize();
 
-    progress_.phase = "Distributed Ray Tracing";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = camera.imageSize();
-
+    // distributed ray tracing
     std::vector<HitPoint> hit_points;
     {
       DefaultSampler<> sampler((std::random_device()()));
@@ -143,38 +132,27 @@ public:
       }
     }
 
-    progress_.phase = "Photon Tracing";
-    progress_.current_phase = 2;
-    progress_.current_job = 0;
-    progress_.total_job = n_iterations_;
+    // photon tracing
+    IterateParallel(ctx, [&](auto const&){
+      DefaultSampler<> sampler((std::random_device()()));
+      pm_type pm(scene);
 
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        DefaultSampler<> sampler((std::random_device()()));
-        std::vector<photon_type> photons;
-        while (++progress_.current_job <= progress_.total_job) {
-          photons.clear();
-          for (std::size_t i = 0; i < n_photons_; i++) {
-            pm.PhotonTracing(1, std::back_inserter(photons), sampler);
-          }
-          ProgressiveDensityEstimate(
-            hit_points.begin(),
-            hit_points.end(),
-            pm.BuildPhotonMap(photons.begin(), photons.end())
-          );
+      std::vector<photon_type> photons;
+      {
+        photons.reserve(n_photons);
+        for (std::size_t i = 0; i < n_photons; i++) {
+          pm.PhotonTracing(1, std::back_inserter(photons), sampler);
         }
-      });
-    }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
-    }
+      }
 
-    progress_.phase = "Radiance Evaluation";
-    progress_.current_phase = 3;
-    progress_.current_job = 0;
-    progress_.total_job = 0;
+      ProgressiveDensityEstimate(
+        hit_points.begin(),
+        hit_points.end(),
+        pm.BuildPhotonMap(photons.begin(), photons.end())
+      );
+    });
 
+    // measurement evaluation
     image_type image(camera.imageWidth(), camera.imageHeight());
     for (auto const& hit_point : hit_points) {
       auto& pixel = image.at(hit_point.x, hit_point.y);
@@ -186,7 +164,7 @@ public:
       pixel +=
         hit_point.weight * hit_point.flux /
         (kPI * hit_point.radius * hit_point.radius) /
-        (n_iterations_ * n_photons_);
+        (ctx.IterationCount() * n_photons);
     }
     return image;
   }

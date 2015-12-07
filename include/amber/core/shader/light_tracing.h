@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "core/shader.h"
@@ -47,55 +46,50 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
-  std::size_t n_threads_, n_samples_;
-  Progress progress_;
-
 public:
-  LightTracing(std::size_t n_threads, std::size_t n_samples) noexcept
-  : n_threads_(n_threads),
-    n_samples_(n_samples),
-    progress_(1)
-  {}
+  LightTracing() noexcept {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "LightTracing(n_threads=" << n_threads_
-      << ", n_samples=" << n_samples_
-      << ")";
+      << "LightTracing()";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
-    progress_.phase = "Light Tracing";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = n_samples_;
-
-    std::vector<std::thread> threads;
-    std::mutex mtx;
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
+
+    {
+      std::mutex mtx;
+
+      IterateParallel(ctx, [&](auto const&){
         DefaultSampler<> sampler((std::random_device()()));
+
         image_type buffer(camera.imageWidth(), camera.imageHeight());
-        while (progress_.current_job++ < progress_.total_job) {
+        for (std::size_t j = 0; j < camera.imageSize(); j++) {
           Sample(scene, camera, buffer, sampler);
         }
+
         std::lock_guard<std::mutex> lock(mtx);
         for (std::size_t y = 0; y < camera.imageHeight(); y++) {
           for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y) / n_samples_;
+            image.at(x, y) += buffer.at(x, y);
           }
         }
       });
     }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
+
+    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        image.at(x, y) /= ctx.IterationCount();
+      }
     }
+
     return image;
   }
 
@@ -112,6 +106,8 @@ private:
     radiant_type weight;
     std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
       scene.GenerateLightRay(sampler);
+
+    weight /= camera.imageSize();
 
     for (;;) {
       hit_type hit;

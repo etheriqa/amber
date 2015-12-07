@@ -65,38 +65,26 @@ public:
   operator()(CommandLineOption const& option) const
   {
     if (option.shader == "pt") {
-      return std::make_shared<pt_type>(
-        option.n_threads,
-        option.spp
-      );
+      return std::make_shared<pt_type>();
     }
 
     if (option.shader == "lt") {
-      return std::make_shared<lt_type>(
-        option.n_threads,
-        option.n_samples
-      );
+      return std::make_shared<lt_type>();
     }
 
     if (option.shader == "bdpt") {
-      return std::make_shared<bdpt_type>(
-        option.n_threads,
-        option.spp
-      );
+      return std::make_shared<bdpt_type>();
     }
 
     if (option.shader == "pssmlt") {
       return std::make_shared<pssmlt_type>(
-        option.n_threads,
         option.n_seeds,
-        option.n_mutations,
         option.p_large
       );
     }
 
     if (option.shader == "pm") {
       return std::make_shared<pm_type>(
-        option.n_threads,
         option.n_photons,
         option.k
       );
@@ -104,9 +92,6 @@ public:
 
     if (option.shader == "ppm") {
       return std::make_shared<ppm_type>(
-        option.n_threads,
-        option.n_photons,
-        option.n_passes,
         option.initial_radius,
         option.alpha
       );
@@ -114,9 +99,6 @@ public:
 
     if (option.shader == "sppm") {
       return std::make_shared<sppm_type>(
-        option.n_threads,
-        option.n_photons,
-        option.n_passes,
         option.initial_radius,
         option.alpha
       );

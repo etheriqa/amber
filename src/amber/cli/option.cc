@@ -52,29 +52,20 @@ ParseCommandLineOption(int argc, char** argv)
      "image height")
     ("help", "print this message")
     ("initial-radius",
-     po::value<std::double_t>(&option.initial_radius)->default_value(0.001),
+     po::value<std::double_t>(&option.initial_radius)->default_value(0.005),
      "a parameter as a fraction of the scene's bounding box used in the density estimation method")
     ("k",
      po::value<std::size_t>(&option.k)->default_value(16),
      "a parameter of the k-nearest neighbours method used in the photon mapping algorithm")
-    ("mutations",
-     po::value<std::size_t>(&option.n_mutations)->default_value(262144 * 16),
-     "a number of mutations used in the MCMC algorithms")
     ("output",
      po::value<std::string>(&option.output)->default_value("output"),
      "an output filename without an extension")
     ("p-large",
      po::value<std::double_t>(&option.p_large)->default_value(0.5),
      "a large step probability used in the primary sample space method")
-    ("passes",
-     po::value<std::size_t>(&option.n_passes)->default_value(16),
-     "a number of passes used in the progressive photon mapping algorithms")
     ("photons",
      po::value<std::size_t>(&option.n_photons)->default_value(262144),
      "a number of emitted photons")
-    ("samples",
-     po::value<std::size_t>(&option.n_samples)->default_value(262144),
-     "a number of samples used in the light tracing algorithm")
     ("seeds",
      po::value<std::size_t>(&option.n_seeds)->default_value(65536),
      "a number of seed states used in the MCMC algorithms")
@@ -83,7 +74,7 @@ ParseCommandLineOption(int argc, char** argv)
      "rendering algorithm to use (pt, lt, bdpt, pssmlt, pm, ppm, sppm)")
     ("spp",
      po::value<std::size_t>(&option.spp)->default_value(16),
-     "samples per pixel")
+     "a number of average samples per pixel")
     ("ssaa",
      po::value<std::size_t>(&option.ssaa)->default_value(1),
      "a level of supersampling anti-aliasing")
@@ -91,6 +82,9 @@ ParseCommandLineOption(int argc, char** argv)
      po::value<std::size_t>(&option.n_threads)
        ->default_value(std::thread::hardware_concurrency()),
      "a number of threads")
+    ("time",
+     po::value<std::size_t>(&option.time)->default_value(0),
+     "rendering time (some rendering algorithms ignore this option)")
     ("width",
      po::value<std::size_t>(&option.width)->default_value(512),
      "image width")
@@ -100,6 +94,14 @@ ParseCommandLineOption(int argc, char** argv)
   po::notify(vm);
 
   if (vm.count("help") || !vm.count("shader")) {
+    std::cerr << R"(                   __             )" << std::endl;
+    std::cerr << R"(  ____ _____ ___  / /_  ___  _____)" << std::endl;
+    std::cerr << R"( / __ `/ __ `__ \/ __ \/ _ \/ ___/)" << std::endl;
+    std::cerr << R"(/ /_/ / / / / / / /_/ /  __/ /    )" << std::endl;
+    std::cerr << R"(\__,_/_/ /_/ /_/_.___/\___/_/     )" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "amber: a global illumination renderer" << std::endl;
+    std::cerr << std::endl;
     std::cerr << description << std::endl;
     option.help = true;
   }

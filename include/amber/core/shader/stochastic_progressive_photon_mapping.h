@@ -20,7 +20,10 @@
 
 #pragma once
 
+#include <algorithm>
+#include <iterator>
 #include <mutex>
+#include <vector>
 
 #include "core/component/photon_mapping.h"
 #include "core/shader.h"
@@ -84,86 +87,66 @@ private:
     {}
   };
 
-  std::size_t n_threads_, n_photons_, n_passes_;
   std::double_t initial_radius_, alpha_;
-  Progress progress_;
 
 public:
   StochasticProgressivePhotonMapping(
-    std::size_t n_threads,
-    std::size_t n_photons,
-    std::size_t n_passes,
     std::double_t initial_radius,
     std::double_t alpha
   ) noexcept
-  : n_threads_(n_threads),
-    n_photons_(n_photons),
-    n_passes_(n_passes),
-    initial_radius_(initial_radius),
-    alpha_(alpha),
-    progress_(1)
+  : initial_radius_(initial_radius)
+  , alpha_(alpha)
   {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "StochasticProgressivePhotonMapping(n_threads=" << n_threads_
-      << ", n_photons=" << n_photons_
-      << ", n_passes=" << n_passes_
-      << ", initial_radius=" << initial_radius_
+      << "StochasticProgressivePhotonMapping(initial_radius=" << initial_radius_
       << ", alpha=" << alpha_
       << ")";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
-    pm_type pm(scene);
-    std::vector<std::thread> threads;
-
-    progress_.phase = "Photon Pass + Distributed Ray Tracing Pass";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = n_passes_;
+    auto const n_photons = camera.imageSize();
 
     std::vector<Statistics> statistics(camera.imageSize());
     for (auto& stats : statistics) {
       stats.radius = scene.SceneSize() * initial_radius_;
     }
 
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        DefaultSampler<> sampler((std::random_device()()));
-        std::vector<photon_type> photons;
+    IterateParallel(ctx, [&](auto const&){
+      DefaultSampler<> sampler((std::random_device()()));
+      pm_type pm(scene);
 
-        while (++progress_.current_job <= progress_.total_job) {
-          // photon pass
-          photons.clear();
-          for (std::size_t j = 0; j < n_photons_; j++) {
-            pm.PhotonTracing(1, std::back_inserter(photons), sampler);
-          }
-          auto const photon_map =
-            pm.BuildPhotonMap(photons.begin(), photons.end());
-
-          // distributed ray tracing pass
-          for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-            for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-              auto const hit_point = RayTracing(scene, camera, x, y, sampler);
-              if (Max(hit_point.weight) == 0) {
-                continue;
-              }
-              auto& stats = statistics.at(x + y * camera.imageWidth());
-              UpdateStatistics(photon_map, hit_point, stats);
-            }
-          }
+      // photon pass
+      std::vector<photon_type> photons;
+      {
+        photons.reserve(n_photons);
+        for (std::size_t j = 0; j < n_photons; j++) {
+          pm.PhotonTracing(1, std::back_inserter(photons), sampler);
         }
-      });
-    }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
-    }
+      }
+      auto const photon_map =
+        pm.BuildPhotonMap(photons.begin(), photons.end());
+
+      // distributed ray tracing pass
+      for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+        for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+          auto const hit_point = RayTracing(scene, camera, x, y, sampler);
+          if (Max(hit_point.weight) == 0) {
+            continue;
+          }
+          auto& stats = statistics.at(x + y * camera.imageWidth());
+          UpdateStatistics(photon_map, hit_point, n_photons, stats);
+        }
+      }
+    });
 
     image_type image(camera.imageWidth(), camera.imageHeight());
     for (std::size_t y = 0; y < camera.imageHeight(); y++) {
@@ -172,7 +155,7 @@ public:
         image.at(x, y) =
           stats.flux /
           (kPI * stats.radius * stats.radius) /
-          (n_passes_ * n_photons_);
+          (ctx.IterationCount() * n_photons);
       }
     }
 
@@ -234,6 +217,7 @@ private:
   UpdateStatistics(
     photon_map_type const& photon_map,
     HitPoint const& hit_point,
+    std::size_t const n_emitted_photons,
     Statistics& stats
   ) const
   {
@@ -251,7 +235,7 @@ private:
 
     auto flux =
       hit_point.object.Radiance(hit_point.direction, hit_point.normal) *
-      kPI * stats.radius * stats.radius * n_photons_;
+      kPI * stats.radius * stats.radius * n_emitted_photons;
     for (auto const& photon : photons) {
       auto const bsdf = hit_point.object.BSDF(
         photon.direction,

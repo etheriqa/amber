@@ -20,9 +20,7 @@
 
 #pragma once
 
-#include <algorithm>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "core/component/bidirectional_path_tracing.h"
@@ -52,75 +50,70 @@ private:
     component::BidirectionalPathTracing<radiant_type, real_type>;
   using bdpt_contribution_type = typename bdpt_type::contribution_type;
 
-  std::size_t n_threads_, spp_;
-  Progress progress_;
-
 public:
-  BidirectionalPathTracing(std::size_t n_threads, std::size_t spp) noexcept
-  : n_threads_(n_threads),
-    spp_(spp),
-    progress_(1)
-  {}
+  BidirectionalPathTracing() noexcept {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "BidirectionalPathTracing(n_threads=" << n_threads_
-      << ", spp=" << spp_
-      << ")";
+      << "BidirectionalPathTracing()";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
-    progress_.phase = "Bidirectional Path Tracing";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = spp_;
-
-    std::vector<std::thread> threads;
-    std::mutex mtx;
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        bdpt_type bdpt;
+
+    {
+      std::mutex mtx;
+
+      IterateParallel(ctx, [&](auto const&){
         DefaultSampler<> sampler((std::random_device()()));
+        bdpt_type bdpt;
+
         image_type buffer(camera.imageWidth(), camera.imageHeight());
-        while (progress_.current_job++ < progress_.total_job) {
-          for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-            for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-              radiant_type measurement;
-              std::vector<bdpt_contribution_type> light_image;
-              std::tie(measurement, light_image) = bdpt.Connect(
-                scene,
-                camera,
-                bdpt.GenerateLightPath(scene, camera, sampler),
-                bdpt.GenerateEyePath(scene, camera, x, y, sampler),
-                component::PowerHeuristic<radiant_value_type>()
-              );
-              for (auto const& contribution : light_image) {
-                auto const& x_light_image = std::get<0>(*contribution.pixel);
-                auto const& y_light_image = std::get<1>(*contribution.pixel);
-                buffer.at(x_light_image, y_light_image) +=
-                  contribution.measurement;
-              }
-              buffer.at(x, y) += measurement;
+
+        for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+          for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+            radiant_type measurement;
+            std::vector<bdpt_contribution_type> light_image;
+            std::tie(measurement, light_image) = bdpt.Connect(
+              scene,
+              camera,
+              bdpt.GenerateLightPath(scene, camera, sampler),
+              bdpt.GenerateEyePath(scene, camera, x, y, sampler),
+              component::PowerHeuristic<radiant_value_type>()
+            );
+            for (auto const& contribution : light_image) {
+              auto const& x_light_image = std::get<0>(*contribution.pixel);
+              auto const& y_light_image = std::get<1>(*contribution.pixel);
+              buffer.at(x_light_image, y_light_image) +=
+                contribution.measurement;
             }
+            buffer.at(x, y) += measurement;
           }
+
         }
+
         std::lock_guard<std::mutex> lock(mtx);
         for (std::size_t y = 0; y < camera.imageHeight(); y++) {
           for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y) / spp_;
+            image.at(x, y) += buffer.at(x, y);
           }
         }
       });
     }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
+
+    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        image.at(x, y) /= ctx.IterationCount();
+      }
     }
+
     return image;
   }
 };

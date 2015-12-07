@@ -30,6 +30,7 @@
 #include <sstream>
 #include <thread>
 
+#include "cli/option.h"
 #include "core/acceleration.h"
 #include "core/camera.h"
 #include "core/component/light_sampler.h"
@@ -48,49 +49,86 @@ render(
   InputIterator last,
   std::shared_ptr<core::Shader<Object>> const& shader,
   std::shared_ptr<core::Acceleration<Object>> const& acceleration,
-  core::Camera<typename Object::radiant_type, typename Object::real_type> const& camera
+  core::Camera<typename Object::radiant_type, typename Object::real_type> const& camera,
+  CommandLineOption const& option
 )
 {
   std::cerr
     << "Objects: " << std::distance(first, last) << std::endl
     << "Shader: " << *shader << std::endl
     << "Acceleration: " << *acceleration << std::endl
-    << "Camera: " << camera << std::endl
-    << std::endl;
+    << "Camera: " << camera << std::endl;
 
   core::Scene<Object> const scene(
     acceleration,
     std::make_shared<core::component::LightSampler<Object>>(first, last)
   );
 
-  auto image =
-    std::async(std::launch::async, [&](){ return (*shader)(scene, camera); });
+  core::DefaultContext ctx(option.n_threads, option.spp);
 
-  std::size_t phase = 0;
-  while (image.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
-    auto const& progress = shader->progress();
-    if (progress.current_phase.load() > phase) {
-      std::cerr << std::endl;
-    }
-    phase = progress.current_phase.load();
-    std::stringstream ss;
-    ss.imbue(std::locale(""));
-    ss
-      << "\r"
-      << "[" << progress.current_phase
-      << "/" << progress.total_phase
-      << "] " << progress.phase;
-    if (progress.total_job > 0) {
-      ss
-        << " " << progress.current_job
-        << "/" << progress.total_job
-        << " " << std::fixed << std::setprecision(2)
-        << 100. * progress.current_job / progress.total_job << "%";
-    }
-    std::cerr << ss.str() << std::flush;
+  if (option.time > 0) {
+    std::thread([&](){
+      std::this_thread::sleep_for(std::chrono::seconds(option.time));
+      ctx.Expire();
+    }).detach();
   }
 
-  std::cerr << std::endl;
+  auto image = std::async(
+    std::launch::async,
+    [&](){ return (*shader)(scene, camera, ctx); }
+  );
+
+  auto const initial = std::chrono::system_clock::now();
+  for (;;) {
+    auto const status = image.wait_for(std::chrono::milliseconds(100));
+
+    if (ctx.IterationCount() == 0) {
+      if (status == std::future_status::ready) {
+        break;
+      } else {
+        continue;
+      }
+    }
+
+    auto const elapsed = std::chrono::system_clock::now() - initial;
+    auto const h =
+      std::chrono::duration_cast<std::chrono::hours>(elapsed).count();
+    auto const m =
+      std::chrono::duration_cast<std::chrono::minutes>(elapsed).count();
+    auto const s =
+      std::chrono::duration_cast<std::chrono::seconds>(elapsed).count();
+    auto const ms =
+      std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
+    auto const percentage = 100. * ctx.IterationCount() / option.spp;
+    auto const ips = ctx.IterationCount() / (0.001 * ms);
+
+    std::stringstream ss;
+    ss.imbue(std::locale(""));
+    ss << "\r";
+    if (h) {
+      ss << h << "h";
+    }
+    if (m) {
+      ss << (m % 60) << "m";
+    }
+    ss << (s % 60) << "s";
+    ss
+      << " - "
+      << ctx.IterationCount() << "/" << option.spp
+      << " - "
+      << std::fixed << std::setprecision(2)
+      << percentage << "%"
+      << " - "
+      << ips << " iterations/second        ";
+    std::cerr << ss.str() << std::flush;
+
+    if (status == std::future_status::ready) {
+      break;
+    }
+  }
+
+  std::cerr << std::endl << std::endl;
 
   return image.get();
 }

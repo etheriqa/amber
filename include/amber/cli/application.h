@@ -65,15 +65,6 @@ public:
 
   int run()
   {
-    std::cerr << R"(                   __             )" << std::endl;
-    std::cerr << R"(  ____ _____ ___  / /_  ___  _____)" << std::endl;
-    std::cerr << R"( / __ `/ __ `__ \/ __ \/ _ \/ ___/)" << std::endl;
-    std::cerr << R"(/ /_/ / / / / / / /_/ /  __/ /    )" << std::endl;
-    std::cerr << R"(\__,_/_/ /_/ /_/_.___/\___/_/     )" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "amber: a global illumination renderer" << std::endl;
-    std::cerr << std::endl;
-
     auto const option = ParseCommandLineOption(argc_, argv_);
     if (option.help) {
       return 0;
@@ -121,8 +112,14 @@ public:
       return -1;
     }
 
-    auto const image =
-      render(objects.begin(), objects.end(), shader, acceleration, camera);
+    auto const image = render(
+      objects.begin(),
+      objects.end(),
+      shader,
+      acceleration,
+      camera,
+      option
+    );
 
     std::cerr << "Total Power = " << image.totalPower() << std::endl;
 

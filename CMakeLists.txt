@@ -33,46 +33,46 @@ if(OpenCV_FOUND)
     target_link_libraries(amber ${OpenCV_LIBS})
 endif()
 
-set(AMBER_COMMAND time lldb -b -o run -- ./amber)
+set(AMBER_COMMAND time lldb -b -o run -- ./amber --spp 65536 --time 10)
 
 add_custom_target(pt
-    COMMAND ${AMBER_COMMAND} --shader pt --output pt --spp 256
+    COMMAND ${AMBER_COMMAND} --shader pt --output pt
     COMMAND open pt.png
     DEPENDS amber
 )
 
 add_custom_target(lt
-    COMMAND ${AMBER_COMMAND} --shader lt --output lt --samples 67108864
+    COMMAND ${AMBER_COMMAND} --shader lt --output lt
     COMMAND open lt.png
     DEPENDS amber
 )
 
 add_custom_target(bdpt
-    COMMAND ${AMBER_COMMAND} --shader bdpt --output bdpt --spp 64
+    COMMAND ${AMBER_COMMAND} --shader bdpt --output bdpt
     COMMAND open bdpt.png
     DEPENDS amber
 )
 
 add_custom_target(pssmlt
-    COMMAND ${AMBER_COMMAND} --shader pssmlt --output pssmlt --seeds 262144 --mutations 16777216
+    COMMAND ${AMBER_COMMAND} --shader pssmlt --output pssmlt --seeds 262144
     COMMAND open pssmlt.png
     DEPENDS amber
 )
 
 add_custom_target(pm
-    COMMAND ${AMBER_COMMAND} --shader pm --output pm --photons 8388608
+    COMMAND ${AMBER_COMMAND} --shader pm --output pm --photons 1048576
     COMMAND open pm.png
     DEPENDS amber
 )
 
 add_custom_target(ppm
-    COMMAND ${AMBER_COMMAND} --shader ppm --output ppm --photons 262144 --passes 64
+    COMMAND ${AMBER_COMMAND} --shader ppm --output ppm
     COMMAND open ppm.png
     DEPENDS amber
 )
 
 add_custom_target(sppm
-    COMMAND ${AMBER_COMMAND} ./amber --shader sppm --output sppm --photons 262144 --passes 64
+    COMMAND ${AMBER_COMMAND} --shader sppm --output sppm
     COMMAND open sppm.png
     DEPENDS amber
 )

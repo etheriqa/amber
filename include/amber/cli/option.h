@@ -35,17 +35,15 @@ struct CommandLineOption
   bool help;
   std::double_t initial_radius;
   std::size_t k;
-  std::size_t n_mutations;
   std::string output;
   std::double_t p_large;
-  std::size_t n_passes;
   std::size_t n_photons;
-  std::size_t n_samples;
   std::size_t n_seeds;
   std::string shader;
   std::size_t spp;
   std::size_t ssaa;
   std::size_t n_threads;
+  std::size_t time;
   std::size_t width;
 };
 

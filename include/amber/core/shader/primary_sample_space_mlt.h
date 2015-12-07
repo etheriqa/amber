@@ -22,7 +22,6 @@
 
 #include <algorithm>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "core/component/bidirectional_path_tracing.h"
@@ -71,63 +70,64 @@ private:
       pss_light(sampler.engine()()),
       pss_eye(sampler.engine()())
     {}
+
+    Seed(
+      State const& state,
+      component::PrimarySampleSpace<> const& pss_light,
+      component::PrimarySampleSpace<> const& pss_eye
+    )
+    : State(state)
+    , pss_light(pss_light)
+    , pss_eye(pss_eye)
+    {}
   };
 
-  std::size_t n_threads_, n_seeds_, n_mutations_;
+  std::size_t n_seeds_;
   real_type p_large_step_;
-  Progress progress_;
 
 public:
   PrimarySampleSpaceMLT(
-    std::size_t n_threads,
     std::size_t n_seeds,
-    std::size_t n_mutations,
     real_type p_large_step
   ) noexcept
-  : n_threads_(n_threads),
-    n_seeds_(n_seeds),
-    n_mutations_(n_mutations),
-    p_large_step_(p_large_step),
-    progress_(2)
+  : n_seeds_(n_seeds)
+  , p_large_step_(p_large_step)
   {}
 
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "PrimarySampleSpaceMLT(n_threads=" << n_threads_
-      << ", n_seeds=" << n_seeds_
-      << ", n_mutations=" << n_mutations_
+      << "PrimarySampleSpaceMLT(n_seeds=" << n_seeds_
       << ", p_large_step=" << p_large_step_
       << ")";
   }
 
-  Progress const& progress() const noexcept { return progress_; }
-
-  image_type operator()(scene_type const& scene, camera_type const& camera)
+  image_type
+  operator()(
+    scene_type const& scene,
+    camera_type const& camera,
+    Context& ctx
+  )
   {
-    std::vector<std::thread> threads;
-    std::mutex mtx;
-
-    progress_.phase = "Generate seeds";
-    progress_.current_phase = 1;
-    progress_.current_job = 0;
-    progress_.total_job = n_seeds_;
-
+    // seed generating
     std::vector<Seed> seeds;
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        bdpt_type bdpt;
+    {
+      std::mutex mtx;
+
+      DoParallel(ctx, [&](){
         DefaultSampler<> sampler((std::random_device()()));
-        while (progress_.current_job++ < progress_.total_job) {
+        bdpt_type bdpt;
+
+        for (;;) {
           auto const seed = GenerateSeed(scene, camera, bdpt, sampler);
+
           std::lock_guard<std::mutex> lock(mtx);
+          if (seeds.size() >= n_seeds_) {
+            break;
+          }
           seeds.push_back(seed);
         }
       });
-    }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
     }
 
     radiant_value_type b = 0;
@@ -135,29 +135,42 @@ public:
       b += seed.contribution / n_seeds_;
     }
 
-    progress_.phase = "Mutation";
-    progress_.current_phase = 3;
-    progress_.current_job = 0;
-    progress_.total_job = n_mutations_;
-
+    // mutation
     image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t i = 0; i < n_threads_; i++) {
-      threads.emplace_back([&](){
-        bdpt_type bdpt;
+
+    {
+      std::mutex mtx;
+      std::vector<Seed> saved_seeds;
+
+      IterateParallel(ctx, [&](auto const&){
         DefaultSampler<> sampler((std::random_device()()));
+        bdpt_type bdpt;
+
         image_type buffer(camera.imageWidth(), camera.imageHeight());
-        auto seed = SampleSeed(seeds.begin(), seeds.end(), sampler);
+
+        Seed seed(sampler);
+        {
+          std::lock_guard<std::mutex> lock(mtx);
+          if (saved_seeds.empty()) {
+            seed = SampleSeed(seeds.begin(), seeds.end(), sampler);
+          } else {
+            seed = saved_seeds.back();
+            saved_seeds.pop_back();
+          }
+        }
         auto& pss_light = seed.pss_light;
         auto& pss_eye = seed.pss_eye;
         State state(seed);
-        while (progress_.current_job++ < progress_.total_job) {
+
+        for (std::size_t j = 0; j < camera.imageSize(); j++) {
           auto const large_step = Uniform<real_type>(sampler) < p_large_step_;
           if (large_step) {
             pss_light.SetLargeStep();
             pss_eye.SetLargeStep();
           }
 
-          auto proposal = ProposeState(scene, camera, bdpt, pss_light, pss_eye);
+          auto proposal =
+            ProposeState(scene, camera, bdpt, pss_light, pss_eye);
 
           auto const p_acceptance = std::min<radiant_value_type>(
             1,
@@ -165,12 +178,11 @@ public:
           );
           proposal.weight =
             (p_acceptance + large_step) /
-            (proposal.contribution / b + p_large_step_) /
-            n_mutations_;
+            (proposal.contribution / b + p_large_step_)
+            ;
           state.weight +=
             (1 - p_acceptance) /
-            (state.contribution / b + p_large_step_) /
-            n_mutations_;
+            (state.contribution / b + p_large_step_);
 
           if (Uniform<radiant_value_type>(sampler) < p_acceptance) {
             buffer.at(state.x, state.y) += state.measurement * state.weight;
@@ -195,19 +207,25 @@ public:
             pss_eye.Reject();
           }
         }
+
         buffer.at(state.x, state.y) += state.measurement * state.weight;
+
         std::lock_guard<std::mutex> lock(mtx);
         for (std::size_t y = 0; y < camera.imageHeight(); y++) {
           for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-            image.at(x, y) += buffer.at(x, y) * camera.imageSize();
+            image.at(x, y) += buffer.at(x, y);
           }
         }
+        saved_seeds.emplace_back(state, pss_light, pss_eye);
       });
     }
-    while (!threads.empty()) {
-      threads.back().join();
-      threads.pop_back();
+
+    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        image.at(x, y) /= ctx.IterationCount();
+      }
     }
+
     return image;
   }
 
