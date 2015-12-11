@@ -62,7 +62,7 @@ public:
     Context& ctx
   )
   {
-    image_type image(camera.imageWidth(), camera.imageHeight());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
 
     {
       std::mutex mtx;
@@ -70,8 +70,8 @@ public:
       IterateParallel(ctx, [&](auto const&){
         DefaultSampler<> sampler((std::random_device()()));
 
-        image_type buffer(camera.imageWidth(), camera.imageHeight());
-        for (std::size_t j = 0; j < camera.imageSize(); j++) {
+        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
+        for (std::size_t j = 0; j < camera.ImageSize(); j++) {
           Sample(scene, camera, buffer, sampler);
         }
 
@@ -80,8 +80,8 @@ public:
       });
     }
 
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         image.at(x, y) /= ctx.IterationCount();
       }
     }
@@ -103,7 +103,7 @@ private:
     std::tie(ray, weight, std::ignore, std::ignore, std::ignore, std::ignore) =
       scene.GenerateLightRay(sampler);
 
-    weight /= camera.imageSize();
+    weight /= camera.ImageSize();
 
     for (;;) {
       hit_type hit;

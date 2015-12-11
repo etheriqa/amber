@@ -66,7 +66,7 @@ public:
     Context& ctx
   )
   {
-    image_type image(camera.imageWidth(), camera.imageHeight());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
 
     {
       std::mutex mtx;
@@ -75,10 +75,10 @@ public:
         DefaultSampler<> sampler((std::random_device()()));
         bdpt_type bdpt;
 
-        image_type buffer(camera.imageWidth(), camera.imageHeight());
+        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
 
-        for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-          for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+          for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
             radiant_type measurement;
             std::vector<bdpt_contribution_type> light_image;
             std::tie(measurement, light_image) = bdpt.Connect(
@@ -104,8 +104,8 @@ public:
       });
     }
 
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         image.at(x, y) /= ctx.IterationCount();
       }
     }

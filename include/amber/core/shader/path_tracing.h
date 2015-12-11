@@ -62,7 +62,7 @@ public:
     Context& ctx
   )
   {
-    image_type image(camera.imageWidth(), camera.imageHeight());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
 
     {
       std::mutex mtx;
@@ -70,9 +70,9 @@ public:
       IterateParallel(ctx, [&](auto const&){
         DefaultSampler<> sampler((std::random_device()()));
 
-        image_type buffer(camera.imageWidth(), camera.imageHeight());
-        for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-          for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
+        for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+          for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
             buffer.at(x, y) += Sample(scene, camera, x, y, sampler);
           }
         }
@@ -82,8 +82,8 @@ public:
       });
     }
 
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         image.at(x, y) /= ctx.IterationCount();
       }
     }

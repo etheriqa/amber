@@ -112,14 +112,14 @@ public:
     Context& ctx
   )
   {
-    auto const n_photons = camera.imageSize();
+    auto const n_photons = camera.ImageSize();
 
     // distributed ray tracing
     std::vector<HitPoint> hit_points;
     {
       DefaultSampler<> sampler((std::random_device()()));
-      for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-        for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+      for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+        for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
           RayTracing(
             scene,
             camera,
@@ -153,7 +153,7 @@ public:
     });
 
     // measurement evaluation
-    image_type image(camera.imageWidth(), camera.imageHeight());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
     for (auto const& hit_point : hit_points) {
       auto& pixel = image.at(hit_point.x, hit_point.y);
 

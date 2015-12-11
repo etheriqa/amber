@@ -91,9 +91,9 @@ public:
     auto const photon_map = pm.BuildPhotonMap(photons.begin(), photons.end());
 
     // distributed ray tracing
-    image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         image.at(x, y) += Render(scene, camera, photon_map, x, y, sampler);
       }
     }

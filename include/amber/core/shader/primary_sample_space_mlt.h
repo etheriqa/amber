@@ -136,7 +136,7 @@ public:
     }
 
     // mutation
-    image_type image(camera.imageWidth(), camera.imageHeight());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
 
     {
       std::mutex mtx;
@@ -146,7 +146,7 @@ public:
         DefaultSampler<> sampler((std::random_device()()));
         bdpt_type bdpt;
 
-        image_type buffer(camera.imageWidth(), camera.imageHeight());
+        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
 
         Seed seed(sampler);
         {
@@ -162,7 +162,7 @@ public:
         auto& pss_eye = seed.pss_eye;
         State state(seed);
 
-        for (std::size_t j = 0; j < camera.imageSize(); j++) {
+        for (std::size_t j = 0; j < camera.ImageSize(); j++) {
           auto const large_step = Uniform<real_type>(sampler) < p_large_step_;
           if (large_step) {
             pss_light.SetLargeStep();
@@ -216,8 +216,8 @@ public:
       });
     }
 
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         image.at(x, y) /= ctx.IterationCount();
       }
     }
@@ -251,8 +251,8 @@ private:
   ) const
   {
     State state;
-    state.x = std::floor(Uniform<real_type>(camera.imageWidth(), pss_eye));
-    state.y = std::floor(Uniform<real_type>(camera.imageHeight(), pss_eye));
+    state.x = std::floor(Uniform<real_type>(camera.ImageWidth(), pss_eye));
+    state.y = std::floor(Uniform<real_type>(camera.ImageHeight(), pss_eye));
     std::tie(state.measurement, state.light_image) = bdpt.Connect(
       scene,
       camera,

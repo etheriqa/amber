@@ -68,7 +68,7 @@ public:
       if (object.Surface() != SurfaceType::Light) {
         return;
       }
-      total_power_ += Sum(object.power());
+      total_power_ += Sum(object.Power());
       nodes_.emplace_back(total_power_, object);
     });
   }

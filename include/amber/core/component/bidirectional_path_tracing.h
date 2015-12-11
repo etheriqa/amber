@@ -369,7 +369,7 @@ public:
           MISWeight(scene, camera, light_path, eye_path, s, t, mis);
 
         if (contribution.pixel) {
-          contribution.measurement /= camera.imageSize();
+          contribution.measurement /= camera.ImageSize();
           light_image.emplace_back(contribution);
         } else {
           measurement += contribution.measurement;

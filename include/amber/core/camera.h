@@ -80,17 +80,17 @@ public:
 
   object_type const& aperture() const noexcept { return aperture_; }
 
-  std::size_t const& imageWidth() const noexcept
+  std::size_t const& ImageWidth() const noexcept
   {
     return sensor_.ImageWidth();
   }
 
-  std::size_t const& imageHeight() const noexcept
+  std::size_t const& ImageHeight() const noexcept
   {
     return sensor_.ImageHeight();
   }
 
-  std::size_t const imageSize() const noexcept
+  std::size_t const ImageSize() const noexcept
   {
     return sensor_.ImageSize();
   }
@@ -98,8 +98,8 @@ public:
   void Write(std::ostream& os) const noexcept
   {
     os
-      << "Camera(width=" << imageWidth()
-      << ", height=" << imageHeight()
+      << "Camera(width=" << ImageWidth()
+      << ", height=" << ImageHeight()
       << ")" << std::endl
       << "Lens: " << *lens_;
   }
@@ -114,7 +114,7 @@ public:
   PDFDirection(unit_vector3_type const& direction) const noexcept
   {
     return
-      imageSize() *
+      ImageSize() *
       std::pow(lens_->SensorDistance(), 2) /
       std::pow(std::abs(Dot(direction, w_)), 4) /
       sensor_.SensorArea();

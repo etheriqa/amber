@@ -113,9 +113,9 @@ public:
     Context& ctx
   )
   {
-    auto const n_photons = camera.imageSize();
+    auto const n_photons = camera.ImageSize();
 
-    std::vector<Statistics> statistics(camera.imageSize());
+    std::vector<Statistics> statistics(camera.ImageSize());
     for (auto& stats : statistics) {
       stats.radius = scene.SceneSize() * initial_radius_;
     }
@@ -136,22 +136,22 @@ public:
         pm.BuildPhotonMap(photons.begin(), photons.end());
 
       // distributed ray tracing pass
-      for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-        for (std::size_t x = 0; x < camera.imageWidth(); x++) {
+      for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+        for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
           auto const hit_point = RayTracing(scene, camera, x, y, sampler);
           if (Max(hit_point.weight) == 0) {
             continue;
           }
-          auto& stats = statistics.at(x + y * camera.imageWidth());
+          auto& stats = statistics.at(x + y * camera.ImageWidth());
           UpdateStatistics(photon_map, hit_point, n_photons, stats);
         }
       }
     });
 
-    image_type image(camera.imageWidth(), camera.imageHeight());
-    for (std::size_t y = 0; y < camera.imageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.imageWidth(); x++) {
-        auto& stats = statistics.at(x + y * camera.imageWidth());
+    image_type image(camera.ImageWidth(), camera.ImageHeight());
+    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
+      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
+        auto& stats = statistics.at(x + y * camera.ImageWidth());
         image.at(x, y) =
           stats.flux /
           (kPI * stats.radius * stats.radius) /

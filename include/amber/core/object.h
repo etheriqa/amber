@@ -208,7 +208,7 @@ public:
     return material_->DistributionImportance(direction_i, normal);
   }
 
-  Radiant power() const noexcept
+  Radiant Power() const noexcept
   {
     return Irradiance() * SurfaceArea();
   }
