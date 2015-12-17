@@ -16,8 +16,9 @@ Features
     - `pt` Path tracing
     - `lt` Light tracing
     - `bdpt` Bidirectional path tracing
-    - `pm` Photon mapping
     - `pssmlt` Primary sample space Metropolis light transport
+    - `mmlt` Multiplexed Metropolis light transport
+    - `pm` Photon mapping
     - `ppm` Progressive photon mapping
     - `sppm` Stochastic progressive photon mapping
 - Geometric primitives

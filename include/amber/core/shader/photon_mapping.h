@@ -80,7 +80,7 @@ public:
     Context& ctx
   )
   {
-    DefaultSampler<> sampler((std::random_device()()));
+    MTSampler sampler((std::random_device()()));
     pm_type pm(scene);
 
     // photon tracing
@@ -108,7 +108,7 @@ private:
     camera_type const& camera,
     photon_map_type const& photon_map,
     std::size_t x, std::size_t y,
-    DefaultSampler<>& sampler
+    Sampler& sampler
   ) const
   {
     ray_type ray;
@@ -125,7 +125,7 @@ private:
     photon_map_type const& photon_map,
     ray_type const& ray,
     radiant_type const& weight,
-    DefaultSampler<>& sampler,
+    Sampler& sampler,
     std::size_t depth = 1
   ) const
   {

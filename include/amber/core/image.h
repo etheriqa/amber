@@ -42,6 +42,7 @@ public:
 
   std::size_t const& width() const noexcept { return width_; }
   std::size_t const& height() const noexcept { return height_; }
+  std::size_t const size() const noexcept { return width_ * height_; }
 
   Image<Radiant>& operator+=(Image<Radiant> const& rhs)
   {

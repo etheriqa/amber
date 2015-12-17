@@ -72,7 +72,7 @@ public:
       std::mutex mtx;
 
       IterateParallel(ctx, [&](auto const&){
-        DefaultSampler<> sampler((std::random_device()()));
+        MTSampler sampler((std::random_device()()));
         bdpt_type bdpt;
 
         image_type buffer(camera.ImageWidth(), camera.ImageHeight());
@@ -81,11 +81,11 @@ public:
           for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
             radiant_type measurement;
             std::vector<bdpt_contribution_type> light_image;
-            std::tie(measurement, light_image) = bdpt.Connect(
+            std::tie(measurement, light_image) = bdpt.Combine(
               scene,
               camera,
-              bdpt.GenerateLightPath(scene, camera, sampler),
-              bdpt.GenerateEyePath(scene, camera, x, y, sampler),
+              component::GenerateLightPath(scene, camera, sampler),
+              component::GenerateEyePath(scene, camera, x, y, sampler),
               component::PowerHeuristic<radiant_value_type>()
             );
             for (auto const& contribution : light_image) {

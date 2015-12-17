@@ -33,7 +33,7 @@ if(OpenCV_FOUND)
     target_link_libraries(amber ${OpenCV_LIBS})
 endif()
 
-set(AMBER_COMMAND time lldb -b -o run -- ./amber --spp 65536 --time 10)
+set(AMBER_COMMAND time ./amber --spp 65536 --time 10)
 
 add_custom_target(pt
     COMMAND ${AMBER_COMMAND} --shader pt --output pt
@@ -54,8 +54,14 @@ add_custom_target(bdpt
 )
 
 add_custom_target(pssmlt
-    COMMAND ${AMBER_COMMAND} --shader pssmlt --output pssmlt --seeds 262144
+    COMMAND ${AMBER_COMMAND} --shader pssmlt --output pssmlt
     COMMAND open pssmlt.png
+    DEPENDS amber
+)
+
+add_custom_target(mmlt
+    COMMAND ${AMBER_COMMAND} --shader mmlt --output mmlt
+    COMMAND open mmlt.png
     DEPENDS amber
 )
 

@@ -117,7 +117,7 @@ public:
     // distributed ray tracing
     std::vector<HitPoint> hit_points;
     {
-      DefaultSampler<> sampler((std::random_device()()));
+      MTSampler sampler((std::random_device()()));
       for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
         for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
           RayTracing(
@@ -134,7 +134,7 @@ public:
 
     // photon tracing
     IterateParallel(ctx, [&](auto const&){
-      DefaultSampler<> sampler((std::random_device()()));
+      MTSampler sampler((std::random_device()()));
       pm_type pm(scene);
 
       std::vector<photon_type> photons;
@@ -178,7 +178,7 @@ private:
     std::size_t x,
     std::size_t y,
     OutputIterator output,
-    DefaultSampler<>& sampler
+    Sampler& sampler
   ) const
   {
     ray_type ray;
@@ -199,7 +199,7 @@ private:
     radiant_type const& weight,
     std::size_t depth,
     OutputIterator output,
-    DefaultSampler<>& sampler
+    Sampler& sampler
   ) const
   {
     hit_type hit;

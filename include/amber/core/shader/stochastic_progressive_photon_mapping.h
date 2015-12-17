@@ -121,7 +121,7 @@ public:
     }
 
     IterateParallel(ctx, [&](auto const&){
-      DefaultSampler<> sampler((std::random_device()()));
+      MTSampler sampler((std::random_device()()));
       pm_type pm(scene);
 
       // photon pass
@@ -169,7 +169,7 @@ private:
     camera_type const& camera,
     std::size_t x,
     std::size_t y,
-    DefaultSampler<>& sampler
+    Sampler& sampler
   ) const
   {
     HitPoint hit_point;

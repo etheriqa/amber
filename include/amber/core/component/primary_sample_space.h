@@ -30,7 +30,7 @@ namespace amber {
 namespace core {
 namespace component {
 
-template <typename BaseSampler = DefaultSampler<>>
+template <typename BaseSampler>
 class PrimarySampleSpace : public Sampler
 {
 public:
@@ -60,19 +60,18 @@ private:
   size_type pos_;
 
 public:
-  PrimarySampleSpace() noexcept : PrimarySampleSpace(seed_type()) {}
-
-  explicit PrimarySampleSpace(result_type seed) noexcept
-  : sampler_(seed),
-    samples_(),
-    logs_(),
-    large_step_(false),
-    large_step_time_(0),
-    time_(0),
-    pos_(0)
+  explicit PrimarySampleSpace(seed_type seed) noexcept
+  : sampler_(seed)
+  , samples_()
+  , logs_()
+  , large_step_(false)
+  , large_step_time_(0)
+  , time_(0)
+  , pos_(0)
   {}
 
   void SetLargeStep() noexcept { large_step_ = true; }
+  void UnsetLargeStep() noexcept { large_step_ = false; }
 
   void Accept() noexcept
   {
@@ -134,7 +133,7 @@ public:
   }
 
 private:
-  result_type Mutate(result_type value)
+  result_type const Mutate(result_type value)
   {
     auto const s1 = static_cast<result_type>(1) / 1024;
     auto const s2 = static_cast<result_type>(1) / 64;
@@ -153,6 +152,54 @@ private:
     return value;
   }
 };
+
+template <typename BaseSampler>
+class PrimarySampleSpacePair
+{
+public:
+  using seed_type = typename BaseSampler::seed_type;
+
+private:
+  PrimarySampleSpace<BaseSampler> light_, eye_;
+
+public:
+  PrimarySampleSpacePair(
+    seed_type const light_seed,
+    seed_type const eye_seed
+  )
+  : light_(light_seed)
+  , eye_(eye_seed)
+  {}
+
+  PrimarySampleSpace<BaseSampler>& light() noexcept { return light_; }
+  PrimarySampleSpace<BaseSampler>& eye() noexcept { return eye_; }
+
+  void SetLargeStep() noexcept
+  {
+    light_.SetLargeStep();
+    eye_.SetLargeStep();
+  }
+
+  void UnsetLargeStep() noexcept
+  {
+    light_.UnsetLargeStep();
+    eye_.UnsetLargeStep();
+  }
+
+  void Accept() noexcept
+  {
+    light_.Accept();
+    eye_.Accept();
+  }
+
+  void Reject() noexcept
+  {
+    light_.Reject();
+    eye_.Reject();
+  }
+};
+
+using MTPrimarySampleSpacePair = PrimarySampleSpacePair<MTSampler>;
 
 }
 }

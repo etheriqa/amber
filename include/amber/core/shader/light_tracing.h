@@ -68,7 +68,7 @@ public:
       std::mutex mtx;
 
       IterateParallel(ctx, [&](auto const&){
-        DefaultSampler<> sampler((std::random_device()()));
+        MTSampler sampler((std::random_device()()));
 
         image_type buffer(camera.ImageWidth(), camera.ImageHeight());
         for (std::size_t j = 0; j < camera.ImageSize(); j++) {
@@ -95,7 +95,7 @@ private:
     scene_type const& scene,
     camera_type const& camera,
     image_type& image,
-    DefaultSampler<>& sampler
+    Sampler& sampler
   ) const
   {
     ray_type ray;

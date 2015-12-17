@@ -21,8 +21,13 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <mutex>
+#include <thread>
+#include <unordered_map>
 #include <vector>
+
+#include <boost/operators.hpp>
 
 #include "core/component/bidirectional_path_tracing.h"
 #include "core/component/multiple_importance_sampling.h"
@@ -59,27 +64,51 @@ private:
     std::vector<bdpt_contribution_type> light_image;
     radiant_value_type contribution;
     radiant_value_type weight;
+
+    State() noexcept
+    : x(0)
+    , y(0)
+    , measurement()
+    , light_image()
+    , contribution(0)
+    , weight(0)
+    {}
   };
 
-  struct Seed : public State
+  struct Chain
+  : public component::MTPrimarySampleSpacePair
+  , public State
   {
-    component::PrimarySampleSpace<> pss_light, pss_eye;
+    using component::MTPrimarySampleSpacePair::seed_type;
 
-    explicit Seed(DefaultSampler<>& sampler)
-    : State(),
-      pss_light(sampler.engine()()),
-      pss_eye(sampler.engine()())
+    Chain(seed_type const light_seed, seed_type const eye_seed)
+    : component::MTPrimarySampleSpacePair(light_seed, eye_seed)
+    , State()
+    {}
+  };
+
+  struct NormalizationFactor
+  : private boost::addable<NormalizationFactor>
+  {
+    radiant_value_type contribution;
+    std::size_t n_samples;
+
+    NormalizationFactor() noexcept
+    : contribution(0)
+    , n_samples(0)
     {}
 
-    Seed(
-      State const& state,
-      component::PrimarySampleSpace<> const& pss_light,
-      component::PrimarySampleSpace<> const& pss_eye
-    )
-    : State(state)
-    , pss_light(pss_light)
-    , pss_eye(pss_eye)
-    {}
+    operator radiant_value_type() const noexcept
+    {
+      return contribution / n_samples;
+    }
+
+    NormalizationFactor& operator+=(NormalizationFactor const& b) noexcept
+    {
+      contribution += b.contribution;
+      n_samples += b.n_samples;
+      return *this;
+    }
   };
 
   std::size_t n_seeds_;
@@ -87,8 +116,8 @@ private:
 
 public:
   PrimarySampleSpaceMLT(
-    std::size_t n_seeds,
-    real_type p_large_step
+    std::size_t const n_seeds,
+    real_type const p_large_step
   ) noexcept
   : n_seeds_(n_seeds)
   , p_large_step_(p_large_step)
@@ -109,110 +138,61 @@ public:
     Context& ctx
   )
   {
-    // seed generating
-    std::vector<Seed> seeds;
-    {
-      std::mutex mtx;
+    auto b = std::make_shared<NormalizationFactor>();
 
-      DoParallel(ctx, [&](){
-        DefaultSampler<> sampler((std::random_device()()));
-        bdpt_type bdpt;
-
-        for (;;) {
-          auto const seed = GenerateSeed(scene, camera, bdpt, sampler);
-
-          std::lock_guard<std::mutex> lock(mtx);
-          if (seeds.size() >= n_seeds_) {
-            break;
-          }
-          seeds.push_back(seed);
-        }
-      });
-    }
-
-    radiant_value_type b = 0;
-    for (auto const& seed : seeds) {
-      b += seed.contribution / n_seeds_;
-    }
-
-    // mutation
     image_type image(camera.ImageWidth(), camera.ImageHeight());
-
     {
       std::mutex mtx;
-      std::vector<Seed> saved_seeds;
+      std::unordered_map<std::thread::id, std::shared_ptr<Chain>> chains;
 
       IterateParallel(ctx, [&](auto const&){
-        DefaultSampler<> sampler((std::random_device()()));
+        MTSampler sampler((std::random_device()()));
         bdpt_type bdpt;
 
-        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
-
-        Seed seed(sampler);
+        std::shared_ptr<Chain> chain;
         {
-          std::lock_guard<std::mutex> lock(mtx);
-          if (saved_seeds.empty()) {
-            seed = SampleSeed(seeds.begin(), seeds.end(), sampler);
-          } else {
-            seed = saved_seeds.back();
-            saved_seeds.pop_back();
+          auto const id = std::this_thread::get_id();
+          {
+            std::lock_guard<std::mutex> lock(mtx);
+            if (chains.count(id)) {
+              chain = chains.at(id);
+            }
+          }
+          if (!chain) {
+            NormalizationFactor b_buffer;
+            chain = std::make_shared<Chain>(GenerateChain(
+              scene,
+              camera,
+              bdpt,
+              b_buffer,
+              sampler
+            ));
+
+            std::lock_guard<std::mutex> lock(mtx);
+            chains.emplace(id, chain);
+            b = std::make_shared<NormalizationFactor>(*b + b_buffer);
           }
         }
-        auto& pss_light = seed.pss_light;
-        auto& pss_eye = seed.pss_eye;
-        State state(seed);
 
-        for (std::size_t j = 0; j < camera.ImageSize(); j++) {
-          auto const large_step = Uniform<real_type>(sampler) < p_large_step_;
-          if (large_step) {
-            pss_light.SetLargeStep();
-            pss_eye.SetLargeStep();
-          }
-
-          auto proposal =
-            ProposeState(scene, camera, bdpt, pss_light, pss_eye);
-
-          auto const p_acceptance = std::min<radiant_value_type>(
-            1,
-            proposal.contribution / state.contribution
+        image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+        NormalizationFactor b_buffer;
+        for (std::size_t i = 0; i < camera.ImageSize(); i++) {
+          Sample(
+            scene,
+            camera,
+            bdpt,
+            *b,
+            *chain,
+            image_buffer,
+            b_buffer,
+            sampler
           );
-          proposal.weight =
-            (p_acceptance + large_step) /
-            (proposal.contribution / b + p_large_step_)
-            ;
-          state.weight +=
-            (1 - p_acceptance) /
-            (state.contribution / b + p_large_step_);
-
-          if (Uniform<radiant_value_type>(sampler) < p_acceptance) {
-            buffer.at(state.x, state.y) += state.measurement * state.weight;
-            for (auto const& contribution : state.light_image) {
-              auto const& x = std::get<0>(*contribution.pixel);
-              auto const& y = std::get<1>(*contribution.pixel);
-              buffer.at(x, y) += contribution.measurement * state.weight;
-            }
-            state = proposal;
-            pss_light.Accept();
-            pss_eye.Accept();
-          } else {
-            buffer.at(proposal.x, proposal.y) +=
-              proposal.measurement * proposal.weight;
-            for (auto const& contribution : proposal.light_image) {
-              auto const& x = std::get<0>(*contribution.pixel);
-              auto const& y = std::get<1>(*contribution.pixel);
-              buffer.at(x, y) +=
-                contribution.measurement * proposal.weight;
-            }
-            pss_light.Reject();
-            pss_eye.Reject();
-          }
         }
-
-        buffer.at(state.x, state.y) += state.measurement * state.weight;
+        AccumulateContribution(*chain, image_buffer);
 
         std::lock_guard<std::mutex> lock(mtx);
-        image += buffer;
-        saved_seeds.emplace_back(state, pss_light, pss_eye);
+        image += image_buffer;
+        b = std::make_shared<NormalizationFactor>(*b + b_buffer);
       });
     }
 
@@ -226,19 +206,71 @@ public:
   }
 
 private:
-  Seed
-  GenerateSeed(
+  Chain
+  GenerateChain(
     scene_type const& scene,
     camera_type const& camera,
     bdpt_type const& bdpt,
-    DefaultSampler<>& sampler
+    NormalizationFactor& b_buffer,
+    MTSampler& sampler
   ) const
   {
-    Seed seed(sampler);
-    seed.State::operator=(
-      ProposeState(scene, camera, bdpt, seed.pss_light, seed.pss_eye)
+    Chain chain(sampler.engine()(), sampler.engine()());
+
+    image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+    for (std::size_t i = 0; i < n_seeds_; i++) {
+      Sample(scene, camera, bdpt, 1, chain, image_buffer, b_buffer, sampler);
+    }
+    chain.weight = 0;
+
+    return chain;
+  }
+
+  void
+  Sample(
+    scene_type const& scene,
+    camera_type const& camera,
+    bdpt_type const& bdpt,
+    radiant_value_type const b,
+    Chain& chain,
+    image_type& image_buffer,
+    NormalizationFactor& b_buffer,
+    Sampler& sampler
+  ) const
+  {
+    auto const large_step = Uniform<real_type>(sampler) < p_large_step_;
+    if (large_step) {
+      chain.SetLargeStep();
+    }
+
+    auto proposal = ProposeState(scene, camera, bdpt, chain);
+    if (large_step) {
+      b_buffer.contribution += proposal.contribution;
+      b_buffer.n_samples++;
+    }
+
+    auto const p_acceptance = std::min<radiant_value_type>(
+      1,
+      proposal.contribution / chain.contribution
     );
-    return seed;
+
+    proposal.weight =
+      (p_acceptance + large_step) /
+      (proposal.contribution / b + p_large_step_);
+    chain.weight +=
+      (1 - p_acceptance) /
+      (chain.contribution / b + p_large_step_);
+
+    if (Uniform<radiant_value_type>(sampler) < p_acceptance) {
+      // accepted
+      AccumulateContribution(chain, image_buffer);
+      chain.State::operator=(proposal);
+      chain.Accept();
+    } else {
+      // rejected
+      AccumulateContribution(proposal, image_buffer);
+      chain.Reject();
+    }
   }
 
   State
@@ -246,43 +278,39 @@ private:
     scene_type const& scene,
     camera_type const& camera,
     bdpt_type const& bdpt,
-    component::PrimarySampleSpace<>& pss_light,
-    component::PrimarySampleSpace<>& pss_eye
+    component::MTPrimarySampleSpacePair& pss
   ) const
   {
     State state;
-    state.x = std::floor(Uniform<real_type>(camera.ImageWidth(), pss_eye));
-    state.y = std::floor(Uniform<real_type>(camera.ImageHeight(), pss_eye));
-    std::tie(state.measurement, state.light_image) = bdpt.Connect(
+    state.x = Uniform<real_type>(camera.ImageWidth(), pss.eye());
+    state.y = Uniform<real_type>(camera.ImageHeight(), pss.eye());
+    std::tie(state.measurement, state.light_image) = bdpt.Combine(
       scene,
       camera,
-      bdpt.GenerateLightPath(scene, camera, pss_light),
-      bdpt.GenerateEyePath(scene, camera, state.x, state.y, pss_eye),
+      component::GenerateLightPath(scene, camera, pss.light()),
+      component::GenerateEyePath(scene, camera, state.x, state.y, pss.eye()),
       component::PowerHeuristic<radiant_value_type>()
     );
-    state.contribution = Sum(state.measurement);
+    state.contribution += Sum(state.measurement);
     for (auto const& contribution : state.light_image) {
       state.contribution += Sum(contribution.measurement);
     }
     return state;
   }
 
-  template <typename InputIterator>
-  Seed
-  SampleSeed(
-    InputIterator first,
-    InputIterator last,
-    DefaultSampler<>& sampler
-  ) const
+  void
+  AccumulateContribution(
+    State& state,
+    image_type& image_buffer
+  ) const noexcept
   {
-    radiant_value_type c = 0;
-    std::vector<radiant_value_type> cs;
-    std::for_each(first, last, [&](auto const& seed){
-      c += seed.contribution;
-      cs.push_back(c);
-    });
-    auto const it = std::lower_bound(cs.begin(), cs.end(), Uniform(c, sampler));
-    return *std::next(first, std::distance(cs.begin(), it));
+    image_buffer.at(state.x, state.y) += state.measurement * state.weight;
+    for (auto const& contribution : state.light_image) {
+      auto const& x = std::get<0>(*contribution.pixel);
+      auto const& y = std::get<1>(*contribution.pixel);
+      image_buffer.at(x, y) += contribution.measurement * state.weight;
+    }
+    state.weight = 0;
   }
 };
 

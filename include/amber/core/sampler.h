@@ -38,8 +38,8 @@ public:
   virtual result_type const operator()() = 0;
 };
 
-template <typename Engine = std::mt19937_64>
-class DefaultSampler : public Sampler
+template <typename Engine>
+class GenericSampler : public Sampler
 {
 public:
   using seed_type = typename Engine::result_type;
@@ -50,9 +50,7 @@ private:
   Engine engine_;
 
 public:
-  DefaultSampler() noexcept : engine_() {}
-
-  explicit DefaultSampler(seed_type seed) noexcept : engine_(seed) {}
+  explicit GenericSampler(seed_type seed) noexcept : engine_(seed) {}
 
   Engine& engine() noexcept { return engine_; }
 
@@ -61,6 +59,8 @@ public:
     return std::uniform_real_distribution<result_type>(0, 1)(engine_);
   }
 };
+
+using MTSampler = GenericSampler<std::mt19937_64>;
 
 template <typename RealType>
 RealType const

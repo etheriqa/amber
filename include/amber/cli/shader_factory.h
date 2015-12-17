@@ -25,6 +25,7 @@
 #include "cli/option.h"
 #include "core/shader/bidirectional_path_tracing.h"
 #include "core/shader/light_tracing.h"
+#include "core/shader/multiplexed_mlt.h"
 #include "core/shader/path_tracing.h"
 #include "core/shader/photon_mapping.h"
 #include "core/shader/primary_sample_space_mlt.h"
@@ -56,6 +57,7 @@ private:
   using lt_type     = core::shader::LightTracing<Object>;
   using bdpt_type   = core::shader::BidirectionalPathTracing<Object>;
   using pssmlt_type = core::shader::PrimarySampleSpaceMLT<Object>;
+  using mmlt_type   = core::shader::MultiplexedMLT<Object>;
   using pm_type     = core::shader::PhotonMapping<Object>;
   using ppm_type    = core::shader::ProgressivePhotonMapping<Object>;
   using sppm_type   = core::shader::StochasticProgressivePhotonMapping<Object>;
@@ -78,6 +80,13 @@ public:
 
     if (option.shader == "pssmlt") {
       return std::make_shared<pssmlt_type>(
+        option.n_seeds,
+        option.p_large
+      );
+    }
+
+    if (option.shader == "mmlt") {
+      return std::make_shared<mmlt_type>(
         option.n_seeds,
         option.p_large
       );
