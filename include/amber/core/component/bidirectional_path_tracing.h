@@ -38,7 +38,7 @@ namespace core {
 namespace component {
 
 template <typename Radiant, typename RealType>
-struct BDPTPathGenerationPolicy
+struct SubpathGenerationPolicy
 {
   using object_type        = Object<Radiant, RealType>;
   using radiant_value_type = typename Radiant::value_type;
@@ -55,7 +55,7 @@ struct BDPTPathGenerationPolicy
   ) const = 0;
 
   virtual
-  radiant_value_type
+  radiant_value_type const
   PDFForward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -64,7 +64,7 @@ struct BDPTPathGenerationPolicy
   ) const = 0;
 
   virtual
-  radiant_value_type
+  radiant_value_type const
   PDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -73,7 +73,7 @@ struct BDPTPathGenerationPolicy
   ) const = 0;
 
   virtual
-  Radiant
+  Radiant const
   BSDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -83,13 +83,13 @@ struct BDPTPathGenerationPolicy
 };
 
 template <typename Radiant, typename RealType>
-struct BDPTLightPathGenerationPolicy
-: public BDPTPathGenerationPolicy<Radiant, RealType>
+struct LightSubpathGenerationPolicy
+: public SubpathGenerationPolicy<Radiant, RealType>
 {
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::object_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::radiant_value_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::scatter_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::unit_vector3_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::object_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::radiant_value_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::scatter_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::unit_vector3_type;
 
   scatter_type
   Scatter(
@@ -102,7 +102,7 @@ struct BDPTLightPathGenerationPolicy
     return object.SampleImportance(direction_o, normal, sampler);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFForward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -113,7 +113,7 @@ struct BDPTLightPathGenerationPolicy
     return object.PDFImportance(direction_i, direction_o, normal);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -124,7 +124,7 @@ struct BDPTLightPathGenerationPolicy
     return object.PDFLight(direction_i, direction_o, normal);
   }
 
-  Radiant
+  Radiant const
   BSDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -137,13 +137,13 @@ struct BDPTLightPathGenerationPolicy
 };
 
 template <typename Radiant, typename RealType>
-struct BDPTEyePathGenerationPolicy
-: public BDPTPathGenerationPolicy<Radiant, RealType>
+struct EyeSubpathGenerationPolicy
+: public SubpathGenerationPolicy<Radiant, RealType>
 {
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::object_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::radiant_value_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::scatter_type;
-  using typename BDPTPathGenerationPolicy<Radiant, RealType>::unit_vector3_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::object_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::radiant_value_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::scatter_type;
+  using typename SubpathGenerationPolicy<Radiant, RealType>::unit_vector3_type;
 
   scatter_type
   Scatter(
@@ -156,7 +156,7 @@ struct BDPTEyePathGenerationPolicy
     return object.SampleLight(direction_o, normal, sampler);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFForward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -167,7 +167,7 @@ struct BDPTEyePathGenerationPolicy
     return object.PDFLight(direction_i, direction_o, normal);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -178,7 +178,7 @@ struct BDPTEyePathGenerationPolicy
     return object.PDFImportance(direction_i, direction_o, normal);
   }
 
-  Radiant
+  Radiant const
   BSDFBackward(
     object_type const& object,
     unit_vector3_type const& direction_i,
@@ -191,7 +191,7 @@ struct BDPTEyePathGenerationPolicy
 };
 
 template <typename Radiant, typename RealType>
-struct BDPTEndpoint
+struct SubpathEndpoint
 {
   using object_type       = Object<Radiant, RealType>;
   using unit_vector3_type = UnitVector3<RealType>;
@@ -205,17 +205,7 @@ struct BDPTEndpoint
 };
 
 template <typename Radiant, typename RealType>
-RealType
-GeometryFactor(
-  BDPTEndpoint<Radiant, RealType> const& x,
-  BDPTEndpoint<Radiant, RealType> const& y
-) noexcept
-{
-  return core::GeometryFactor(x.position, y.position, x.normal, y.normal);
-}
-
-template <typename Radiant, typename RealType>
-struct BDPTEvent : public BDPTEndpoint<Radiant, RealType>
+struct SubpathEvent : public SubpathEndpoint<Radiant, RealType>
 {
   using radiant_value_type = typename Radiant::value_type;
 
@@ -224,16 +214,116 @@ struct BDPTEvent : public BDPTEndpoint<Radiant, RealType>
   radiant_value_type p_forward;
 };
 
+template <typename Radiant>
+struct PathContribution
+{
+  Radiant measurement;
+  boost::optional<std::tuple<std::size_t, std::size_t>> pixel;
+
+  PathContribution() noexcept : measurement(), pixel(boost::none) {}
+
+  PathContribution(Radiant const& measurement) noexcept
+  : measurement(measurement), pixel(boost::none) {}
+
+  PathContribution(
+    Radiant const& measurement,
+    std::tuple<std::size_t, std::size_t> const& pixel
+  ) noexcept
+  : measurement(measurement), pixel(pixel) {}
+
+  operator bool() const noexcept
+  {
+    return Max(measurement) > 0;
+  }
+};
+
 template <typename Radiant, typename RealType>
-std::vector<BDPTEvent<Radiant, RealType>>
-GenerateLightPath(
+struct PathBuffer
+{
+  using camera_type        = Camera<Radiant, RealType>;
+  using event_type         = SubpathEvent<Radiant, RealType>;
+  using radiant_value_type = typename Radiant::value_type;
+  using scene_type         = Scene<Object<Radiant, RealType>>;
+
+  std::vector<radiant_value_type> geometry_factor;
+  std::vector<radiant_value_type> p_light;
+  std::vector<radiant_value_type> p_importance;
+  std::vector<radiant_value_type> p_technique;
+
+  PathBuffer() noexcept
+  : geometry_factor()
+  , p_light()
+  , p_importance()
+  , p_technique()
+  {}
+
+  void
+  Buffer(
+    scene_type const& scene,
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t const s,
+    std::size_t const t
+  );
+
+private:
+  void
+  BufferGeometryFactor(
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t const s,
+    std::size_t const t
+  );
+
+  void
+  BufferLightProbability(
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t const s,
+    std::size_t const t
+  );
+
+  void
+  BufferImportanceProbability(
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t const s,
+    std::size_t const t
+  );
+
+  void
+  BufferTechniqueProbability(
+    scene_type const& scene,
+    camera_type const& camera,
+    std::vector<event_type> const& light_path,
+    std::vector<event_type> const& eye_path,
+    std::size_t const s,
+    std::size_t const t
+  );
+};
+
+template <typename Radiant, typename RealType>
+RealType
+GeometryFactor(
+  SubpathEndpoint<Radiant, RealType> const& x,
+  SubpathEndpoint<Radiant, RealType> const& y
+) noexcept
+{
+  return core::GeometryFactor(x.position, y.position, x.normal, y.normal);
+}
+
+template <typename Radiant, typename RealType>
+std::vector<SubpathEvent<Radiant, RealType>>
+GenerateLightSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
   std::size_t const s,
   Sampler& sampler
 )
 {
-  std::vector<BDPTEvent<Radiant, RealType>> events;
+  std::vector<SubpathEvent<Radiant, RealType>> events;
   if (s == 0) {
     return events;
   }
@@ -250,7 +340,7 @@ GenerateLightPath(
     std::tie(ray, weight, object, std::ignore, p_psa, normal) =
       scene.GenerateLightRay(sampler);
 
-    BDPTEvent<Radiant, RealType> event;
+    SubpathEvent<Radiant, RealType> event;
     event.object          = object;
     event.position        = ray.origin;
     event.normal          = normal;
@@ -262,8 +352,8 @@ GenerateLightPath(
     events.push_back(event);
   }
 
-  ExtendPath(
-    BDPTLightPathGenerationPolicy<Radiant, RealType>(),
+  ExtendSubpath(
+    LightSubpathGenerationPolicy<Radiant, RealType>(),
     scene,
     s,
     ray,
@@ -277,14 +367,14 @@ GenerateLightPath(
 }
 
 template <typename Radiant, typename RealType>
-std::vector<BDPTEvent<Radiant, RealType>>
-GenerateLightPath(
+std::vector<SubpathEvent<Radiant, RealType>>
+GenerateLightSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
   Sampler& sampler
 )
 {
-  return GenerateLightPath(
+  return GenerateLightSubpath(
     scene,
     camera,
     std::numeric_limits<std::size_t>::max(),
@@ -293,8 +383,8 @@ GenerateLightPath(
 }
 
 template <typename Radiant, typename RealType>
-std::vector<BDPTEvent<Radiant, RealType>>
-GenerateEyePath(
+std::vector<SubpathEvent<Radiant, RealType>>
+GenerateEyeSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
   std::size_t const x,
@@ -303,7 +393,7 @@ GenerateEyePath(
   Sampler& sampler
 )
 {
-  std::vector<BDPTEvent<Radiant, RealType>> events;
+  std::vector<SubpathEvent<Radiant, RealType>> events;
   if (t == 0) {
     return events;
   }
@@ -320,7 +410,7 @@ GenerateEyePath(
     std::tie(ray, weight, object, std::ignore, p_psa, normal) =
       camera.GenerateEyeRay(x, y, sampler);
 
-    BDPTEvent<Radiant, RealType> event;
+    SubpathEvent<Radiant, RealType> event;
     event.object          = object;
     event.position        = ray.origin;
     event.normal          = normal;
@@ -332,8 +422,8 @@ GenerateEyePath(
     events.push_back(event);
   }
 
-  ExtendPath(
-    BDPTEyePathGenerationPolicy<Radiant, RealType>(),
+  ExtendSubpath(
+    EyeSubpathGenerationPolicy<Radiant, RealType>(),
     scene,
     t,
     ray,
@@ -347,8 +437,8 @@ GenerateEyePath(
 }
 
 template <typename Radiant, typename RealType>
-std::vector<BDPTEvent<Radiant, RealType>>
-GenerateEyePath(
+std::vector<SubpathEvent<Radiant, RealType>>
+GenerateEyeSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
   std::size_t const x,
@@ -356,7 +446,7 @@ GenerateEyePath(
   Sampler& sampler
 )
 {
-  return GenerateEyePath(
+  return GenerateEyeSubpath(
     scene,
     camera,
     x,
@@ -373,7 +463,7 @@ template <
   typename OutputIterator
 >
 void
-ExtendPath(
+ExtendSubpath(
   Policy const policy,
   Scene<Object<Radiant, RealType>> const& scene,
   std::size_t const n_vertices,
@@ -415,7 +505,7 @@ ExtendPath(
       hit.normal
     );
 
-    BDPTEvent<Radiant, RealType> event;
+    SubpathEvent<Radiant, RealType> event;
     event.object          = object;
     event.position        = hit.position;
     event.normal          = hit.normal;
@@ -439,31 +529,13 @@ ExtendPath(
   }
 }
 
-template <typename Radiant>
-struct BDPTContribution
-{
-  Radiant measurement;
-  boost::optional<std::tuple<std::size_t, std::size_t>> pixel;
-
-  BDPTContribution() noexcept : measurement(), pixel(boost::none) {}
-
-  BDPTContribution(Radiant const& measurement) noexcept
-  : measurement(measurement), pixel(boost::none) {}
-
-  BDPTContribution(
-    Radiant const& measurement,
-    std::tuple<std::size_t, std::size_t> const& pixel
-  ) noexcept
-  : measurement(measurement), pixel(pixel) {}
-};
-
 template <typename Radiant, typename RealType>
-BDPTContribution<Radiant>
+PathContribution<Radiant>
 Connect(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
-  BDPTEndpoint<Radiant, RealType> const* const light_endpoint,
-  BDPTEndpoint<Radiant, RealType> const* const eye_endpoint
+  SubpathEndpoint<Radiant, RealType> const* const light_endpoint,
+  SubpathEndpoint<Radiant, RealType> const* const eye_endpoint
 )
 {
   if (light_endpoint == nullptr && eye_endpoint == nullptr) {
@@ -493,7 +565,7 @@ Connect(
     if (!response) {
       return Radiant();
     }
-    return BDPTContribution<Radiant>(
+    return PathContribution<Radiant>(
       std::get<2>(*response) * light_endpoint->weight,
       std::make_tuple(std::get<0>(*response), std::get<1>(*response))
     );
@@ -515,7 +587,7 @@ Connect(
     }
   }
 
-  BDPTContribution<Radiant> contribution(Radiant(1));
+  PathContribution<Radiant> contribution(Radiant(1));
 
   Ray<RealType> const ray(
     light_endpoint->position,
@@ -572,268 +644,271 @@ Connect(
 }
 
 template <typename Radiant, typename RealType>
-class BidirectionalPathTracing
+void
+PathBuffer<Radiant, RealType>::Buffer(
+  scene_type const& scene,
+  camera_type const& camera,
+  std::vector<event_type> const& light_path,
+  std::vector<event_type> const& eye_path,
+  std::size_t const s,
+  std::size_t const t
+)
 {
-public:
-  using event_type        = BDPTEvent<Radiant, RealType>;
-  using contribution_type = BDPTContribution<Radiant>;
+  BufferGeometryFactor(light_path, eye_path, s, t);
+  BufferLightProbability(camera, light_path, eye_path, s, t);
+  BufferImportanceProbability(light_path, eye_path, s, t);
+  BufferTechniqueProbability(scene, camera, light_path, eye_path, s, t);
+}
 
-  using camera_type = Camera<Radiant, RealType>;
-  using scene_type  = Scene<Object<Radiant, RealType>>;
+template <typename Radiant, typename RealType>
+void
+PathBuffer<Radiant, RealType>::BufferGeometryFactor(
+  std::vector<SubpathEvent<Radiant, RealType>> const& light_path,
+  std::vector<SubpathEvent<Radiant, RealType>> const& eye_path,
+  std::size_t const s,
+  std::size_t const t
+)
+{
+  geometry_factor.clear();
 
-private:
-  using hit_type           = Hit<RealType>;
-  using object_type        = Object<Radiant, RealType>;
-  using radiant_value_type = typename Radiant::value_type;
-  using ray_type           = Ray<RealType>;
-  using scatter_type       = Scatter<Radiant, RealType>;
-  using unit_vector3_type  = UnitVector3<RealType>;
-
-private:
-  std::mutex                      mutable buffer_mtx_;
-  std::vector<radiant_value_type> mutable buffer_geometry_factor_;
-  std::vector<radiant_value_type> mutable buffer_p_light_;
-  std::vector<radiant_value_type> mutable buffer_p_importance_;
-  std::vector<radiant_value_type> mutable buffer_probability_;
-
-public:
-  BidirectionalPathTracing() noexcept
-  : buffer_mtx_(),
-    buffer_geometry_factor_(),
-    buffer_p_light_(),
-    buffer_p_importance_(),
-    buffer_probability_()
-  {}
-
-  template <typename MIS>
-  std::tuple<Radiant, std::vector<contribution_type>>
-  Combine(
-    scene_type const& scene,
-    camera_type const& camera,
-    std::vector<event_type> const& light_path,
-    std::vector<event_type> const& eye_path,
-    MIS const mis
-  ) const
-  {
-    Radiant measurement;
-    std::vector<contribution_type> light_image;
-
-    for (std::size_t s = 0; s <= light_path.size(); s++) {
-      for (std::size_t t = 0; t <= eye_path.size(); t++) {
-        auto contribution = component::Connect(
-          scene,
-          camera,
-          s == 0 ? nullptr : &light_path.at(s - 1),
-          t == 0 ? nullptr : &eye_path.at(t - 1)
-        );
-
-        if (Max(contribution.measurement) == 0) {
-          continue;
-        }
-
-        contribution.measurement *=
-          MISWeight(scene, camera, light_path, eye_path, s, t, mis);
-
-        if (contribution.pixel) {
-          contribution.measurement /= camera.ImageSize();
-          light_image.emplace_back(contribution);
-        } else {
-          measurement += contribution.measurement;
-        }
-      }
-    }
-
-    return std::make_tuple(measurement, light_image);
-  }
-
-  template <typename MIS>
-  radiant_value_type
-  MISWeight(
-    scene_type const& scene,
-    camera_type const& camera,
-    std::vector<event_type> const& light_path,
-    std::vector<event_type> const& eye_path,
-    std::size_t s,
-    std::size_t t,
-    MIS mis
-  ) const
-  {
-    std::lock_guard<std::mutex> lock(buffer_mtx_);
-
-    auto const n_techniques = s + t + 1;
-
-    UpdateGeometryFactorBuffer(light_path, eye_path, s, t);
-    UpdateLightProbabilityBuffer(camera, light_path, eye_path, s, t);
-    UpdateImportanceProbabilityBuffer(light_path, eye_path, s, t);
-
-    buffer_probability_.resize(n_techniques);
-    buffer_probability_.at(s) = 1;
-
-    for (std::size_t i = s - 1; i < n_techniques; i--) {
-      auto& p = buffer_probability_.at(i);
-      p = buffer_probability_.at(i + 1);
-
-      if (i == n_techniques - 2) {
-        p *= camera.PDFArea();
-      } else {
-        p *= buffer_p_light_.at(i) * buffer_geometry_factor_.at(i);
-      }
-
-      if (i == 0) {
-        p /= scene.LightPDFArea(light_path.front().object);
-      } else {
-        p /= buffer_p_importance_.at(i - 1) * buffer_geometry_factor_.at(i - 1);
-      }
-    }
-
-    for (std::size_t i = s + 1; i < n_techniques; i++) {
-      auto& p = buffer_probability_.at(i);
-      p = buffer_probability_.at(i - 1);
-
-      if (i == 1) {
-        p *= scene.LightPDFArea(eye_path.back().object);
-      } else {
-        p *= buffer_p_importance_.at(i - 2) * buffer_geometry_factor_.at(i - 2);
-      }
-
-      if (i == n_techniques - 1) {
-        p /= camera.PDFArea();
-      } else {
-        p /= buffer_p_light_.at(i - 1) * buffer_geometry_factor_.at(i - 1);
-      }
-    }
-
-    for (std::size_t i = 1; i + 1 < s; i++) {
-      auto const surface = light_path.at(i).object.Surface();
-      if (surface == SurfaceType::Specular || surface == SurfaceType::Eye) {
-        buffer_probability_.at(i) = 0;
-        buffer_probability_.at(i + 1) = 0;
-      }
-    }
-    for (std::size_t i = 1; i + 1 < t; i++) {
-      auto const surface = eye_path.at(i).object.Surface();
-      if (surface == SurfaceType::Specular || surface == SurfaceType::Eye) {
-        buffer_probability_.at(n_techniques - i - 1) = 0;
-        buffer_probability_.at(n_techniques - i - 2) = 0;
-      }
-    }
-
-    return mis(buffer_probability_.begin(), buffer_probability_.end());
-  }
-
-private:
-  void
-  UpdateGeometryFactorBuffer(
-    std::vector<event_type> const& light_path,
-    std::vector<event_type> const& eye_path,
-    std::size_t s,
-    std::size_t t
-  ) const
-  {
-    buffer_geometry_factor_.clear();
-
-    if (s >= 2) {
-      for (std::size_t i = 1; i <= s - 1; i++) {
-        buffer_geometry_factor_.push_back(light_path.at(i).geometry_factor);
-      }
-    }
-
-    if (s >= 1 && t >= 1) {
-      buffer_geometry_factor_.push_back(
-        GeometryFactor(light_path.at(s - 1), eye_path.at(t - 1))
-      );
-    }
-
-    if (t >= 2) {
-      for (std::size_t i = t - 1; i >= 1; i--) {
-        buffer_geometry_factor_.push_back(eye_path.at(i).geometry_factor);
-      }
+  if (s >= 2) {
+    for (std::size_t i = 1; i <= s - 1; i++) {
+      geometry_factor.emplace_back(light_path.at(i).geometry_factor);
     }
   }
 
-  void
-  UpdateLightProbabilityBuffer(
-    camera_type const& camera,
-    std::vector<event_type> const& light_path,
-    std::vector<event_type> const& eye_path,
-    std::size_t s,
-    std::size_t t
-  ) const
-  {
-    buffer_p_light_.clear();
+  if (s >= 1 && t >= 1) {
+    geometry_factor.emplace_back(
+      GeometryFactor(light_path.at(s - 1), eye_path.at(t - 1))
+    );
+  }
 
-    if (s >= 2) {
-      for (std::size_t i = 1; i <= s - 1; i++) {
-        buffer_p_light_.push_back(light_path.at(i).p_backward);
-      }
+  if (t >= 2) {
+    for (std::size_t i = t - 1; i >= 1; i--) {
+      geometry_factor.emplace_back(eye_path.at(i).geometry_factor);
     }
+  }
+}
 
-    if (s >= 1 && t >= 1) {
-      auto const& light = light_path.at(s - 1);
-      auto const& eye = eye_path.at(t - 1);
-      auto const incident = Normalize(light.position - eye.position);
-      auto const& exitant = eye.direction;
-      auto const& normal = eye.normal;
-      auto const bsdf = eye.object.BSDF(incident, exitant, normal);
-      auto const pdf = eye.object.PDFLight(incident, exitant, normal);
-      auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, Max(bsdf / pdf));
-      buffer_p_light_.push_back(pdf * p_russian_roulette);
+template <typename Radiant, typename RealType>
+void
+PathBuffer<Radiant, RealType>::BufferLightProbability(
+  Camera<Radiant, RealType> const& camera,
+  std::vector<SubpathEvent<Radiant, RealType>> const& light_path,
+  std::vector<SubpathEvent<Radiant, RealType>> const& eye_path,
+  std::size_t const s,
+  std::size_t const t
+)
+{
+  p_light.clear();
+
+  if (s >= 2) {
+    for (std::size_t i = 1; i <= s - 1; i++) {
+      p_light.emplace_back(light_path.at(i).p_backward);
     }
+  }
 
-    if (t >= 2) {
-      for (std::size_t i = t - 2; i <= t - 2; i--) {
-        buffer_p_light_.push_back(eye_path.at(i).p_forward);
-      }
+  if (s >= 1 && t >= 1) {
+    auto const& light = light_path.at(s - 1);
+    auto const& eye = eye_path.at(t - 1);
+    auto const incident = Normalize(light.position - eye.position);
+    auto const& exitant = eye.direction;
+    auto const& normal = eye.normal;
+    auto const bsdf = eye.object.BSDF(incident, exitant, normal);
+    auto const pdf = eye.object.PDFLight(incident, exitant, normal);
+    auto const p_russian_roulette =
+      std::min<typename Radiant::value_type>(1, Max(bsdf / pdf));
+    p_light.emplace_back(pdf * p_russian_roulette);
+  }
+
+  if (t >= 2) {
+    for (std::size_t i = t - 2; i <= t - 2; i--) {
+      p_light.emplace_back(eye_path.at(i).p_forward);
+    }
+  } else {
+    auto const& z0 = t > 0 ? eye_path.at(0) : light_path.at(s + t - 1);
+    auto const& z1 = t > 1 ? eye_path.at(1) : light_path.at(s + t - 2);
+    p_light.back() =
+      camera.PDFDirection(Normalize(z1.position - z0.position));
+  }
+}
+
+template <typename Radiant, typename RealType>
+void
+PathBuffer<Radiant, RealType>::BufferImportanceProbability(
+  std::vector<SubpathEvent<Radiant, RealType>> const& light_path,
+  std::vector<SubpathEvent<Radiant, RealType>> const& eye_path,
+  std::size_t const s,
+  std::size_t const t
+)
+{
+  p_importance.clear();
+
+  if (s >= 2) {
+    for (std::size_t i = 0; i <= s - 2; i++) {
+      p_importance.emplace_back(light_path.at(i).p_forward);
+    }
+  }
+
+  if (s >= 1 && t >= 1) {
+    auto const& light = light_path.at(s - 1);
+    auto const& eye = eye_path.at(t - 1);
+    auto const incident = Normalize(eye.position - light.position);
+    auto const& exitant = light.direction;
+    auto const& normal = light.normal;
+    auto const bsdf = light.object.AdjointBSDF(incident, exitant, normal);
+    auto const pdf = light.object.PDFImportance(incident, exitant, normal);
+    auto const p_russian_roulette =
+      std::min<typename Radiant::value_type>(1, Max(bsdf / pdf));
+    p_importance.emplace_back(pdf * p_russian_roulette);
+  }
+
+  if (t >= 2) {
+    for (std::size_t i = t - 1; i >= 1; i--) {
+      p_importance.emplace_back(eye_path.at(i).p_backward);
+    }
+  }
+
+  if (s < 2) {
+    p_importance.front() = 1 / kPI;
+  }
+}
+
+template <typename Radiant, typename RealType>
+void
+PathBuffer<Radiant, RealType>::BufferTechniqueProbability(
+  scene_type const& scene,
+  camera_type const& camera,
+  std::vector<event_type> const& light_path,
+  std::vector<event_type> const& eye_path,
+  std::size_t const s,
+  std::size_t const t
+)
+{
+  auto const n_techniques = s + t + 1;
+  p_technique.resize(n_techniques);
+  p_technique.at(s) = 1;
+
+  for (std::size_t i = s - 1; i < n_techniques; i--) {
+    auto& p = p_technique.at(i);
+    p = p_technique.at(i + 1);
+
+    if (i == n_techniques - 2) {
+      p *= camera.PDFArea();
     } else {
-      auto const& z0 = t > 0 ? eye_path.at(0) : light_path.at(s + t - 1);
-      auto const& z1 = t > 1 ? eye_path.at(1) : light_path.at(s + t - 2);
-      buffer_p_light_.back() =
-        camera.PDFDirection(Normalize(z1.position - z0.position));
+      p *= p_light.at(i) * geometry_factor.at(i);
+    }
+
+    if (i == 0) {
+      p /= scene.LightPDFArea(light_path.front().object);
+    } else {
+      p /= p_importance.at(i - 1) * geometry_factor.at(i - 1);
     }
   }
 
-  void
-  UpdateImportanceProbabilityBuffer(
-    std::vector<event_type> const& light_path,
-    std::vector<event_type> const& eye_path,
-    std::size_t s,
-    std::size_t t
-  ) const
-  {
-    buffer_p_importance_.clear();
+  for (std::size_t i = s + 1; i < n_techniques; i++) {
+    auto& p = p_technique.at(i);
+    p = p_technique.at(i - 1);
 
-    if (s >= 2) {
-      for (std::size_t i = 0; i <= s - 2; i++) {
-        buffer_p_importance_.push_back(light_path.at(i).p_forward);
-      }
+    if (i == 1) {
+      p *= scene.LightPDFArea(eye_path.back().object);
+    } else {
+      p *= p_importance.at(i - 2) * geometry_factor.at(i - 2);
     }
 
-    if (s >= 1 && t >= 1) {
-      auto const& light = light_path.at(s - 1);
-      auto const& eye = eye_path.at(t - 1);
-      auto const incident = Normalize(eye.position - light.position);
-      auto const& exitant = light.direction;
-      auto const& normal = light.normal;
-      auto const bsdf = light.object.AdjointBSDF(incident, exitant, normal);
-      auto const pdf = light.object.PDFImportance(incident, exitant, normal);
-      auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, Max(bsdf / pdf));
-      buffer_p_importance_.push_back(pdf * p_russian_roulette);
-    }
-
-    if (t >= 2) {
-      for (std::size_t i = t - 1; i >= 1; i--) {
-        buffer_p_importance_.push_back(eye_path.at(i).p_backward);
-      }
-    }
-
-    if (s < 2) {
-      // XXX
-      buffer_p_importance_.front() = 1 / kPI;
+    if (i == n_techniques - 1) {
+      p /= camera.PDFArea();
+    } else {
+      p /= p_light.at(i - 1) * geometry_factor.at(i - 1);
     }
   }
-};
+}
+
+template <typename Radiant, typename RealType, typename MIS>
+std::tuple<Radiant, std::vector<PathContribution<Radiant>>>
+Combine(
+  Scene<Object<Radiant, RealType>> const& scene,
+  Camera<Radiant, RealType> const& camera,
+  std::vector<SubpathEvent<Radiant, RealType>> const& light_path,
+  std::vector<SubpathEvent<Radiant, RealType>> const& eye_path,
+  PathBuffer<Radiant, RealType>& path_buffer,
+  MIS const mis
+)
+{
+  Radiant measurement;
+  std::vector<PathContribution<Radiant>> light_image;
+
+  for (std::size_t s = 0; s <= light_path.size(); s++) {
+    for (std::size_t t = 0; t <= eye_path.size(); t++) {
+      auto contribution = Connect(
+        scene,
+        camera,
+        s == 0 ? nullptr : &light_path.at(s - 1),
+        t == 0 ? nullptr : &eye_path.at(t - 1)
+      );
+
+      if (!contribution) {
+        continue;
+      }
+
+      contribution.measurement *= BidirectionalMISWeight(
+        scene,
+        camera,
+        light_path,
+        eye_path,
+        s,
+        t,
+        path_buffer,
+        mis
+      );
+
+      if (contribution.pixel) {
+        contribution.measurement /= camera.ImageSize();
+        light_image.emplace_back(contribution);
+      } else {
+        measurement += contribution.measurement;
+      }
+    }
+  }
+
+  return std::make_tuple(measurement, light_image);
+}
+
+template <typename Radiant, typename RealType, typename MIS>
+typename Radiant::value_type const
+BidirectionalMISWeight(
+  Scene<Object<Radiant, RealType>> const& scene,
+  Camera<Radiant, RealType> const& camera,
+  std::vector<SubpathEvent<Radiant, RealType>> const& light_path,
+  std::vector<SubpathEvent<Radiant, RealType>> const& eye_path,
+  std::size_t const s,
+  std::size_t const t,
+  PathBuffer<Radiant, RealType>& path_buffer,
+  MIS const mis
+)
+{
+  path_buffer.Buffer(scene, camera, light_path, eye_path, s, t);
+
+  auto const n_techniques = s + t + 1;
+
+  for (std::size_t i = 1; i + 1 < s; i++) {
+    auto const surface = light_path.at(i).object.Surface();
+    if (surface != SurfaceType::Diffuse) {
+      path_buffer.p_technique.at(i) = 0;
+      path_buffer.p_technique.at(i + 1) = 0;
+    }
+  }
+
+  for (std::size_t i = 1; i + 1 < t; i++) {
+    auto const surface = eye_path.at(i).object.Surface();
+    if (surface != SurfaceType::Diffuse) {
+      path_buffer.p_technique.at(n_techniques - i - 1) = 0;
+      path_buffer.p_technique.at(n_techniques - i - 2) = 0;
+    }
+  }
+
+  return mis(path_buffer.p_technique.begin(), path_buffer.p_technique.end());
+}
 
 }
 }

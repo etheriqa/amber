@@ -21,6 +21,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <mutex>
 #include <numeric>
 #include <thread>
@@ -50,8 +51,7 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
-  using bdpt_type =
-    component::BidirectionalPathTracing<radiant_type, real_type>;
+  using path_buffer_type = component::PathBuffer<radiant_type, real_type>;
 
   struct State
   {
@@ -176,7 +176,7 @@ public:
 
       IterateParallel(ctx, [&](auto const&){
         MTSampler sampler((std::random_device()()));
-        bdpt_type bdpt;
+        path_buffer_type path_buffer;
 
         auto const bs_snapshot = bs;
         NormalizationFactorMap bs_buffer;
@@ -194,8 +194,8 @@ public:
             chains = std::make_shared<ChainMap>(GenerateChains(
               scene,
               camera,
-              bdpt,
               *bs_snapshot,
+              path_buffer,
               bs_buffer,
               sampler
             ));
@@ -210,8 +210,8 @@ public:
           Sample(
             scene,
             camera,
-            bdpt,
             *bs_snapshot,
+            path_buffer,
             *chains,
             image_buffer,
             bs_buffer,
@@ -248,14 +248,14 @@ private:
     NormalizationFactorMap bs;
 
     MTSampler sampler((std::random_device()()));
-    bdpt_type bdpt;
+    path_buffer_type path_buffer;
 
     for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
       for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
         auto const light_path =
-          component::GenerateLightPath(scene, camera, sampler);
+          component::GenerateLightSubpath(scene, camera, sampler);
         auto const eye_path =
-          component::GenerateEyePath(scene, camera, x, y, sampler);
+          component::GenerateEyeSubpath(scene, camera, x, y, sampler);
         for (std::size_t s = 0; s <= light_path.size(); s++) {
           for (std::size_t t = 0; t <= eye_path.size(); t++) {
             auto contribution = component::Connect(
@@ -265,19 +265,16 @@ private:
               t == 0 ? nullptr : &eye_path.at(t - 1)
             );
 
-            if (Max(contribution.measurement) == 0) {
+            if (!contribution) {
               continue;
             }
 
-            contribution.measurement *= bdpt.MISWeight(
-              scene,
-              camera,
-              light_path,
-              eye_path,
-              s,
-              t,
-              component::PowerHeuristic<radiant_value_type>()
-            );
+            path_buffer.Buffer(scene, camera, light_path, eye_path, s, t);
+            contribution.measurement *=
+              component::PowerHeuristic<radiant_value_type>()(
+                path_buffer.p_technique.begin(),
+                path_buffer.p_technique.end()
+              );
 
             if (contribution.pixel) {
               contribution.measurement /= camera.ImageSize();
@@ -303,8 +300,8 @@ private:
   GenerateChains(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
     NormalizationFactorMap const& bs,
+    path_buffer_type& path_buffer,
     NormalizationFactorMap& bs_buffer,
     MTSampler& sampler
   ) const
@@ -317,7 +314,16 @@ private:
 
     image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
     for (std::size_t i = 0; i < n_seeds_; i++) {
-      Sample(scene, camera, bdpt, bs, chains, image_buffer, bs_buffer, sampler);
+      Sample(
+        scene,
+        camera,
+        bs,
+        path_buffer,
+        chains,
+        image_buffer,
+        bs_buffer,
+        sampler
+      );
     }
     for (auto& p : chains) {
       auto& chain = p.second;
@@ -331,8 +337,8 @@ private:
   Sample(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
     NormalizationFactorMap const& bs,
+    path_buffer_type& path_buffer,
     ChainMap& chains,
     image_type& buffer,
     NormalizationFactorMap& bs_buffer,
@@ -350,7 +356,7 @@ private:
       chain.SetLargeStep();
     }
 
-    auto proposal = ProposeState(scene, camera, bdpt, k, chain);
+    auto proposal = ProposeState(scene, camera, k, path_buffer, chain);
     if (large_step) {
       auto& b_buffer = bs_buffer[k];
       b_buffer.contribution += Sum(proposal.measurement);
@@ -414,8 +420,8 @@ private:
   ProposeState(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
     std::size_t const k,
+    path_buffer_type& path_buffer,
     component::MTPrimarySampleSpacePair& pss
   ) const
   {
@@ -423,7 +429,7 @@ private:
     std::size_t const t = k + 1 - s;
 
     auto const light_path =
-      component::GenerateLightPath(scene, camera, s, pss.light());
+      component::GenerateLightSubpath(scene, camera, s, pss.light());
     if (light_path.size() != s) {
       return State();
     }
@@ -432,7 +438,7 @@ private:
     std::size_t const y = Uniform<real_type>(camera.ImageHeight(), pss.eye());
 
     auto const eye_path =
-      component::GenerateEyePath(scene, camera, x, y, t, pss.eye());
+      component::GenerateEyeSubpath(scene, camera, x, y, t, pss.eye());
     if (eye_path.size() != t) {
       return State();
     }
@@ -443,17 +449,18 @@ private:
       s == 0 ? nullptr : &light_path.at(s - 1),
       t == 0 ? nullptr : &eye_path.at(t - 1)
     );
-    if (Max(contribution.measurement) == 0) {
+    if (!contribution) {
       return State();
     }
 
-    auto const weight = bdpt.MISWeight(
+    auto const weight = component::BidirectionalMISWeight(
       scene,
       camera,
       light_path,
       eye_path,
       s,
       t,
+      path_buffer,
       component::PowerHeuristic<radiant_value_type>()
     );
 

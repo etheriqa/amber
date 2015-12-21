@@ -33,7 +33,7 @@ if(OpenCV_FOUND)
     target_link_libraries(amber ${OpenCV_LIBS})
 endif()
 
-set(AMBER_COMMAND time ./amber --spp 65536 --time 10)
+set(AMBER_COMMAND time ./amber --spp 65536 --time 10 --initial-radius 0.008)
 
 add_custom_target(pt
     COMMAND ${AMBER_COMMAND} --shader pt --output pt
@@ -80,5 +80,11 @@ add_custom_target(ppm
 add_custom_target(sppm
     COMMAND ${AMBER_COMMAND} --shader sppm --output sppm
     COMMAND open sppm.png
+    DEPENDS amber
+)
+
+add_custom_target(ups
+    COMMAND ${AMBER_COMMAND} --shader ups --output ups
+    COMMAND open ups.png
     DEPENDS amber
 )

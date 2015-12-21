@@ -221,7 +221,7 @@ private:
       hit_point.x         = x;
       hit_point.y         = y;
       hit_point.n_photons = 0;
-      hit_point.radius    = scene.SceneSize() * initial_radius_;
+      hit_point.radius    = initial_radius_;
       hit_point.flux      = radiant_type();
       output = hit_point;
       return;

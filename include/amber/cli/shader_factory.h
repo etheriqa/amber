@@ -31,6 +31,7 @@
 #include "core/shader/primary_sample_space_mlt.h"
 #include "core/shader/progressive_photon_mapping.h"
 #include "core/shader/stochastic_progressive_photon_mapping.h"
+#include "core/shader/unified_path_sampling.h"
 
 namespace amber {
 namespace cli {
@@ -61,6 +62,7 @@ private:
   using pm_type     = core::shader::PhotonMapping<Object>;
   using ppm_type    = core::shader::ProgressivePhotonMapping<Object>;
   using sppm_type   = core::shader::StochasticProgressivePhotonMapping<Object>;
+  using ups_type    = core::shader::UnifiedPathSampling<Object>;
 
 public:
   shader_ptr
@@ -108,6 +110,13 @@ public:
 
     if (option.shader == "sppm") {
       return std::make_shared<sppm_type>(
+        option.initial_radius,
+        option.alpha
+      );
+    }
+
+    if (option.shader == "ups") {
+      return std::make_shared<ups_type>(
         option.initial_radius,
         option.alpha
       );

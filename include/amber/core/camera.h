@@ -95,6 +95,20 @@ public:
     return sensor_.ImageSize();
   }
 
+  std::size_t const
+  PackUV(std::size_t const u, std::size_t const v) const noexcept
+  {
+    // TODO check the range of the input values
+    return u + v * ImageWidth();
+  }
+
+  std::tuple<std::size_t, std::size_t>
+  UnpackUV(std::size_t const i) const noexcept
+  {
+    // TODO check the range of the input value
+    return std::make_tuple(i % ImageWidth(), i / ImageWidth());
+  }
+
   void Write(std::ostream& os) const noexcept
   {
     os

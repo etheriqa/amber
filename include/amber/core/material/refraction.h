@@ -30,8 +30,8 @@
 
 namespace {
 
-std::double_t const kReflectance = 1;
-std::double_t const kTransmittance = 1;
+std::double_t const kReflectance = .95;
+std::double_t const kTransmittance = .95;
 
 }
 
@@ -77,17 +77,16 @@ public:
 
     // transmittance is needed to scale by relative IOR
     auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
-    auto const rho_t = (1 - rho_r) / (ior * ior);
-    auto const rho = rho_r + rho_t;
+    auto const rho_t = (1 - rho_r) * (ior * ior);
 
     auto const signed_cos_i = Dot(direction_i, normal);
 
     if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
-      return Radiant(rho_r / rho * kReflectance * kDiracDelta);
+      return Radiant(rho_r * kReflectance * kDiracDelta);
     } else {
       // refraction
-      return Radiant(rho_t / rho * kTransmittance * kDiracDelta);
+      return Radiant(rho_t * kTransmittance * kDiracDelta);
     }
   }
 
@@ -142,7 +141,7 @@ public:
 
     // transmittance is needed to scale by relative IOR
     auto const rho_r = Schlick(r0_, std::abs(signed_cos_alpha));
-    auto const rho_t = (1 - rho_r) / (ior * ior);
+    auto const rho_t = (1 - rho_r) * (ior * ior);
     auto const rho = rho_r + rho_t;
 
     auto const signed_cos_i = Dot(direction_i, normal);
@@ -218,7 +217,7 @@ public:
 
     // transmittance is needed to scale by relative IOR
     auto const rho_r = Schlick(r0_, cos_alpha);
-    auto const rho_t = (1 - rho_r) / (ior * ior);
+    auto const rho_t = (1 - rho_r) * (ior * ior);
 
     return {
       // partial reflection

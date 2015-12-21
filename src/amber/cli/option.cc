@@ -42,7 +42,7 @@ ParseCommandLineOption(int argc, char** argv)
      po::value<std::string>(&option.acceleration)->default_value("kdtree"),
      "acceleration structure to use (list, bsp, kdtree, bvh)")
     ("alpha",
-     po::value<std::double_t>(&option.alpha)->default_value(0.7),
+     po::value<std::double_t>(&option.alpha)->default_value(2. / 3.),
      "a parameter used in the progressive photon mapping algoritms")
     ("exposure",
      po::value<std::double_t>(&option.exposure)->default_value(1),
@@ -52,8 +52,8 @@ ParseCommandLineOption(int argc, char** argv)
      "image height")
     ("help", "print this message")
     ("initial-radius",
-     po::value<std::double_t>(&option.initial_radius)->default_value(0.005),
-     "a parameter as a fraction of the scene's bounding box used in the density estimation method")
+     po::value<std::double_t>(&option.initial_radius)->default_value(0.001),
+     "a parameter of the initial radius used in the density estimation algorithms")
     ("k",
      po::value<std::size_t>(&option.k)->default_value(16),
      "a parameter of the k-nearest neighbours method used in the photon mapping algorithm")
@@ -71,7 +71,7 @@ ParseCommandLineOption(int argc, char** argv)
      "a number of seed states used in the MCMC algorithms")
     ("shader",
      po::value<std::string>(&option.shader),
-     "rendering algorithm to use (pt, lt, bdpt, pssmlt, pm, ppm, sppm)")
+     "rendering algorithm to use (pt, lt, bdpt, pssmlt, mmlt, pm, ppm, sppm, ups)")
     ("spp",
      po::value<std::size_t>(&option.spp)->default_value(16),
      "a number of average samples per pixel")

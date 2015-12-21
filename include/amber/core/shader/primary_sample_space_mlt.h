@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -53,15 +54,14 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
-  using bdpt_type =
-    component::BidirectionalPathTracing<radiant_type, real_type>;
-  using bdpt_contribution_type = typename bdpt_type::contribution_type;
+  using path_buffer_type       = component::PathBuffer<radiant_type, real_type>;
+  using path_contribution_type = component::PathContribution<radiant_type>;
 
   struct State
   {
     std::size_t x, y;
     radiant_type measurement;
-    std::vector<bdpt_contribution_type> light_image;
+    std::vector<path_contribution_type> light_image;
     radiant_value_type contribution;
     radiant_value_type weight;
 
@@ -147,7 +147,7 @@ public:
 
       IterateParallel(ctx, [&](auto const&){
         MTSampler sampler((std::random_device()()));
-        bdpt_type bdpt;
+        path_buffer_type path_buffer;
 
         std::shared_ptr<Chain> chain;
         {
@@ -163,7 +163,7 @@ public:
             chain = std::make_shared<Chain>(GenerateChain(
               scene,
               camera,
-              bdpt,
+              path_buffer,
               b_buffer,
               sampler
             ));
@@ -180,8 +180,8 @@ public:
           Sample(
             scene,
             camera,
-            bdpt,
             *b,
+            path_buffer,
             *chain,
             image_buffer,
             b_buffer,
@@ -210,7 +210,7 @@ private:
   GenerateChain(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
+    path_buffer_type& path_buffer,
     NormalizationFactor& b_buffer,
     MTSampler& sampler
   ) const
@@ -219,7 +219,7 @@ private:
 
     image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
     for (std::size_t i = 0; i < n_seeds_; i++) {
-      Sample(scene, camera, bdpt, 1, chain, image_buffer, b_buffer, sampler);
+      Sample(scene, camera, 1, path_buffer, chain, image_buffer, b_buffer, sampler);
     }
     chain.weight = 0;
 
@@ -230,8 +230,8 @@ private:
   Sample(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
     radiant_value_type const b,
+    path_buffer_type& path_buffer,
     Chain& chain,
     image_type& image_buffer,
     NormalizationFactor& b_buffer,
@@ -243,7 +243,7 @@ private:
       chain.SetLargeStep();
     }
 
-    auto proposal = ProposeState(scene, camera, bdpt, chain);
+    auto proposal = ProposeState(scene, camera, path_buffer, chain);
     if (large_step) {
       b_buffer.contribution += proposal.contribution;
       b_buffer.n_samples++;
@@ -277,18 +277,19 @@ private:
   ProposeState(
     scene_type const& scene,
     camera_type const& camera,
-    bdpt_type const& bdpt,
+    path_buffer_type& path_buffer,
     component::MTPrimarySampleSpacePair& pss
   ) const
   {
     State state;
     state.x = Uniform<real_type>(camera.ImageWidth(), pss.eye());
     state.y = Uniform<real_type>(camera.ImageHeight(), pss.eye());
-    std::tie(state.measurement, state.light_image) = bdpt.Combine(
+    std::tie(state.measurement, state.light_image) = component::Combine(
       scene,
       camera,
-      component::GenerateLightPath(scene, camera, pss.light()),
-      component::GenerateEyePath(scene, camera, state.x, state.y, pss.eye()),
+      component::GenerateLightSubpath(scene, camera, pss.light()),
+      component::GenerateEyeSubpath(scene, camera, state.x, state.y, pss.eye()),
+      path_buffer,
       component::PowerHeuristic<radiant_value_type>()
     );
     state.contribution += Sum(state.measurement);

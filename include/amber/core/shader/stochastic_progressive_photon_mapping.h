@@ -117,7 +117,7 @@ public:
 
     std::vector<Statistics> statistics(camera.ImageSize());
     for (auto& stats : statistics) {
-      stats.radius = scene.SceneSize() * initial_radius_;
+      stats.radius = initial_radius_;
     }
 
     IterateParallel(ctx, [&](auto const&){

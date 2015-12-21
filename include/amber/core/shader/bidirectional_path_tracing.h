@@ -46,9 +46,8 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
-  using bdpt_type =
-    component::BidirectionalPathTracing<radiant_type, real_type>;
-  using bdpt_contribution_type = typename bdpt_type::contribution_type;
+  using path_buffer_type       = component::PathBuffer<radiant_type, real_type>;
+  using path_contribution_type = component::PathContribution<radiant_type>;
 
 public:
   BidirectionalPathTracing() noexcept {}
@@ -73,34 +72,35 @@ public:
 
       IterateParallel(ctx, [&](auto const&){
         MTSampler sampler((std::random_device()()));
-        bdpt_type bdpt;
 
-        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
+        image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+        path_buffer_type path_buffer;
 
         for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
           for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
             radiant_type measurement;
-            std::vector<bdpt_contribution_type> light_image;
-            std::tie(measurement, light_image) = bdpt.Combine(
+            std::vector<path_contribution_type> light_image;
+            std::tie(measurement, light_image) = component::Combine(
               scene,
               camera,
-              component::GenerateLightPath(scene, camera, sampler),
-              component::GenerateEyePath(scene, camera, x, y, sampler),
+              component::GenerateLightSubpath(scene, camera, sampler),
+              component::GenerateEyeSubpath(scene, camera, x, y, sampler),
+              path_buffer,
               component::PowerHeuristic<radiant_value_type>()
             );
             for (auto const& contribution : light_image) {
               auto const& x_light_image = std::get<0>(*contribution.pixel);
               auto const& y_light_image = std::get<1>(*contribution.pixel);
-              buffer.at(x_light_image, y_light_image) +=
+              image_buffer.at(x_light_image, y_light_image) +=
                 contribution.measurement;
             }
-            buffer.at(x, y) += measurement;
+            image_buffer.at(x, y) += measurement;
           }
 
         }
 
         std::lock_guard<std::mutex> lock(mtx);
-        image += buffer;
+        image += image_buffer;
       });
     }
 
