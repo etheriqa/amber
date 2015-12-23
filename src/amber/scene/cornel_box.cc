@@ -53,12 +53,12 @@ CornelBox()
   // light source
   objects.emplace_back(
     new ConvexPolygon({
-      vector3_type( 0.25, 0.99,  0.25),
-      vector3_type(-0.25, 0.99,  0.25),
-      vector3_type(-0.25, 0.99, -0.25),
-      vector3_type( 0.25, 0.99, -0.25),
+      vector3_type( 0.01, 0.99,  0.01),
+      vector3_type(-0.01, 0.99,  0.01),
+      vector3_type(-0.01, 0.99, -0.01),
+      vector3_type( 0.01, 0.99, -0.01),
     }),
-    new Light(radiant_type(10, 10, 10))
+    new Light(radiant_type(1e6, 1e6, 1e6))
   );
   // left
   objects.emplace_back(
@@ -88,7 +88,7 @@ CornelBox()
       vector3_type(-1, -1, -1),
       vector3_type( 1, -1, -1),
     }),
-    new Phong(radiant_type(), radiant_type(.95), 16)
+    new Phong(radiant_type(), radiant_type(.95), 256)
   );
   // floor
   objects.emplace_back(
@@ -110,6 +110,25 @@ CornelBox()
     }),
     new Lambertian(radiant_type(.5, .5, .5))
   );
+  // water
+  objects.emplace_back(
+    new ConvexPolygon({
+      vector3_type( 1, -0.5,  1),
+      vector3_type( 1, -0.5, -1),
+      vector3_type(-1, -0.5, -1),
+      vector3_type(-1, -0.5,  1),
+    }),
+    new Refraction(1.333)
+  );
+  objects.emplace_back(
+    new ConvexPolygon({
+      vector3_type( 1, -0.5, 1),
+      vector3_type(-1, -0.5, 1),
+      vector3_type(-1, -1, 1),
+      vector3_type( 1, -1, 1),
+    }),
+    new Refraction(1.333)
+  );
   // diffuse Sphere
   objects.emplace_back(
     new Sphere(vector3_type( 0.4, -0.6, -0.5), 0.4),
@@ -123,7 +142,7 @@ CornelBox()
   // refraction Sphere
   objects.emplace_back(
     new Sphere(vector3_type( 0.1, -0.8,  0.6), 0.2),
-    new Refraction(1.5)
+    new Refraction(1.125)
   );
 
   return objects;

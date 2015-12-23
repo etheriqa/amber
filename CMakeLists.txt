@@ -23,7 +23,6 @@ target_link_libraries(amber pthread)
 find_package(Boost REQUIRED program_options)
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    link_directories(${Boost_LIBRARY_DIRS})
     target_link_libraries(amber ${Boost_LIBRARIES})
 endif()
 
@@ -33,7 +32,7 @@ if(OpenCV_FOUND)
     target_link_libraries(amber ${OpenCV_LIBS})
 endif()
 
-set(AMBER_COMMAND time ./amber --spp 65536 --time 10 --initial-radius 0.008)
+set(AMBER_COMMAND time ./amber --spp 65536 --time 10 --initial-radius 0.008 --exposure 1000)
 
 add_custom_target(pt
     COMMAND ${AMBER_COMMAND} --shader pt --output pt
