@@ -28,7 +28,7 @@
 namespace amber {
 namespace cli {
 
-CommandLineOption
+boost::optional<CommandLineOption>
 ParseCommandLineOption(int argc, char** argv)
 {
   CommandLineOption option;
@@ -90,7 +90,13 @@ ParseCommandLineOption(int argc, char** argv)
      "image width")
     ;
 
-  po::store(po::parse_command_line(argc, argv, description), vm);
+  try {
+    po::store(po::parse_command_line(argc, argv, description), vm);
+  } catch (po::error_with_option_name const& e) {
+    std::cerr << e.what() << std::endl;
+    return boost::none;
+  }
+
   po::notify(vm);
 
   if (vm.count("help") || !vm.count("shader")) {

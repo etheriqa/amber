@@ -23,6 +23,8 @@
 #include <cmath>
 #include <string>
 
+#include <boost/optional.hpp>
+
 namespace amber {
 namespace cli {
 
@@ -47,7 +49,7 @@ struct CommandLineOption
   std::size_t width;
 };
 
-CommandLineOption
+boost::optional<CommandLineOption>
 ParseCommandLineOption(int argc, char** argv);
 
 }

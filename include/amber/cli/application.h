@@ -66,7 +66,9 @@ public:
   int run()
   {
     auto const option = ParseCommandLineOption(argc_, argv_);
-    if (option.help) {
+    if (!option) {
+      return -1;
+    } else if (option->help) {
       return 0;
     }
 
@@ -84,8 +86,8 @@ public:
     );
     auto const lens = core::lens::Thin<real_type>(focus_distance);
     auto const sensor = core::Sensor<radiant_type, real_type>(
-      option.width * option.ssaa,
-      option.height * option.ssaa
+      option->width * option->ssaa,
+      option->height * option->ssaa
     );
     auto const camera = core::Camera<radiant_type, real_type>(
       sensor, &lens, &aperture, origin, axis, up
@@ -94,7 +96,7 @@ public:
 
     ShaderFactory<object_type>::shader_ptr shader;
     try {
-      shader = ShaderFactory<object_type>()(option);
+      shader = ShaderFactory<object_type>()(*option);
     } catch (UnknownShaderError const& e) {
       std::cerr << e.what() << std::endl;
       return -1;
@@ -105,7 +107,7 @@ public:
       acceleration = AccelerationFactory<object_type>()(
         objects.begin(),
         objects.end(),
-        option
+        *option
       );
     } catch (UnknownAccelerationError const& e) {
       std::cerr << e.what() << std::endl;
@@ -118,21 +120,21 @@ public:
       shader,
       acceleration,
       camera,
-      option
+      *option
     );
 
     std::cerr << "Total Power = " << image.TotalPower() << std::endl;
 
     {
-      auto const filename = option.output + ".exr";
+      auto const filename = option->output + ".exr";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      ExportEXR(image.DownSample(option.ssaa), filename);
+      ExportEXR(image.DownSample(option->ssaa), filename);
     }
 
     {
-      auto const filename = option.output + ".png";
+      auto const filename = option->output + ".png";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      ExportPNG(image.DownSample(option.ssaa), filename, option.exposure);
+      ExportPNG(image.DownSample(option->ssaa), filename, option->exposure);
     }
 
     return 0;
