@@ -37,58 +37,83 @@ private:
   std::vector<Radiant> pixels_;
 
 public:
-  Image(std::size_t width, std::size_t height) noexcept
-    : width_(width), height_(height), pixels_(width * height) {}
+  Image(std::size_t const width, std::size_t const height) noexcept
+  : width_(width)
+  , height_(height)
+  , pixels_(width * height)
+  {}
 
   std::size_t const& width() const noexcept { return width_; }
   std::size_t const& height() const noexcept { return height_; }
   std::size_t const size() const noexcept { return width_ * height_; }
 
-  Image<Radiant>& operator+=(Image<Radiant> const& rhs)
-  {
-    if (rhs.width_ != width_ || rhs.height_ != height_) {
-      throw std::out_of_range("amber::Image::operator+=: invalid dimensions");
-    }
+  Image<Radiant>& operator+=(Image<Radiant> const& rhs);
 
-    for (std::size_t i = 0; i < width_ * height_; i++) {
-      pixels_[i] += rhs.pixels_[i];
-    }
+  Radiant& at(std::size_t const u, std::size_t const v);
+  Radiant const& at(std::size_t const u, std::size_t const v) const;
 
-    return *this;
-  }
-
-  Radiant& at(std::size_t x, std::size_t y) {
-    if (x >= width_ || y >= height_) {
-      throw std::out_of_range("amber::Image::at: invalid coordinates");
-    }
-    return pixels_.at(x + y * width_);
-  }
-
-  Radiant const& at(std::size_t x, std::size_t y) const {
-    if (x >= width_ || y >= height_) {
-      throw std::out_of_range("amber::Image::at: invalid coordinates");
-    }
-    return pixels_.at(x + y * width_);
-  }
-
-  Radiant const totalPower() const noexcept {
-    return std::accumulate(pixels_.begin(), pixels_.end(), Radiant());
-  }
-
-  Image<Radiant> downSample(std::size_t n) const {
-    if ((width_ % n) * (height_ % n) > 0) {
-      throw std::invalid_argument(
-        "amber::Image::downSample: invalid n");
-    }
-    Image<Radiant> image(width_ / n, height_ / n);
-    for (std::size_t i = 0; i < width_; i++) {
-      for (std::size_t j = 0; j < height_; j++) {
-        image.at(i / n, j / n) = at(i, j);
-      }
-    }
-    return image;
-  }
+  Radiant const TotalPower() const noexcept;
+  Image<Radiant> const DownSample(std::size_t const n) const;
 };
+
+template <typename Radiant>
+Image<Radiant>&
+Image<Radiant>::operator+=(Image<Radiant> const& rhs)
+{
+  if (rhs.width_ != width_ || rhs.height_ != height_) {
+    throw std::out_of_range("amber::Image::operator+=: invalid dimensions");
+  }
+
+  for (std::size_t i = 0; i < width_ * height_; i++) {
+    pixels_[i] += rhs.pixels_[i];
+  }
+
+  return *this;
+}
+
+template <typename Radiant>
+Radiant&
+Image<Radiant>::at(std::size_t const u, std::size_t const v)
+{
+  if (u >= width_ || v >= height_) {
+    throw std::out_of_range("amber::Image::at: invalid coordinates");
+  }
+  return pixels_.at(u + v * width_);
+}
+
+template <typename Radiant>
+Radiant const&
+Image<Radiant>::at(std::size_t const u, std::size_t const v) const
+{
+  if (u >= width_ || v >= height_) {
+    throw std::out_of_range("amber::Image::at: invalid coordinates");
+  }
+  return pixels_.at(u + v * width_);
+}
+
+template <typename Radiant>
+Radiant const
+Image<Radiant>::TotalPower() const noexcept
+{
+  return std::accumulate(pixels_.begin(), pixels_.end(), Radiant());
+}
+
+template <typename Radiant>
+Image<Radiant> const
+Image<Radiant>::DownSample(std::size_t const n) const
+{
+  if ((width_ % n) * (height_ % n) > 0) {
+    throw std::invalid_argument(
+      "amber::Image::DownSample: invalid n");
+  }
+  Image<Radiant> image(width_ / n, height_ / n);
+  for (std::size_t i = 0; i < width_; i++) {
+    for (std::size_t j = 0; j < height_; j++) {
+      image.at(i / n, j / n) = at(i, j);
+    }
+  }
+  return image;
+}
 
 }
 }

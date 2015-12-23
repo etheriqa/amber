@@ -24,6 +24,7 @@
 #include <mutex>
 #include <vector>
 
+#include "core/component/image_average_buffer.h"
 #include "core/shader.h"
 #include "core/surface_type.h"
 
@@ -62,28 +63,22 @@ public:
     Context& ctx
   )
   {
-    image_type image(camera.ImageWidth(), camera.ImageHeight());
-
+    component::ImageAverageBuffer<radiant_type>
+      image(camera.ImageWidth(), camera.ImageHeight());
     {
       std::mutex mtx;
 
       IterateParallel(ctx, [&](auto const&){
         MTSampler sampler((std::random_device()()));
 
-        image_type buffer(camera.ImageWidth(), camera.ImageHeight());
+        image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
         for (std::size_t j = 0; j < camera.ImageSize(); j++) {
-          Sample(scene, camera, buffer, sampler);
+          Sample(scene, camera, image_buffer, sampler);
         }
 
         std::lock_guard<std::mutex> lock(mtx);
-        image += buffer;
+        image.Buffer(std::move(image_buffer));
       });
-    }
-
-    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
-        image.at(x, y) /= ctx.IterationCount();
-      }
     }
 
     return image;
@@ -94,7 +89,7 @@ private:
   Sample(
     scene_type const& scene,
     camera_type const& camera,
-    image_type& image,
+    image_type& image_buffer,
     Sampler& sampler
   ) const
   {
@@ -119,7 +114,7 @@ private:
           auto const& x = std::get<0>(*response);
           auto const& y = std::get<1>(*response);
           auto const& sensor_weight = std::get<2>(*response);
-          image.at(x, y) += weight * sensor_weight;
+          image_buffer.at(x, y) += weight * sensor_weight;
         }
       }
 

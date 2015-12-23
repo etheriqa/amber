@@ -121,18 +121,18 @@ public:
       option
     );
 
-    std::cerr << "Total Power = " << image.totalPower() << std::endl;
+    std::cerr << "Total Power = " << image.TotalPower() << std::endl;
 
     {
       auto const filename = option.output + ".exr";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      ExportEXR(image.downSample(option.ssaa), filename);
+      ExportEXR(image.DownSample(option.ssaa), filename);
     }
 
     {
       auto const filename = option.output + ".png";
       std::cerr << "Exporting " << filename << "..." << std::endl;
-      ExportPNG(image.downSample(option.ssaa), filename, option.exposure);
+      ExportPNG(image.DownSample(option.ssaa), filename, option.exposure);
     }
 
     return 0;

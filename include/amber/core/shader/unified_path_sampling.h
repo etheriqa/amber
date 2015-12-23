@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "core/component/bidirectional_path_tracing.h"
+#include "core/component/image_average_buffer.h"
 #include "core/component/kdtree.h"
 #include "core/component/multiple_importance_sampling.h"
 #include "core/shader.h"
@@ -222,25 +223,20 @@ UnifiedPathSampling<Object>::operator()(
 )
 -> image_type
 {
-  image_type image(camera.ImageWidth(), camera.ImageHeight());
-
+  component::ImageAverageBuffer<radiant_type>
+    image(camera.ImageWidth(), camera.ImageHeight());
   {
     std::mutex mtx;
 
     IterateParallel(ctx, [&](auto const i){
       path_buffer_type path_buffer;
       image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+
       Render(scene, camera, i, path_buffer, image_buffer);
 
       std::lock_guard<std::mutex> lock(mtx);
-      image += image_buffer;
+      image.Buffer(std::move(image_buffer));
     });
-  }
-
-  for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
-    for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
-      image.at(x, y) /= ctx.IterationCount();
-    }
   }
 
   return image;

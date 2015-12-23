@@ -21,7 +21,6 @@
 #pragma once
 
 #include <algorithm>
-#include <atomic>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -31,6 +30,7 @@
 #include <boost/operators.hpp>
 
 #include "core/component/bidirectional_path_tracing.h"
+#include "core/component/image_average_buffer.h"
 #include "core/component/multiple_importance_sampling.h"
 #include "core/component/primary_sample_space.h"
 #include "core/shader.h"
@@ -140,7 +140,8 @@ public:
   {
     auto b = std::make_shared<NormalizationFactor>();
 
-    image_type image(camera.ImageWidth(), camera.ImageHeight());
+    component::ImageAverageBuffer<radiant_type>
+      image(camera.ImageWidth(), camera.ImageHeight());
     {
       std::mutex mtx;
       std::unordered_map<std::thread::id, std::shared_ptr<Chain>> chains;
@@ -191,15 +192,9 @@ public:
         AccumulateContribution(*chain, image_buffer);
 
         std::lock_guard<std::mutex> lock(mtx);
-        image += image_buffer;
+        image.Buffer(std::move(image_buffer));
         b = std::make_shared<NormalizationFactor>(*b + b_buffer);
       });
-    }
-
-    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
-        image.at(x, y) /= ctx.IterationCount();
-      }
     }
 
     return image;

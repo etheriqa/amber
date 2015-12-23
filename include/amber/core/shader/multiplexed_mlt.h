@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include "core/component/bidirectional_path_tracing.h"
+#include "core/component/image_average_buffer.h"
 #include "core/component/multiple_importance_sampling.h"
 #include "core/component/primary_sample_space.h"
 #include "core/shader.h"
@@ -169,7 +170,8 @@ public:
         camera
       ));
 
-    image_type image(camera.ImageWidth(), camera.ImageHeight());
+    component::ImageAverageBuffer<radiant_type>
+      image(camera.ImageWidth(), camera.ImageHeight());
     {
       std::mutex mtx;
       std::unordered_map<std::thread::id, std::shared_ptr<ChainMap>> chain_maps;
@@ -177,9 +179,9 @@ public:
       IterateParallel(ctx, [&](auto const&){
         MTSampler sampler((std::random_device()()));
         path_buffer_type path_buffer;
+        NormalizationFactorMap bs_buffer;
 
         auto const bs_snapshot = bs;
-        NormalizationFactorMap bs_buffer;
 
         std::shared_ptr<ChainMap> chains;
         {
@@ -224,15 +226,9 @@ public:
         }
 
         std::lock_guard<std::mutex> lock(mtx);
-        image += image_buffer;
+        image.Buffer(std::move(image_buffer));
         bs = std::make_shared<NormalizationFactorMap>(Merge(*bs, bs_buffer));
       });
-    }
-
-    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
-        image.at(x, y) /= ctx.IterationCount();
-      }
     }
 
     return image;
