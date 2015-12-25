@@ -52,6 +52,7 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
+  using event_type       = component::SubpathEvent<radiant_type, real_type>;
   using path_buffer_type = component::PathBuffer<radiant_type, real_type>;
 
   struct State
@@ -246,12 +247,12 @@ private:
     MTSampler sampler((std::random_device()()));
     path_buffer_type path_buffer;
 
-    for (std::size_t y = 0; y < camera.ImageHeight(); y++) {
-      for (std::size_t x = 0; x < camera.ImageWidth(); x++) {
+    for (std::size_t v = 0; v < camera.ImageHeight(); v++) {
+      for (std::size_t u = 0; u < camera.ImageWidth(); u++) {
         auto const light_path =
           component::GenerateLightSubpath(scene, camera, sampler);
         auto const eye_path =
-          component::GenerateEyeSubpath(scene, camera, x, y, sampler);
+          component::GenerateEyeSubpath(scene, camera, u, v, sampler);
         for (std::size_t s = 0; s <= light_path.size(); s++) {
           for (std::size_t t = 0; t <= eye_path.size(); t++) {
             auto contribution = component::Connect(
@@ -430,11 +431,10 @@ private:
       return State();
     }
 
-    std::size_t const x = Uniform<real_type>(camera.ImageWidth(), pss.eye());
-    std::size_t const y = Uniform<real_type>(camera.ImageHeight(), pss.eye());
-
-    auto const eye_path =
-      component::GenerateEyeSubpath(scene, camera, x, y, t, pss.eye());
+    std::size_t u, v;
+    std::vector<event_type> eye_path;
+    std::tie(eye_path, u, v) =
+      component::GenerateEyeSubpath(scene, camera, t, pss.eye());
     if (eye_path.size() != t) {
       return State();
     }
@@ -467,7 +467,7 @@ private:
         contribution.measurement * weight / camera.ImageSize()
       );
     } else {
-      return State(x, y, contribution.measurement * weight);
+      return State(u, v, contribution.measurement * weight);
     }
   }
 

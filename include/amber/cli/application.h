@@ -85,7 +85,7 @@ public:
       origin, axis, up, n_blades, radius
     );
     auto const lens = core::lens::Thin<real_type>(focus_distance);
-    auto const sensor = core::Sensor<radiant_type, real_type>(
+    auto const sensor = core::Sensor<real_type>(
       option->width * option->ssaa,
       option->height * option->ssaa
     );

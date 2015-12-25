@@ -54,20 +54,22 @@ private:
   using real_type          = typename Object::real_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
 
+  using event_type =
+    component::SubpathEvent<radiant_type, real_type>;
   using path_buffer_type       = component::PathBuffer<radiant_type, real_type>;
   using path_contribution_type = component::PathContribution<radiant_type>;
 
   struct State
   {
-    std::size_t x, y;
+    std::size_t u, v;
     radiant_type measurement;
     std::vector<path_contribution_type> light_image;
     radiant_value_type contribution;
     radiant_value_type weight;
 
     State() noexcept
-    : x(0)
-    , y(0)
+    : u(0)
+    , v(0)
     , measurement()
     , light_image()
     , contribution(0)
@@ -277,20 +279,28 @@ private:
   ) const
   {
     State state;
-    state.x = Uniform<real_type>(camera.ImageWidth(), pss.eye());
-    state.y = Uniform<real_type>(camera.ImageHeight(), pss.eye());
+
+    auto const light_path =
+      component::GenerateLightSubpath(scene, camera, pss.light());
+
+    std::vector<event_type> eye_path;
+    std::tie(eye_path, state.u, state.v) =
+      component::GenerateEyeSubpath(scene, camera, pss.eye()),
+
     std::tie(state.measurement, state.light_image) = component::Combine(
       scene,
       camera,
-      component::GenerateLightSubpath(scene, camera, pss.light()),
-      component::GenerateEyeSubpath(scene, camera, state.x, state.y, pss.eye()),
+      light_path,
+      eye_path,
       path_buffer,
       component::PowerHeuristic<radiant_value_type>()
     );
+
     state.contribution += Sum(state.measurement);
     for (auto const& contribution : state.light_image) {
       state.contribution += Sum(contribution.measurement);
     }
+
     return state;
   }
 
@@ -300,11 +310,11 @@ private:
     image_type& image_buffer
   ) const noexcept
   {
-    image_buffer.at(state.x, state.y) += state.measurement * state.weight;
+    image_buffer.at(state.u, state.v) += state.measurement * state.weight;
     for (auto const& contribution : state.light_image) {
-      auto const& x = std::get<0>(*contribution.pixel);
-      auto const& y = std::get<1>(*contribution.pixel);
-      image_buffer.at(x, y) += contribution.measurement * state.weight;
+      auto const& u = std::get<0>(*contribution.pixel);
+      auto const& v = std::get<1>(*contribution.pixel);
+      image_buffer.at(u, v) += contribution.measurement * state.weight;
     }
     state.weight = 0;
   }

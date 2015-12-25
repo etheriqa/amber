@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "core/initial_ray.h"
 #include "core/sampler.h"
 #include "core/surface_type.h"
 
@@ -40,6 +41,8 @@ public:
   using radiant_value_type = typename Object::radiant_value_type;
   using ray_type           = typename Object::ray_type;
   using unit_vector3_type  = typename Object::unit_vector3_type;
+
+  using initial_ray_type = InitialRay<Object>;
 
 private:
   struct Node
@@ -89,14 +92,7 @@ public:
     return Sum(object.Irradiance()) / total_power_;
   }
 
-  std::tuple<
-    ray_type,           // generated ray
-    Radiant,            // weight
-    Object,             // light object
-    radiant_value_type, // probability in the area measure
-    radiant_value_type, // probability in the projected solid angle measure
-    unit_vector3_type   // normal vector
-  >
+  initial_ray_type
   GenerateLightRay(Sampler& sampler) const
   {
     auto const light = SampleLight(sampler);

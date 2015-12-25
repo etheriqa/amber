@@ -387,8 +387,8 @@ std::vector<SubpathEvent<Radiant, RealType>>
 GenerateEyeSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
-  std::size_t const x,
-  std::size_t const y,
+  std::size_t const u,
+  std::size_t const v,
   std::size_t const t,
   Sampler& sampler
 )
@@ -408,7 +408,7 @@ GenerateEyeSubpath(
     Object<Radiant, RealType> object;
     typename Radiant::value_type p_psa;
     std::tie(ray, weight, object, std::ignore, p_psa, normal) =
-      camera.GenerateEyeRay(x, y, sampler);
+      camera.GenerateEyeRay(u, v, sampler);
 
     SubpathEvent<Radiant, RealType> event;
     event.object          = object;
@@ -437,20 +437,98 @@ GenerateEyeSubpath(
 }
 
 template <typename Radiant, typename RealType>
+std::tuple<
+  std::vector<SubpathEvent<Radiant, RealType>>,
+  std::size_t,
+  std::size_t
+>
+GenerateEyeSubpath(
+  Scene<Object<Radiant, RealType>> const& scene,
+  Camera<Radiant, RealType> const& camera,
+  std::size_t const t,
+  Sampler& sampler
+)
+{
+  std::vector<SubpathEvent<Radiant, RealType>> events;
+  std::size_t u, v;
+  if (t == 0) {
+    return std::make_tuple(events, u, v);
+  }
+
+  events.reserve(8);
+
+  Ray<RealType> ray;
+  Radiant weight;
+  UnitVector3<RealType> normal;
+
+  {
+    Object<Radiant, RealType> object;
+    typename Radiant::value_type p_psa;
+    std::tie(ray, weight, object, std::ignore, p_psa, normal, u, v) =
+      camera.GenerateEyeRay(sampler);
+
+    SubpathEvent<Radiant, RealType> event;
+    event.object          = object;
+    event.position        = ray.origin;
+    event.normal          = normal;
+    event.direction       = UnitVector3<RealType>();
+    event.weight          = weight;
+    event.geometry_factor = std::numeric_limits<RealType>::quiet_NaN();
+    event.p_backward      = std::numeric_limits<RealType>::quiet_NaN();
+    event.p_forward       = p_psa;
+    events.push_back(event);
+  }
+
+  ExtendSubpath(
+    EyeSubpathGenerationPolicy<Radiant, RealType>(),
+    scene,
+    t,
+    ray,
+    weight,
+    normal,
+    std::back_inserter(events),
+    sampler
+  );
+
+  return std::make_tuple(events, u, v);
+}
+
+
+template <typename Radiant, typename RealType>
 std::vector<SubpathEvent<Radiant, RealType>>
 GenerateEyeSubpath(
   Scene<Object<Radiant, RealType>> const& scene,
   Camera<Radiant, RealType> const& camera,
-  std::size_t const x,
-  std::size_t const y,
+  std::size_t const u,
+  std::size_t const v,
   Sampler& sampler
 )
 {
   return GenerateEyeSubpath(
     scene,
     camera,
-    x,
-    y,
+    u,
+    v,
+    std::numeric_limits<std::size_t>::max(),
+    sampler
+  );
+}
+
+template <typename Radiant, typename RealType>
+std::tuple<
+  std::vector<SubpathEvent<Radiant, RealType>>,
+  std::size_t,
+  std::size_t
+>
+GenerateEyeSubpath(
+  Scene<Object<Radiant, RealType>> const& scene,
+  Camera<Radiant, RealType> const& camera,
+  Sampler& sampler
+)
+{
+  return GenerateEyeSubpath(
+    scene,
+    camera,
     std::numeric_limits<std::size_t>::max(),
     sampler
   );
