@@ -287,6 +287,7 @@ auto
 UnifiedPathSampling<Object>::KernelRadius(std::size_t const i) const noexcept
 -> real_type const
 {
+  // TODO refactor with MPPM
   auto factor = static_cast<real_type>(1) / i;
 
   for (std::size_t j = 1; j < i; j++) {
@@ -301,6 +302,7 @@ auto
 UnifiedPathSampling<Object>::Kernel(real_type const radius) noexcept
 -> real_type const
 {
+  // TODO refactor with MPPM
   return 1 / (static_cast<real_type>(kPI) * radius * radius);
 }
 

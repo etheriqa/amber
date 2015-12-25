@@ -82,6 +82,12 @@ add_custom_target(sppm
     DEPENDS amber
 )
 
+add_custom_target(mppm
+    COMMAND ${AMBER_COMMAND} --shader mppm --output mppm
+    COMMAND open mppm.png
+    DEPENDS amber
+)
+
 add_custom_target(ups
     COMMAND ${AMBER_COMMAND} --shader ups --output ups
     COMMAND open ups.png

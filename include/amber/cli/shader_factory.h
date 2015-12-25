@@ -25,6 +25,7 @@
 #include "cli/option.h"
 #include "core/shader/bidirectional_path_tracing.h"
 #include "core/shader/light_tracing.h"
+#include "core/shader/memoryless_progressive_photon_mapping.h"
 #include "core/shader/multiplexed_mlt.h"
 #include "core/shader/path_tracing.h"
 #include "core/shader/photon_mapping.h"
@@ -62,6 +63,7 @@ private:
   using pm_type     = core::shader::PhotonMapping<Object>;
   using ppm_type    = core::shader::ProgressivePhotonMapping<Object>;
   using sppm_type   = core::shader::StochasticProgressivePhotonMapping<Object>;
+  using mppm_type   = core::shader::MemorylessProgressivePhotonMapping<Object>;
   using ups_type    = core::shader::UnifiedPathSampling<Object>;
 
 public:
@@ -110,6 +112,13 @@ public:
 
     if (option.shader == "sppm") {
       return std::make_shared<sppm_type>(
+        option.initial_radius,
+        option.alpha
+      );
+    }
+
+    if (option.shader == "mppm") {
+      return std::make_shared<mppm_type>(
         option.initial_radius,
         option.alpha
       );

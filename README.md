@@ -21,6 +21,7 @@ Features
     - `pm` photon mapping
     - `ppm` progressive photon mapping
     - `sppm` stochastic progressive photon mapping
+    - `mppm` memoryless progressive photon mapping
     - `ups` unified path sampling
 - Geometric primitives
     - Triangle
