@@ -33,7 +33,7 @@ public:
   using typename Material<Radiant, RealType>::scatter_type;
   using typename Material<Radiant, RealType>::unit_vector3_type;
 
-  Radiant
+  Radiant const
   AdjointBSDF(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -43,7 +43,7 @@ public:
     return this->BSDF(direction_i, direction_o, normal);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFLight(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -53,7 +53,7 @@ public:
     return PDF(direction_i, direction_o, normal);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFImportance(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -78,7 +78,8 @@ public:
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal,
     Sampler& sampler
-  ) const {
+  ) const
+  {
     return Sample(direction_o, normal, sampler);
   }
 
@@ -102,7 +103,7 @@ public:
 
 protected:
   virtual
-  radiant_value_type
+  radiant_value_type const
   PDF(
     unit_vector3_type const&,
     unit_vector3_type const&,
@@ -115,10 +116,7 @@ protected:
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal,
     Sampler& sampler
-  ) const
-  {
-    return this->SampleScatter(Distribution(direction_o, normal), sampler);
-  }
+  ) const = 0;
 
   virtual
   std::vector<scatter_type>
@@ -127,7 +125,7 @@ protected:
     unit_vector3_type const&
   ) const
   {
-    throw std::logic_error("specularScatters is not implemented");
+    throw std::logic_error("Distribution is not implemented");
   }
 };
 

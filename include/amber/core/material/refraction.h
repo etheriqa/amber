@@ -30,8 +30,8 @@
 
 namespace {
 
-std::double_t const kReflectance = .95;
-std::double_t const kTransmittance = .95;
+std::double_t const kReflectance = 1;
+std::double_t const kTransmittance = 1;
 
 }
 
@@ -50,15 +50,17 @@ private:
   radiant_value_type ior_, r0_;
 
 public:
-  explicit Refraction(radiant_value_type ior) noexcept
-    : ior_(ior), r0_(Fresnel(ior)) {}
+  explicit Refraction(radiant_value_type const ior) noexcept
+  : ior_(ior)
+  , r0_(Fresnel(ior))
+  {}
 
   SurfaceType Surface() const noexcept
   {
     return SurfaceType::Specular;
   }
 
-  Radiant
+  Radiant const
   BSDF(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -90,7 +92,7 @@ public:
     }
   }
 
-  Radiant
+  Radiant const
   AdjointBSDF(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -122,7 +124,7 @@ public:
     }
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFLight(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -148,14 +150,14 @@ public:
 
     if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
-      return rho_r / rho * kDiracDelta;
+      return (rho_r / rho + .25) / 1.5 * kDiracDelta;
     } else {
       // refraction
-      return rho_t / rho * kDiracDelta;
+      return (rho_t / rho + .25) / 1.5 * kDiracDelta;
     }
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDFImportance(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -180,11 +182,31 @@ public:
 
     if (signed_cos_alpha * signed_cos_i > 0) {
       // partial reflection
-      return rho_r * kDiracDelta;
+      return (rho_r + .25) / 1.5 * kDiracDelta;
     } else {
       // refraction
-      return rho_t * kDiracDelta;
+      return (rho_t + .25) / 1.5 * kDiracDelta;
     }
+  }
+
+  scatter_type
+  SampleLight(
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
+    Sampler& sampler
+  ) const
+  {
+    return SampleScatter(DistributionLight(direction_o, normal), sampler);
+  }
+
+  scatter_type
+  SampleImportance(
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
+    Sampler& sampler
+  ) const
+  {
+    return SampleScatter(DistributionImportance(direction_o, normal), sampler);
   }
 
   std::vector<scatter_type>
@@ -268,12 +290,50 @@ public:
   }
 
 private:
-  static RealType Fresnel(RealType ior) noexcept {
+  static
+  RealType const
+  Fresnel(RealType const ior) noexcept
+  {
     return std::pow((ior - 1) / (ior + 1), 2);
   }
 
-  static RealType Schlick(RealType r0, RealType cos_theta) noexcept {
+  static
+  RealType const
+  Schlick(
+    RealType const r0,
+    RealType const cos_theta
+  ) noexcept
+  {
     return r0 + (1 - r0) * std::pow(1 - cos_theta, 5);
+  }
+
+  static
+  scatter_type
+  SampleScatter(
+    std::vector<scatter_type> const& scatters,
+    Sampler& sampler
+  )
+  {
+    switch (scatters.size()) {
+    case 1:
+      return scatters[0];
+      break;
+    case 2:
+      {
+        auto const sum_weight = Sum(scatters[0].weight + scatters[1].weight);
+        auto const p_0 = (Sum(scatters[0].weight) / sum_weight + .25) / 1.5;
+        auto const p_1 = (Sum(scatters[1].weight) / sum_weight + .25) / 1.5;
+        if (p_0 > Uniform<radiant_value_type>(sampler)) {
+          return scatter_type(scatters[0].direction, scatters[0].weight / p_0);
+        } else {
+          return scatter_type(scatters[1].direction, scatters[1].weight / p_1);
+        }
+      }
+      break;
+    default:
+      throw std::logic_error("SampleScatter: invalid number of scatters");
+      break;
+    }
   }
 };
 

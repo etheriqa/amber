@@ -199,7 +199,7 @@ private:
       auto const scatter =
         object.SampleLight(-ray.direction, hit.normal, sampler);
       auto const p_russian_roulette =
-        std::min<radiant_value_type>(1, Max(scatter.weight));
+        std::min<radiant_value_type>(kRussianRoulette, Max(scatter.weight));
 
       if (Uniform<radiant_value_type>(sampler) >= p_russian_roulette) {
         hit_point.weight = radiant_type();

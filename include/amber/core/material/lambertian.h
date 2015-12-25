@@ -45,7 +45,7 @@ public:
     return SurfaceType::Diffuse;
   }
 
-  Radiant
+  Radiant const
   BSDF(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -62,7 +62,7 @@ public:
     }
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDF(
     unit_vector3_type const&,
     unit_vector3_type const&,

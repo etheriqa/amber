@@ -88,7 +88,7 @@ CornelBox()
       vector3_type(-1, -1, -1),
       vector3_type( 1, -1, -1),
     }),
-    new Phong(radiant_type(), radiant_type(.95), 256)
+    new Phong(radiant_type(.95), 256)
   );
   // floor
   objects.emplace_back(

@@ -45,9 +45,9 @@ public:
     return SurfaceType::Light;
   }
 
-  Radiant Irradiance() const noexcept { return radiance_ * kPI; }
+  Radiant const Irradiance() const noexcept { return radiance_ * kPI; }
 
-  Radiant
+  Radiant const
   Radiance(
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal
@@ -60,7 +60,7 @@ public:
     }
   }
 
-  Radiant
+  Radiant const
   BSDF(
     unit_vector3_type const&,
     unit_vector3_type const&,
@@ -70,7 +70,7 @@ public:
     return Radiant();
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDF(
     unit_vector3_type const&,
     unit_vector3_type const&,

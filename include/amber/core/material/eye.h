@@ -43,7 +43,7 @@ public:
     return SurfaceType::Eye;
   }
 
-  Radiant
+  Radiant const
   BSDF(
     unit_vector3_type const&,
     unit_vector3_type const&,
@@ -53,7 +53,7 @@ public:
     return Radiant(kDiracDelta);
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDF(
     unit_vector3_type const&,
     unit_vector3_type const&,
@@ -63,10 +63,20 @@ public:
     return kDiracDelta;
   }
 
+  scatter_type
+  Sample(
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const&,
+    Sampler&
+  ) const
+  {
+    return scatter_type(-direction_o, Radiant(1));
+  }
+
   std::vector<scatter_type>
   Distribution(
     unit_vector3_type const& direction_o,
-    unit_vector3_type const& normal
+    unit_vector3_type const&
   ) const
   {
     return {

@@ -48,7 +48,7 @@ public:
     return SurfaceType::Specular;
   }
 
-  Radiant
+  Radiant const
   BSDF(
     unit_vector3_type const& direction_i,
     unit_vector3_type const& direction_o,
@@ -65,7 +65,7 @@ public:
     }
   }
 
-  radiant_value_type
+  radiant_value_type const
   PDF(
     unit_vector3_type const&,
     unit_vector3_type const&,
@@ -75,15 +75,23 @@ public:
     return kDiracDelta;
   }
 
+  scatter_type
+  Sample(
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal,
+    Sampler&
+  ) const
+  {
+    return scatter_type(PerfectReflection(direction_o, normal), ks_);
+  }
+
   std::vector<scatter_type>
   Distribution(
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal
   ) const
   {
-    return {
-      scatter_type(PerfectReflection(direction_o, normal), ks_),
-    };
+    return {scatter_type(PerfectReflection(direction_o, normal), ks_)};
   }
 };
 

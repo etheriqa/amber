@@ -494,9 +494,15 @@ ExtendSubpath(
     auto const bsdf =
       policy.BSDFBackward(object, direction_o, direction_i, hit.normal);
     auto const p_russian_roulette_backward =
-      std::min<decltype(Max(bsdf / p_backward))>(1, Max(bsdf / p_backward));
+      std::min<typename Radiant::value_type>(
+        kRussianRoulette,
+        Max(bsdf / p_backward)
+      );
     auto const p_russian_roulette_forward =
-      std::min<decltype(Max(scatter.weight))>(1, Max(scatter.weight));
+      std::min<typename Radiant::value_type>(
+        kRussianRoulette,
+        Max(scatter.weight)
+      );
 
     auto const geometry_factor = core::GeometryFactor(
       direction_o,
@@ -516,7 +522,7 @@ ExtendSubpath(
     event.p_forward       = p_forward * p_russian_roulette_forward;
     output = event;
 
-    if (Uniform<decltype(p_russian_roulette_forward)>(sampler) >=
+    if (Uniform<typename Radiant::value_type>(sampler) >=
         p_russian_roulette_forward
     ) {
       break;
@@ -717,7 +723,7 @@ PathBuffer<Radiant, RealType>::BufferLightProbability(
     auto const bsdf = eye.object.BSDF(incident, exitant, normal);
     auto const pdf = eye.object.PDFLight(incident, exitant, normal);
     auto const p_russian_roulette =
-      std::min<typename Radiant::value_type>(1, Max(bsdf / pdf));
+      std::min<typename Radiant::value_type>(kRussianRoulette, Max(bsdf / pdf));
     p_light.emplace_back(pdf * p_russian_roulette);
   }
 
@@ -759,7 +765,7 @@ PathBuffer<Radiant, RealType>::BufferImportanceProbability(
     auto const bsdf = light.object.AdjointBSDF(incident, exitant, normal);
     auto const pdf = light.object.PDFImportance(incident, exitant, normal);
     auto const p_russian_roulette =
-      std::min<typename Radiant::value_type>(1, Max(bsdf / pdf));
+      std::min<typename Radiant::value_type>(kRussianRoulette, Max(bsdf / pdf));
     p_importance.emplace_back(pdf * p_russian_roulette);
   }
 

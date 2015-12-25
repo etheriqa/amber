@@ -45,46 +45,46 @@ public:
   virtual SurfaceType Surface() const noexcept = 0;
 
   virtual
-  Radiant
+  Radiant const
   Irradiance() const noexcept { return Radiant(); }
 
   virtual
-  Radiant
+  Radiant const
   Radiance(
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept { return Radiant(); }
 
   virtual
-  Radiant
+  Radiant const
   BSDF(
-    unit_vector3_type const&,
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept = 0;
 
   virtual
-  Radiant
+  Radiant const
   AdjointBSDF(
-    unit_vector3_type const&,
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept = 0;
 
   virtual
-  radiant_value_type
+  radiant_value_type const
   PDFLight(
-    unit_vector3_type const&,
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept = 0;
 
   virtual
-  radiant_value_type
+  radiant_value_type const
   PDFImportance(
-    unit_vector3_type const&,
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_i,
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const noexcept = 0;
 
   virtual
@@ -93,10 +93,7 @@ public:
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal,
     Sampler& sampler
-  ) const
-  {
-    return SampleScatter(DistributionLight(direction_o, normal), sampler);
-  }
+  ) const = 0;
 
   virtual
   scatter_type
@@ -104,69 +101,26 @@ public:
     unit_vector3_type const& direction_o,
     unit_vector3_type const& normal,
     Sampler& sampler
-  ) const
-  {
-    return SampleScatter(DistributionImportance(direction_o, normal), sampler);
-  }
+  ) const = 0;
 
   virtual
   std::vector<scatter_type>
   DistributionLight(
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
-    throw std::logic_error("distributionLight it not implemented");
+    throw std::logic_error("DistributionLight it not implemented");
   }
 
   virtual
   std::vector<scatter_type>
   DistributionImportance(
-    unit_vector3_type const&,
-    unit_vector3_type const&
+    unit_vector3_type const& direction_o,
+    unit_vector3_type const& normal
   ) const
   {
-    throw std::logic_error("distributionImportance it not implemented");
-  }
-
-protected:
-  static
-  scatter_type
-  SampleScatter(
-    std::vector<scatter_type> const& scatters,
-    Sampler& sampler
-  )
-  {
-    if (scatters.empty()) {
-      throw std::logic_error("no scatter event given");
-    }
-
-    if (scatters.size() == 1) {
-      return scatters.front();
-    }
-
-    std::vector<radiant_value_type> weights(scatters.size());
-    std::transform(
-      scatters.begin(),
-      scatters.end(),
-      weights.begin(),
-      [](auto const& scatter){ return Sum(scatter.weight); }
-    );
-    std::partial_sum(weights.begin(), weights.end(), weights.begin());
-
-    auto const distance = std::distance(
-      weights.begin(),
-      std::lower_bound(
-        weights.begin(),
-        weights.end(),
-        Uniform(weights.back(), sampler)
-    ));
-
-    auto const& scatter = scatters.at(distance);
-    return scatter_type(
-      scatter.direction,
-      scatter.weight / Sum(scatter.weight) * weights.back()
-    );
+    throw std::logic_error("DistributionImportance it not implemented");
   }
 };
 
