@@ -28,6 +28,7 @@
 #include "core/component/bidirectional_path_tracing.h"
 #include "core/component/image_average_buffer.h"
 #include "core/component/kdtree.h"
+#include "core/component/kernel.h"
 #include "core/component/multiple_importance_sampling.h"
 #include "core/shader.h"
 
@@ -82,6 +83,8 @@ private:
 
   using photon_map_type = component::KDTree<Photon, real_type>;
 
+  using kernel_type = component::DiskKernel<real_type>;
+
   std::double_t initial_radius_, alpha_;
 
 public:
@@ -107,15 +110,10 @@ private:
   Render(
     scene_type const& scene,
     camera_type const& camera,
-    std::size_t const i,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer,
     image_type& image_buffer
   ) const;
-
-  real_type const KernelRadius(std::size_t const i) const noexcept;
-
-  static
-  real_type const Kernel(real_type const radius) noexcept;
 
   static
   std::vector<path_type>
@@ -146,8 +144,7 @@ private:
     std::vector<path_type> const& light_paths,
     path_type const& light_path,
     path_type const& eye_path,
-    real_type const kernel,
-    real_type const radius,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer,
     image_type& image_buffer
   );
@@ -159,7 +156,7 @@ private:
     camera_type const& camera,
     path_type const& light_path,
     path_type const& eye_path,
-    real_type const kernel,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer
   );
 
@@ -170,7 +167,7 @@ private:
     camera_type const& camera,
     path_type const& light_path,
     path_type const& eye_path,
-    real_type const kernel,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer,
     image_type& image_buffer
   );
@@ -183,8 +180,7 @@ private:
     photon_map_type const& photon_map,
     std::vector<path_type> const& light_paths,
     path_type const& eye_path,
-    real_type const kernel,
-    real_type const radius,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer
   );
 
@@ -198,7 +194,7 @@ private:
     path_type const& eye_path,
     std::size_t const s,
     std::size_t const t,
-    real_type const kernel,
+    kernel_type const& kernel,
     path_buffer_type& path_buffer
   );
 };
@@ -226,12 +222,18 @@ UnifiedPathSampling<Object>::operator()(
     image(camera.ImageWidth(), camera.ImageHeight());
   {
     std::mutex mtx;
+    component::KernelRadiusSequence<real_type> radii(initial_radius_, alpha_);
 
     IterateParallel(ctx, [&](auto const i){
       path_buffer_type path_buffer;
       image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+      real_type radius;
+      {
+        std::lock_guard<std::mutex> lock(mtx);
+        radius = radii();
+      }
 
-      Render(scene, camera, i, path_buffer, image_buffer);
+      Render(scene, camera, kernel_type(radius), path_buffer, image_buffer);
 
       std::lock_guard<std::mutex> lock(mtx);
       image.Buffer(std::move(image_buffer));
@@ -246,7 +248,7 @@ void
 UnifiedPathSampling<Object>::Render(
   scene_type const& scene,
   camera_type const& camera,
-  std::size_t const i,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer,
   image_type& image_buffer
 ) const
@@ -256,8 +258,6 @@ UnifiedPathSampling<Object>::Render(
   auto const light_paths = GenerateLightPaths(scene, camera, sampler);
   auto const eye_paths = GenerateEyePaths(scene, camera, sampler);
   auto const photon_map = BuildPhotonMap(light_paths);
-  auto const radius = KernelRadius(i);
-  auto const kernel = Kernel(radius);
 
   for (std::size_t i = 0; i < camera.ImageSize(); i++) {
     auto const& light_path = light_paths.at(i);
@@ -274,35 +274,10 @@ UnifiedPathSampling<Object>::Render(
       light_path,
       eye_path,
       kernel,
-      radius,
       path_buffer,
       image_buffer
     );
   }
-}
-
-template <typename Object>
-auto
-UnifiedPathSampling<Object>::KernelRadius(std::size_t const i) const noexcept
--> real_type const
-{
-  // TODO refactor with MPPM
-  auto factor = static_cast<real_type>(1) / i;
-
-  for (std::size_t j = 1; j < i; j++) {
-    factor *= (j + alpha_) / j;
-  }
-
-  return initial_radius_ * std::sqrt(factor);
-}
-
-template <typename Object>
-auto
-UnifiedPathSampling<Object>::Kernel(real_type const radius) noexcept
--> real_type const
-{
-  // TODO refactor with MPPM
-  return 1 / (static_cast<real_type>(kPI) * radius * radius);
 }
 
 template <typename Object>
@@ -384,8 +359,7 @@ UnifiedPathSampling<Object>::CombinePath(
   std::vector<path_type> const& light_paths,
   path_type const& light_path,
   path_type const& eye_path,
-  real_type const kernel,
-  real_type const radius,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer,
   image_type& image_buffer
 )
@@ -417,7 +391,6 @@ UnifiedPathSampling<Object>::CombinePath(
     light_paths,
     eye_path,
     kernel,
-    radius,
     path_buffer
   );
 
@@ -431,7 +404,7 @@ UnifiedPathSampling<Object>::ConnectEyeImage(
   camera_type const& camera,
   path_type const& light_path,
   path_type const& eye_path,
-  real_type const kernel,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer
 )
 -> radiant_type const
@@ -476,7 +449,7 @@ UnifiedPathSampling<Object>::ConnectLightImage(
   camera_type const& camera,
   path_type const& light_path,
   path_type const& eye_path,
-  real_type const kernel,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer,
   image_type& image_buffer
 )
@@ -522,8 +495,7 @@ UnifiedPathSampling<Object>::ConnectDensityEstimation(
   photon_map_type const& photon_map,
   std::vector<path_type> const& light_paths,
   path_type const& eye_path,
-  real_type const kernel,
-  real_type const radius,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer
 )
 -> radiant_type const
@@ -538,7 +510,7 @@ UnifiedPathSampling<Object>::ConnectDensityEstimation(
     }
 
     auto const photons =
-      photon_map.SearchRNeighbours(eye_end.position, radius);
+      photon_map.SearchRNeighbours(eye_end.position, kernel.radius());
 
     radiant_type contribution;
 
@@ -571,7 +543,7 @@ UnifiedPathSampling<Object>::ConnectDensityEstimation(
       contribution += light_end.weight * bsdf * weight;
     }
 
-    measurement += contribution * kernel * eye_end.weight;
+    measurement += contribution * kernel() * eye_end.weight;
   }
 
   return measurement;
@@ -587,7 +559,7 @@ UnifiedPathSampling<Object>::MISWeight(
   path_type const& eye_path,
   std::size_t const s,
   std::size_t const t,
-  real_type const kernel,
+  kernel_type const& kernel,
   path_buffer_type& path_buffer
 )
 -> radiant_value_type const
@@ -620,11 +592,11 @@ UnifiedPathSampling<Object>::MISWeight(
 
   if (VirtualPerturbation) {
     for (std::size_t i = n_mc_techniques; i < n_techniques; i++) {
-      p_technique.at(i) /= kernel;
+      p_technique.at(i) /= kernel();
     }
   } else {
     for (std::size_t i = 0; i < n_mc_techniques; i++) {
-      p_technique.at(i) *= kernel;
+      p_technique.at(i) *= kernel();
     }
   }
 

@@ -24,6 +24,7 @@
 #include <mutex>
 #include <vector>
 
+#include "core/component/kernel.h"
 #include "core/component/photon_mapping.h"
 #include "core/shader.h"
 #include "core/surface_type.h"
@@ -52,6 +53,8 @@ private:
   using photon_map_type = typename pm_type::photon_map_type;
   using photon_type     = typename pm_type::photon_type;
 
+  using kernel_type = component::DiskKernel<real_type>;
+
   std::double_t initial_radius_, alpha_;
 
 public:
@@ -77,14 +80,9 @@ private:
   Render(
     scene_type const& scene,
     camera_type const& camera,
-    std::size_t const i,
+    kernel_type const& kernel,
     image_type& image_buffer
   ) const;
-
-  real_type const KernelRadius(std::size_t const i) const noexcept;
-
-  static
-  real_type const Kernel(real_type const radius) noexcept;
 
   static
   photon_map_type
@@ -102,8 +100,7 @@ private:
     photon_map_type const& photon_map,
     std::size_t const u,
     std::size_t const v,
-    real_type const kernel,
-    real_type const radius,
+    kernel_type const& kernel,
     Sampler& sampler
   );
 };
@@ -134,11 +131,17 @@ MemorylessProgressivePhotonMapping<Object>::operator()(
     image(camera.ImageWidth(), camera.ImageHeight());
   {
     std::mutex mtx;
+    component::KernelRadiusSequence<real_type> radii(initial_radius_, alpha_);
 
     IterateParallel(ctx, [&](auto const i){
       image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());
+      real_type radius;
+      {
+        std::lock_guard<std::mutex> lock(mtx);
+        radius = radii();
+      }
 
-      Render(scene, camera, i, image_buffer);
+      Render(scene, camera, kernel_type(radius), image_buffer);
 
       std::lock_guard<std::mutex> lock(mtx);
       image.Buffer(std::move(image_buffer));
@@ -153,50 +156,20 @@ void
 MemorylessProgressivePhotonMapping<Object>::Render(
   scene_type const& scene,
   camera_type const& camera,
-  std::size_t const i,
+  kernel_type const& kernel,
   image_type& image_buffer
 ) const
 {
   MTSampler sampler((std::random_device()()));
 
   auto const photon_map = BuildPhotonMap(scene, camera, sampler);
-  auto const radius = KernelRadius(i);
-  auto const kernel = Kernel(radius);
 
   for (std::size_t v = 0; v < camera.ImageHeight(); v++) {
     for (std::size_t u = 0; u < camera.ImageWidth(); u++) {
       image_buffer.at(u, v) +=
-        RayTracing(scene, camera, photon_map, u, v, kernel, radius, sampler);
+        RayTracing(scene, camera, photon_map, u, v, kernel, sampler);
     }
   }
-}
-
-template <typename Object>
-auto
-MemorylessProgressivePhotonMapping<Object>::KernelRadius(
-  std::size_t const i
-) const noexcept
--> real_type const
-{
-  // TODO refactor with UPS
-  auto factor = static_cast<real_type>(1) / i;
-
-  for (std::size_t j = 1; j < i; j++) {
-    factor *= (j + alpha_) / j;
-  }
-
-  return initial_radius_ * std::sqrt(factor);
-}
-
-template <typename Object>
-auto
-MemorylessProgressivePhotonMapping<Object>::Kernel(
-  real_type const radius
-) noexcept
--> real_type const
-{
-  // TODO refactor with UPS
-  return 1 / (static_cast<real_type>(kPI) * radius * radius);
 }
 
 template <typename Object>
@@ -229,8 +202,7 @@ MemorylessProgressivePhotonMapping<Object>::RayTracing(
   photon_map_type const& photon_map,
   std::size_t const u,
   std::size_t const v,
-  real_type const kernel,
-  real_type const radius,
+  kernel_type const& kernel,
   Sampler& sampler
 )
 -> radiant_type const
@@ -254,14 +226,14 @@ MemorylessProgressivePhotonMapping<Object>::RayTracing(
 
     if (object.Surface() == SurfaceType::Diffuse) {
       auto const photons =
-        photon_map.SearchRNeighbours(hit.position, radius);
+        photon_map.SearchRNeighbours(hit.position, kernel.radius());
       radiant_type contribution;
       for (auto const& photon : photons) {
         auto const bsdf =
           object.BSDF(photon.direction, -ray.direction, hit.normal);
         contribution += photon.power * bsdf;
       }
-      return contribution * kernel * weight / camera.ImageSize();
+      return contribution * kernel() * weight / camera.ImageSize();
     }
 
     auto const scatter =
