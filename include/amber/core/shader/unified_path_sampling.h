@@ -203,7 +203,6 @@ private:
   );
 };
 
-
 template <typename Object>
 void
 UnifiedPathSampling<Object>::Write(std::ostream& os) const noexcept

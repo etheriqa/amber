@@ -32,7 +32,11 @@ if(OpenCV_FOUND)
     target_link_libraries(amber ${OpenCV_LIBS})
 endif()
 
-set(AMBER_COMMAND time ./amber --spp 65536 --time 10 --initial-radius 0.008 --exposure 1000)
+set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --exposure 1000)
+set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --initial-radius 0.008)
+set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --spp 65536)
+set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --time 10)
+set(AMBER_COMMAND time ./amber ${AMBER_COMMAND_OPTION})
 
 add_custom_target(pt
     COMMAND ${AMBER_COMMAND} --shader pt --output pt

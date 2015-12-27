@@ -13,16 +13,20 @@ Features
 --------
 
 - Rendering algorithms
-    - `pt` path tracing
-    - `lt` light tracing
-    - `bdpt` bidirectional path tracing
-    - `pssmlt` primary sample space Metropolis light transport
-    - `mmlt` multiplexed Metropolis light transport
-    - `pm` photon mapping
-    - `ppm` progressive photon mapping
-    - `sppm` stochastic progressive photon mapping
-    - `mppm` memoryless progressive photon mapping
-    - `ups` unified path sampling
+    - Local path sampling algorithms
+        - `pt` path tracing
+        - `lt` light tracing
+        - `bdpt` bidirectional path tracing
+    - Photon density estimation algorithms
+        - `pm` photon mapping
+        - `ppm` progressive photon mapping
+        - `sppm` stochastic progressive photon mapping
+        - `mppm` memoryless progressive photon mapping / (S)PPM without local statistics
+    - Markov chain Monte Carlo algorithms
+        - `pssmlt` primary sample space Metropolis light transport
+        - `mmlt` multiplexed Metropolis light transport
+    - Hybrid algorithms
+        - `ups` unified path sampling / vertex connection and merging
 - Geometric primitives
     - Triangle
     - Disk

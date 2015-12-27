@@ -86,8 +86,8 @@ private:
   {
     using component::MTPrimarySampleSpacePair::seed_type;
 
-    Chain(seed_type const light_seed, seed_type const eye_seed)
-    : component::MTPrimarySampleSpacePair(light_seed, eye_seed)
+    explicit Chain(seed_type const seed)
+    : component::MTPrimarySampleSpacePair(seed)
     , State()
     {}
   };
@@ -306,7 +306,7 @@ private:
     ChainMap chains;
     for (auto const& p : bs) {
       auto const& k = p.first;
-      chains.emplace(k, Chain(sampler.engine()(), sampler.engine()()));
+      chains.emplace(k, Chain(sampler.engine()()));
     }
 
     image_type image_buffer(camera.ImageWidth(), camera.ImageHeight());

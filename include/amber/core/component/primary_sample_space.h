@@ -34,12 +34,10 @@ template <typename BaseSampler>
 class PrimarySampleSpace : public Sampler
 {
 public:
-  using seed_type = typename BaseSampler::seed_type;
+  using seed_type   = typename BaseSampler::seed_type;
+  using result_type = typename BaseSampler::result_type;
 
 private:
-  using typename Sampler::result_type;
-
-  using size_type      = std::size_t;
   using timestamp_type = std::uint_fast64_t;
 
   struct Sample
@@ -47,159 +45,332 @@ private:
     timestamp_type timestamp;
     result_type value;
 
-    Sample(timestamp_type timestamp, result_type value) noexcept
-    : timestamp(timestamp), value(value) {}
+    Sample() noexcept;
+    Sample(timestamp_type const timestamp, result_type const value) noexcept;
   };
 
   BaseSampler sampler_;
+
   std::vector<Sample> samples_;
-  std::vector<Sample> logs_;
-  bool large_step_;
-  timestamp_type large_step_time_;
+  std::vector<Sample> proposals_;
+
+  timestamp_type last_large_step_time_;
   timestamp_type time_;
-  size_type pos_;
+
+  bool large_step_;
+  std::size_t pos_;
 
 public:
-  explicit PrimarySampleSpace(seed_type seed) noexcept
-  : sampler_(seed)
-  , samples_()
-  , logs_()
-  , large_step_(false)
-  , large_step_time_(0)
-  , time_(0)
-  , pos_(0)
-  {}
+  explicit PrimarySampleSpace(seed_type const seed);
 
-  void SetLargeStep() noexcept { large_step_ = true; }
-  void UnsetLargeStep() noexcept { large_step_ = false; }
-
-  void Accept() noexcept
-  {
-    logs_.clear();
-    large_step_ = false;
-    large_step_time_ = time_;
-    pos_ = 0;
-    time_++;
-  }
-
-  void Reject() noexcept
-  {
-    std::copy(logs_.begin(), logs_.end(), samples_.begin());
-    while (!samples_.empty() && samples_.back().timestamp == time_) {
-      samples_.pop_back();
-    }
-    logs_.clear();
-    large_step_ = false;
-    pos_ = 0;
-  }
-
-  void Clear() noexcept
-  {
-    samples_.clear();
-    logs_.clear();
-    large_step_ = false;
-    large_step_time_ = 0;
-    pos_ = 0;
-    time_ = 0;
-  }
-
-  result_type const operator()()
-  {
-    auto const position = pos_++;
-
-    if (position >= samples_.size()) {
-      while (position >= samples_.size()) {
-        samples_.emplace_back(time_, sampler_());
-      }
-      return samples_.back().value;
-    }
-
-    auto& sample = samples_.at(position);
-    if (large_step_ || sample.timestamp < large_step_time_) {
-      logs_.push_back(sample);
-      sample.timestamp = time_;
-      sample.value = sampler_();
-    } else {
-      while (sample.timestamp < time_) {
-        if (sample.timestamp == time_ - 1) {
-          logs_.push_back(sample);
-        }
-        sample.timestamp++;
-        sample.value = Mutate(sample.value);
-      }
-    }
-
-    return sample.value;
-  }
+  result_type const operator()();
+  result_type const operator[](std::size_t const pos);
+  void SetLargeStep();
+  void Accept() noexcept;
+  void Reject() noexcept;
+  void ResetPosition() noexcept;
 
 private:
-  result_type const Mutate(result_type value)
-  {
-    auto const s1 = static_cast<result_type>(1) / 1024;
-    auto const s2 = static_cast<result_type>(1) / 64;
-    auto const dv = s2 * std::exp(-std::log(s2 / s1) * sampler_());
-    if (sampler_() < 0.5) {
-      value += dv;
-      if (value >= 1) {
-        value -= 1;
-      }
-    } else {
-      value -= dv;
-      if (value < 0) {
-        value += 1;
-      }
-    }
-    return value;
-  }
+  Sample GenerateSample();
+  Sample MutateSample(Sample const& sample);
+  result_type const Mutate(result_type value);
 };
 
 template <typename BaseSampler>
 class PrimarySampleSpacePair
 {
 public:
-  using seed_type = typename BaseSampler::seed_type;
+  using seed_type   = typename BaseSampler::seed_type;
+  using result_type = typename BaseSampler::result_type;
+
+  class Reference : public Sampler
+  {
+    friend class PrimarySampleSpacePair;
+
+  private:
+    PrimarySampleSpace<BaseSampler>* pss_;
+    std::size_t pos_;
+
+    Reference(
+      PrimarySampleSpace<BaseSampler>* const pss,
+      std::size_t const pos
+    ) noexcept;
+
+  public:
+    result_type const operator()();
+  };
 
 private:
-  PrimarySampleSpace<BaseSampler> light_, eye_;
+  PrimarySampleSpace<BaseSampler> pss_;
+
+  Reference light_;
+  Reference eye_;
 
 public:
-  PrimarySampleSpacePair(
-    seed_type const light_seed,
-    seed_type const eye_seed
-  )
-  : light_(light_seed)
-  , eye_(eye_seed)
-  {}
+  explicit PrimarySampleSpacePair(seed_type const seed);
+  PrimarySampleSpacePair(PrimarySampleSpacePair<BaseSampler> const& pssp);
 
-  PrimarySampleSpace<BaseSampler>& light() noexcept { return light_; }
-  PrimarySampleSpace<BaseSampler>& eye() noexcept { return eye_; }
+  PrimarySampleSpacePair<BaseSampler>& operator=(
+    PrimarySampleSpacePair<BaseSampler> const& pssp
+  );
 
-  void SetLargeStep() noexcept
-  {
-    light_.SetLargeStep();
-    eye_.SetLargeStep();
-  }
+  Reference& light() noexcept { return light_; }
+  Reference& eye() noexcept { return eye_; }
 
-  void UnsetLargeStep() noexcept
-  {
-    light_.UnsetLargeStep();
-    eye_.UnsetLargeStep();
-  }
+  void SetLargeStep();
+  void Accept() noexcept;
+  void Reject() noexcept;
+  void ResetPosition() noexcept;
 
-  void Accept() noexcept
-  {
-    light_.Accept();
-    eye_.Accept();
-  }
-
-  void Reject() noexcept
-  {
-    light_.Reject();
-    eye_.Reject();
-  }
+private:
+  void ResetReference() noexcept;
 };
 
+using MTPrimarySampleSpace     = PrimarySampleSpace<MTSampler>;
 using MTPrimarySampleSpacePair = PrimarySampleSpacePair<MTSampler>;
+
+template <typename BaseSampler>
+PrimarySampleSpace<BaseSampler>::PrimarySampleSpace(
+  seed_type const seed
+)
+: sampler_(seed)
+, samples_()
+, proposals_()
+, last_large_step_time_(0)
+, time_(0)
+, large_step_(false)
+, pos_(0)
+{}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpace<BaseSampler>::operator()()
+-> result_type const
+{
+  auto const position = pos_++;
+
+  if (position < proposals_.size()) {
+    return proposals_.at(position).value;
+  }
+
+  if (large_step_ || position >= samples_.size()) {
+    proposals_.emplace_back(GenerateSample());
+    return proposals_.back().value;
+  }
+
+  auto& sample = samples_.at(position);
+
+  if (sample.timestamp < last_large_step_time_) {
+    proposals_.emplace_back(GenerateSample());
+    return proposals_.back().value;
+  }
+
+  while (sample.timestamp + 1 < time_) {
+    sample = MutateSample(sample);
+  }
+
+  proposals_.emplace_back(MutateSample(sample));
+  return proposals_.back().value;
+}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpace<BaseSampler>::operator[](std::size_t const pos)
+-> result_type const
+{
+  while (pos >= proposals_.size()) {
+    operator()();
+  }
+
+  return proposals_.at(pos).value;
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpace<BaseSampler>::SetLargeStep()
+{
+  if (proposals_.size() > 0) {
+    throw std::logic_error("PrimarySampleSpace::SetLargeStep: cannot be called after sampling");
+  }
+
+  large_step_ = true;
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpace<BaseSampler>::Accept() noexcept
+{
+  samples_.resize(std::max(samples_.size(), proposals_.size()));
+  std::copy(proposals_.begin(), proposals_.end(), samples_.begin());
+  proposals_.clear();
+
+  if (large_step_) {
+    last_large_step_time_ = time_;
+  }
+  time_++;
+
+  large_step_ = false;
+  pos_ = 0;
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpace<BaseSampler>::Reject() noexcept
+{
+  proposals_.clear();
+
+  large_step_ = false;
+  pos_ = 0;
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpace<BaseSampler>::ResetPosition() noexcept
+{
+  pos_ = 0;
+}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpace<BaseSampler>::GenerateSample()
+-> Sample
+{
+  return Sample(time_, sampler_());
+}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpace<BaseSampler>::MutateSample(Sample const& sample)
+-> Sample
+{
+  return Sample(sample.timestamp + 1, Mutate(sample.value));
+}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpace<BaseSampler>::Mutate(result_type value)
+-> result_type const
+{
+  auto const s1 = static_cast<result_type>(1) / 1024;
+  auto const s2 = static_cast<result_type>(1) / 64;
+  auto const dv = s2 * std::exp(-std::log(s2 / s1) * sampler_());
+  if (sampler_() < 0.5) {
+    value += dv;
+    if (value >= 1) {
+      value -= 1;
+    }
+  } else {
+    value -= dv;
+    if (value < 0) {
+      value += 1;
+    }
+  }
+  return value;
+}
+
+template <typename BaseSampler>
+PrimarySampleSpace<BaseSampler>::Sample::Sample() noexcept
+: timestamp(0)
+, value(0)
+{}
+
+template <typename BaseSampler>
+PrimarySampleSpace<BaseSampler>::Sample::Sample(
+  timestamp_type const timestamp,
+  result_type const value
+) noexcept
+: timestamp(timestamp)
+, value(value)
+{}
+
+template <typename BaseSampler>
+PrimarySampleSpacePair<BaseSampler>::PrimarySampleSpacePair(
+  seed_type const seed
+)
+: pss_(seed)
+, light_(&pss_, 0)
+, eye_(&pss_, 1)
+{}
+
+template <typename BaseSampler>
+PrimarySampleSpacePair<BaseSampler>::PrimarySampleSpacePair(
+  PrimarySampleSpacePair<BaseSampler> const& pssp
+)
+: pss_(pssp.pss_)
+, light_(&pss_, 0)
+, eye_(&pss_, 1)
+{}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpacePair<BaseSampler>::operator=(
+  PrimarySampleSpacePair<BaseSampler> const& pssp
+)
+-> PrimarySampleSpacePair<BaseSampler>&
+{
+  pss_ = pssp.pss_;
+  ResetReference();
+  return *this;
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpacePair<BaseSampler>::SetLargeStep()
+{
+  pss_.SetLargeStep();
+  ResetReference();
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpacePair<BaseSampler>::Accept() noexcept
+{
+  pss_.Accept();
+  ResetReference();
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpacePair<BaseSampler>::Reject() noexcept
+{
+  pss_.Reject();
+  ResetReference();
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpacePair<BaseSampler>::ResetPosition() noexcept
+{
+  pss_.ResetPosition();
+  ResetReference();
+}
+
+template <typename BaseSampler>
+void
+PrimarySampleSpacePair<BaseSampler>::ResetReference() noexcept
+{
+  light_ = Reference(&pss_, 0);
+  eye_ = Reference(&pss_, 1);
+}
+
+template <typename BaseSampler>
+PrimarySampleSpacePair<BaseSampler>::Reference::Reference(
+  PrimarySampleSpace<BaseSampler>* const pss,
+  std::size_t const pos
+) noexcept
+: pss_(pss)
+, pos_(pos)
+{}
+
+template <typename BaseSampler>
+auto
+PrimarySampleSpacePair<BaseSampler>::Reference::operator()()
+-> result_type const
+{
+  auto const value = (*pss_)[pos_];
+  pos_ += 2;
+  return value;
+}
 
 }
 }

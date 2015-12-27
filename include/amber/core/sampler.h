@@ -42,11 +42,10 @@ template <typename Engine>
 class GenericSampler : public Sampler
 {
 public:
-  using seed_type = typename Engine::result_type;
+  using seed_type   = typename Engine::result_type;
+  using result_type = typename Sampler::result_type;
 
 private:
-  using typename Sampler::result_type;
-
   Engine engine_;
 
 public:
