@@ -12,6 +12,7 @@ include_directories(include/amber)
 
 add_executable(amber
     src/amber/cli/export.cc
+    src/amber/cli/import.cc
     src/amber/cli/option.cc
     src/amber/scene/cornel_box.cc
     src/amber/scene/cornel_box_complex.cc

@@ -18,57 +18,29 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <iostream>
 #include <opencv2/highgui/highgui.hpp>
 
-#include "cli/export.h"
-#include "post_process/filmic.h"
-#include "post_process/gamma.h"
-#include "post_process/normalizer.h"
+#include "cli/import.h"
 
 namespace amber {
 namespace cli {
 
-void
-ExportEXR(
-  core::Image<core::RGB<std::float_t>> const& image,
-  std::string const& filename
-)
+core::Image<core::RGB<std::float_t>>
+ImportEXR(std::string const& filename)
 {
-  cv::Mat mat(image.height(), image.width(), CV_32FC3);
+  auto const mat =
+    cv::imread(filename, cv::IMREAD_ANYDEPTH | cv::IMREAD_ANYCOLOR);
+
+  core::Image<core::RGB<std::float_t>> image(mat.rows, mat.cols);
   for (std::size_t i = 0; i < image.height(); i++) {
     for (std::size_t j = 0; j < image.width(); j++) {
       auto& rgb = mat.at<cv::Vec3f>(i, j);
-      rgb[0] = image.at(j, i).b();
-      rgb[1] = image.at(j, i).g();
-      rgb[2] = image.at(j, i).r();
+      image.at(j, i) = core::RGB<std::float_t>(rgb[2], rgb[1], rgb[0]);
     }
   }
 
-  cv::imwrite(filename, mat);
-}
-
-void
-ExportPNG(
-  core::Image<core::RGB<std::float_t>> const& image,
-  std::string const& filename,
-  std::double_t const exposure
-)
-{
-  post_process::Filmic<core::RGB<std::float_t>> filmic(exposure);
-  post_process::Gamma<core::RGB<std::float_t>> gamma;
-
-  auto const ldr_image = gamma(filmic(image));
-
-  cv::Mat mat(ldr_image.height(), ldr_image.width(), CV_8UC3);
-  for (std::size_t i = 0; i < ldr_image.height(); i++) {
-    for (std::size_t j = 0; j < ldr_image.width(); j++) {
-      auto& rgb = mat.at<cv::Vec3b>(i, j);
-      rgb[0] = ldr_image.at(j, i).b();
-      rgb[1] = ldr_image.at(j, i).g();
-      rgb[2] = ldr_image.at(j, i).r();
-    }
-  }
-  cv::imwrite(filename, mat);
+  return image;
 }
 
 }
