@@ -38,8 +38,10 @@ class RGB
 public:
   using value_type = T;
 
+  static const std::size_t kDimension = 3;
+
 private:
-  std::array<T, 3> values_;
+  std::array<T, kDimension> values_;
 
 public:
   RGB() noexcept : RGB(T()) {}
@@ -88,6 +90,28 @@ T const
 Sum(RGB<T> const& c) noexcept
 {
   return c.r() + c.g() + c.b();
+}
+
+template <typename T>
+T const
+MeanSquareError(RGB<T> const& estimated, RGB<T> const& actual) noexcept
+{
+  auto const error = estimated - actual;
+  return
+    (error.r() * error.r() + error.g() * error.g() + error.b() * error.b()) /
+    RGB<T>::kDimension;
+}
+
+template <typename T>
+T const
+AverageRelativeError(RGB<T> const& estimated, RGB<T> const& actual) noexcept
+{
+  auto const error = (estimated - actual) / actual;
+  return (
+    std::abs(std::isfinite(error.r()) ? error.r() : 0) +
+    std::abs(std::isfinite(error.g()) ? error.g() : 0) +
+    std::abs(std::isfinite(error.b()) ? error.b() : 0)
+  ) / RGB<T>::kDimension;
 }
 
 }

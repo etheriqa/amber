@@ -20,10 +20,13 @@
 
 #pragma once
 
+#include <cmath>
 #include <numeric>
 #include <vector>
 
 #include <boost/operators.hpp>
+
+#include "core/accumulator.h"
 
 namespace amber {
 namespace core {
@@ -37,11 +40,7 @@ private:
   std::vector<Radiant> pixels_;
 
 public:
-  Image(std::size_t const width, std::size_t const height) noexcept
-  : width_(width)
-  , height_(height)
-  , pixels_(width * height)
-  {}
+  Image(std::size_t const width, std::size_t const height) noexcept;
 
   std::size_t const& width() const noexcept { return width_; }
   std::size_t const& height() const noexcept { return height_; }
@@ -55,6 +54,62 @@ public:
   Radiant const TotalPower() const noexcept;
   Image<Radiant> const DownSample(std::size_t const n) const;
 };
+
+template <typename Radiant>
+typename Radiant::value_type
+MeanSquareError(
+  Image<Radiant> const& image,
+  Image<Radiant> const& reference
+)
+{
+  if (image.width() != reference.width() ||
+      image.height() != reference.height()) {
+    throw std::out_of_range("MeanSquareError: invalid dimensions");
+  }
+
+  Accumulator<typename Radiant::value_type> mse;
+
+  for (std::size_t v = 0; v < image.height(); v++) {
+    for (std::size_t u = 0; u < image.width(); u++) {
+      mse += MeanSquareError(image.at(u, v), reference.at(u, v));
+    }
+  }
+
+  return mse / image.size();
+}
+
+template <typename Radiant>
+typename Radiant::value_type
+AverageRelativeError(
+  Image<Radiant> const& image,
+  Image<Radiant> const& reference
+)
+{
+  if (image.width() != reference.width() ||
+      image.height() != reference.height()) {
+    throw std::out_of_range("AverageRelativeError: invalid dimensions");
+  }
+
+  Accumulator<typename Radiant::value_type> are;
+
+  for (std::size_t v = 0; v < image.height(); v++) {
+    for (std::size_t u = 0; u < image.width(); u++) {
+      are += AverageRelativeError(image.at(u, v), reference.at(u, v));
+    }
+  }
+
+  return are / image.size();
+}
+
+template <typename Radiant>
+Image<Radiant>::Image(
+  std::size_t const width,
+  std::size_t const height
+) noexcept
+: width_(width)
+, height_(height)
+, pixels_(width * height)
+{}
 
 template <typename Radiant>
 Image<Radiant>&

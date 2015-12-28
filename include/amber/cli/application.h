@@ -25,6 +25,7 @@
 
 #include "cli/acceleration_factory.h"
 #include "cli/export.h"
+#include "cli/import.h"
 #include "cli/option.h"
 #include "cli/render.h"
 #include "cli/shader_factory.h"
@@ -123,7 +124,17 @@ public:
       *option
     );
 
-    std::cerr << "Total Power = " << image.TotalPower() << std::endl;
+    if (option->reference != "") {
+      auto const reference = ImportEXR(option->reference);
+      std::cerr
+        << "Mean Square Error = "
+        << MeanSquareError(image, reference)
+        << std::endl
+        << "Average Relative Error = "
+        << AverageRelativeError(image, reference)
+        << std::endl
+        ;
+    }
 
     {
       auto const filename = option->output + ".exr";

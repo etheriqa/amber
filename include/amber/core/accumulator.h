@@ -20,38 +20,74 @@
 
 #pragma once
 
-#include <cmath>
-#include <string>
-
-#include <boost/optional.hpp>
-
 namespace amber {
-namespace cli {
+namespace core {
 
-struct CommandLineOption
+template <typename T>
+class Accumulator
 {
-  std::string acceleration;
-  std::double_t alpha;
-  std::double_t exposure;
-  std::size_t height;
-  bool help;
-  std::double_t initial_radius;
-  std::size_t k;
-  std::string output;
-  std::double_t p_large;
-  std::size_t n_photons;
-  std::size_t n_seeds;
-  std::string shader;
-  std::size_t spp;
-  std::size_t ssaa;
-  std::size_t n_threads;
-  std::size_t time;
-  std::size_t width;
-  std::string reference;
+private:
+  std::size_t n_;
+  std::vector<T> buffer_;
+
+public:
+  Accumulator() noexcept;
+
+  operator T const() const noexcept;
+
+  Accumulator<T>& operator+=(T const& value);
+  Accumulator<T>& operator+=(T&& value);
 };
 
-boost::optional<CommandLineOption>
-ParseCommandLineOption(int argc, char** argv);
+template <typename T>
+Accumulator<T>::Accumulator() noexcept
+: n_(0)
+, buffer_()
+{}
+
+template <typename T>
+Accumulator<T>::operator T const() const noexcept
+{
+  T sum(0);
+
+  for (std::size_t i = 0; i < buffer_.size(); i++) {
+    if (n_ & (static_cast<std::size_t>(1) << i)) {
+      sum += buffer_.at(i);
+    }
+  }
+
+  return sum;
+}
+
+template <typename T>
+Accumulator<T>&
+Accumulator<T>::operator+=(T const& value)
+{
+  auto copy = value;
+  return operator+=(copy);
+}
+
+template <typename T>
+Accumulator<T>&
+Accumulator<T>::operator+=(T&& value)
+{
+  n_++;
+
+  for (std::size_t i = 0;; i++) {
+    if (n_ & (static_cast<std::size_t>(1) << i)) {
+      if (n_ == (n_ & -n_)) {
+        buffer_.emplace_back(std::move(value));
+      } else {
+        buffer_.at(i) = std::move(value);
+      }
+      break;
+    }
+
+    value += buffer_.at(i);
+  }
+
+  return *this;
+}
 
 }
 }

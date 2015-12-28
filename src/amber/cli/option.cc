@@ -88,6 +88,9 @@ ParseCommandLineOption(int argc, char** argv)
     ("width",
      po::value<std::size_t>(&option.width)->default_value(512),
      "image width")
+    ("reference",
+     po::value<std::string>(&option.reference),
+     "reference image")
     ;
 
   try {
