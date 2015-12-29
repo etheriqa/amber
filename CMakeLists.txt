@@ -8,6 +8,20 @@ set(CMAKE_CXX_FLAGS "-std=c++1y -pedantic -Wall -mavx")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+
+# pthread
+list(APPEND AMBER_LIBRARIES pthread)
+
+# Boost
+find_package(Boost REQUIRED program_options)
+include_directories(${Boost_INCLUDE_DIRS})
+list(APPEND AMBER_LIBRARIES ${Boost_LIBRARIES})
+
+# OpenCV
+find_package(OpenCV REQUIRED core highgui)
+include_directories(${OpenCV_INCLUDE_DIRS})
+list(APPEND AMBER_LIBRARIES ${OpenCV_LIBS})
+
 include_directories(include/amber)
 
 add_executable(amber
@@ -19,22 +33,11 @@ add_executable(amber
     src/main.cc
 )
 
-target_link_libraries(amber pthread)
+target_link_libraries(amber ${AMBER_LIBRARIES})
 
-find_package(Boost REQUIRED program_options)
-if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    target_link_libraries(amber ${Boost_LIBRARIES})
-endif()
 
-find_package(OpenCV REQUIRED)
-if(OpenCV_FOUND)
-    include_directories(${OpenCV_INCLUDE_DIRS})
-    target_link_libraries(amber ${OpenCV_LIBS})
-endif()
-
+# define some useful custom targets
 set(REFERENCE_IMAGE reference.exr)
-
 set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --exposure 1000)
 set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --initial-radius 0.008)
 set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --spp 65536)
