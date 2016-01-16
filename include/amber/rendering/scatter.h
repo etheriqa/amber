@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,67 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/prelude/forward.h"
+#include "amber/prelude/vector3.h"
+
+namespace amber {
+namespace rendering {
+
+/** Scattering event.
+ */
+template <typename Radiant>
+class Scatter
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  /** Constructors.
+   */
+  Scatter() noexcept;
+  Scatter(const UnitVector3& direction_in, const Radiant& weight) noexcept;
+
+  /** Queries.
+   */
+  const UnitVector3 DirectionIn() const noexcept;
+  const Radiant Weight() const noexcept;
+
+private:
+  UnitVector3 direction_in_;
+  Radiant weight_;
+};
+
+
+
+
+
+template <typename Radiant>
+Scatter<Radiant>::Scatter() noexcept
+: direction_in_()
+, weight_(0)
+{}
+
+template <typename Radiant>
+Scatter<Radiant>::Scatter(
+  const UnitVector3& direction_in,
+  const Radiant& weight
+) noexcept
+: direction_in_(direction_in)
+, weight_(weight)
+{}
+
+template <typename Radiant>
+const UnitVector3
+Scatter<Radiant>::DirectionIn() const noexcept
+{
+  return direction_in_;
+}
+
+template <typename Radiant>
+const Radiant
+Scatter<Radiant>::Weight() const noexcept
+{
+  return weight_;
+}
+
+}
 }

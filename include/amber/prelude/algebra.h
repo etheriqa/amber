@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <cmath>
+#include <tuple>
+
+#include <boost/optional.hpp>
+
+namespace amber {
+namespace prelude {
+
+template <typename T>
+boost::optional<std::tuple<T, T>>
+SolveQuadratic(const T& a, const T& b, const T& c) noexcept
 {
-  return amber::cli::Application().Run(argc, argv);
+  const auto d = b * b - 4 * a * c;
+  if (d < 0) {
+    return boost::none;
+  }
+
+  const auto sqrt_d = std::sqrt(d);
+  auto alpha = - b - sqrt_d;
+  auto beta = - b + sqrt_d;
+  if (std::abs(alpha) < std::abs(beta)) {
+    alpha = c / beta * 2;
+    beta /= 2 * a;
+  } else {
+    beta = c / alpha * 2;
+    alpha /= 2 * a;
+  }
+
+  return std::make_tuple(alpha, beta);
+}
+
+}
 }

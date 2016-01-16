@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,53 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#include "amber/cli/context.h"
 
-int main(int argc, char **argv)
+namespace amber {
+namespace cli {
+
+Context::Context(std::size_t n_threads, std::size_t n_iterations) noexcept
+: mutex_()
+, n_threads_(n_threads)
+, n_iterations_(n_iterations)
+, n_iterations_started_(0)
+, is_expired_(false)
+{}
+
+const std::size_t
+Context::ThreadCount() const noexcept
 {
-  return amber::cli::Application().Run(argc, argv);
+  std::lock_guard<std::mutex> lock(mutex_);
+  return n_threads_;
+}
+
+const std::size_t
+Context::IterationCount() const noexcept
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  return n_iterations_started_;
+}
+
+bool
+Context::Iterate() noexcept
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (n_iterations_ > 0 && n_iterations_started_ >= n_iterations_) {
+    return false;
+  }
+  if (is_expired_) {
+    return false;
+  }
+  n_iterations_started_++;
+  return true;
+}
+
+void
+Context::Expire() noexcept
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  is_expired_ = true;
+}
+
+}
 }

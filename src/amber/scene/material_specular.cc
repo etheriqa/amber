@@ -18,27 +18,56 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "amber/cli/forward.h"
+#include "amber/constants.h"
+#include "amber/prelude/geometry.h"
+#include "amber/rendering/surface.h"
+#include "amber/scene/material_specular.h"
 
 namespace amber {
-namespace cli {
+namespace scene {
 
-class Application
+rendering::SurfaceType
+BasicSpecular::Surface() const noexcept
 {
-public:
-  int Run(int argc, const char*const* argv);
+  return rendering::SurfaceType::Specular;
+}
 
-private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
-};
+const real_type
+BasicSpecular::SymmetricBSDF(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  const UnitVector3& direction_in
+) const noexcept
+{
+  const auto signed_cos_o = Dot(direction_out, normal);
+  const auto signed_cos_i = Dot(direction_in, normal);
+
+  if (signed_cos_o * signed_cos_i <= 0) {
+    return 0;
+  }
+
+  return kDiracDelta;
+}
+
+const real_type
+BasicSpecular::PDF(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  const UnitVector3& direction_in
+) const noexcept
+{
+  return kDiracDelta;
+}
+
+BasicScatter
+BasicSpecular::Sample(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  Sampler& sampler
+) const
+{
+  return BasicScatter(prelude::PerfectReflection(direction_out, normal), 1);
+}
 
 }
 }

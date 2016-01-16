@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,54 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/prelude/accumulator.h"
+#include "amber/prelude/parallel.h"
+#include "amber/rendering/context.h"
+#include "amber/rendering/forward.h"
+
+namespace amber {
+namespace rendering {
+
+void Parallel(const Context& context, std::function<void()> f);
+void ParallelIterate(Context& context, std::function<void()> f);
+
+template <typename T>
+const T ParallelMean(
+  Context& context,
+  T&& initial,
+  std::function<const T()> f
+);
+
+
+
+inline
+void Parallel(const Context& context, std::function<void()> f)
 {
-  return amber::cli::Application().Run(argc, argv);
+  prelude::Parallel(context.ThreadCount(), f);
+}
+
+inline
+void ParallelIterate(Context& context, std::function<void()> f)
+{
+  Parallel(context, [&context, f](){ while (context.Iterate()) { f(); } });
+}
+
+template <typename T>
+inline
+const T ParallelMean(
+  Context& context,
+  T&& initial,
+  std::function<const T()> f
+)
+{
+  Accumulator<T> accumulator(std::move(initial));
+
+  ParallelIterate(context, [&accumulator, f](){ accumulator += f(); });
+
+  return accumulator.Mean();
+}
+
+}
 }

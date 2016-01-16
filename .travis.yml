@@ -16,4 +16,4 @@ addons:
 before_script:
   - if [ "$CXX" = "g++" ]; then export CXX=/usr/bin/g++-5; fi
   - if [ "$CXX" = "clang++" ]; then export CXX=/usr/bin/clang++-3.7; fi
-script: cmake . && make
+script: cmake -DCMAKE_BUILD_TYPE=Release . && make

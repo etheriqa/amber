@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
-{
-  return amber::cli::Application().Run(argc, argv);
+#include <memory>
+
+#include "amber/rendering/algorithm.h"
+
+namespace amber {
+namespace rendering {
+
+std::unique_ptr<Algorithm<RGB>>
+MakeRGBPrimarySampleSpaceMLT(
+  std::size_t n_discard_samples,
+  real_type p_large_step
+);
+
+}
 }

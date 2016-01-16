@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,42 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/prelude/vector3.h"
+
+namespace amber {
+namespace prelude {
+
+template <typename T>
+struct Ray
 {
-  return amber::cli::Application().Run(argc, argv);
+  Vector3<T> origin;
+  UnitVector3<T> direction;
+
+  Ray() noexcept;
+  Ray(const Vector3<T>& origin, const Vector3<T>& direction) noexcept;
+  Ray(const Vector3<T>& origin, const UnitVector3<T>& direction) noexcept;
+};
+
+
+
+template <typename T>
+Ray<T>::Ray() noexcept
+: origin()
+, direction()
+{}
+
+template <typename T>
+Ray<T>::Ray(const Vector3<T>& origin, const Vector3<T>& direction) noexcept
+: Ray(origin, Normalize(direction))
+{}
+
+template <typename T>
+Ray<T>::Ray(const Vector3<T>& origin, const UnitVector3<T>& direction) noexcept
+: origin(origin)
+, direction(direction)
+{}
+
+}
 }

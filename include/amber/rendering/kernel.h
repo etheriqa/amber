@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/constants.h"
+
+namespace amber {
+namespace rendering {
+
+template <typename T>
+class DiskKernel
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  explicit DiskKernel(const T& radius) noexcept;
+
+  const T& radius() const noexcept { return radius_; }
+  const T operator()() const noexcept;
+
+private:
+  T radius_;
+};
+
+
+
+template <typename T>
+DiskKernel<T>::DiskKernel(const T& radius) noexcept
+: radius_(radius)
+{}
+
+template <typename T>
+const T
+DiskKernel<T>::operator()() const noexcept
+{
+  return 1 / (static_cast<T>(kPI) * radius_ * radius_);
+}
+
+}
 }

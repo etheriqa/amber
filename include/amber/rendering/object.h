@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,57 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <boost/operators.hpp>
+
+namespace amber {
+namespace rendering {
+
+/** Object pointer.
+ */
+class ObjectPointer
+: private boost::equality_comparable<ObjectPointer>
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  /** Constructor.
+   */
+  template <typename Object>
+  ObjectPointer(const Object* pointer) noexcept;
+
+  /** Dereference.
+   */
+  template <typename Object>
+  operator const Object&() const noexcept;
+
+  /** Comparator.
+   */
+  bool operator==(const ObjectPointer& rhs) const noexcept;
+
+private:
+  const void* pointer_;
+};
+
+
+
+
+
+template <typename Object>
+ObjectPointer::ObjectPointer(const Object* object) noexcept
+: pointer_(object)
+{}
+
+template <typename Object>
+ObjectPointer::operator const Object&() const noexcept
+{
+  return *static_cast<const Object*>(pointer_);
+}
+
+inline bool
+ObjectPointer::operator==(const ObjectPointer& rhs) const noexcept
+{
+  return pointer_ == rhs.pointer_;
+}
+
+}
 }

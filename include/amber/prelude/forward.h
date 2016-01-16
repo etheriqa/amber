@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
-{
-  return amber::cli::Application().Run(argc, argv);
+#include <cstdint>
+
+namespace amber {
+namespace prelude {
+
+using pixel_size_type = std::uint_fast32_t;
+
+template <typename T> class Vector1;
+template <typename T> class Vector2;
+template <typename T> class Vector3;
+template <typename T> class UnitVector3;
+template <typename T> class Matrix3;
+template <typename T> class Matrix4;
+template <typename T> class AABB;
+template <typename T> struct Ray;
+template <typename T> struct Hit;
+
+class Pixel;
+template <typename T> class PixelValue;
+template <typename T> class Image;
+template <typename T> class SparseImage;
+
+class Sampler;
+template <typename Engine> class GenericSampler;
+
+template <typename T> class Accumulator;
+template <typename T, typename U> class KDTree;
+
+enum class Axis;
+
+}
 }

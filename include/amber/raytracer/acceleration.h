@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,37 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <limits>
+#include <tuple>
+
+#include "amber/raytracer/forward.h"
+
+namespace amber {
+namespace raytracer {
+
+template <typename T, typename Object>
+class Acceleration
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  virtual ~Acceleration() {}
+
+  virtual std::tuple<Hit<T>, const Object*>
+  Cast(const Ray<T>& ray) const noexcept;
+
+  virtual std::tuple<Hit<T>, const Object*>
+  Cast(const Ray<T>& ray, T distance) const noexcept = 0;
+};
+
+
+
+template <typename T, typename Object>
+std::tuple<Hit<T>, const Object*>
+Acceleration<T, Object>::Cast(const Ray<T>& ray) const noexcept
+{
+  return Cast(ray, std::numeric_limits<T>::max());
+}
+
+}
 }

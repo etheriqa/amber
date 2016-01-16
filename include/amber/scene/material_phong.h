@@ -20,25 +20,63 @@
 
 #pragma once
 
-#include "amber/cli/forward.h"
+#include <memory>
+
+#include "amber/scene/material_basic.h"
 
 namespace amber {
-namespace cli {
+namespace scene {
 
-class Application
+template <typename Radiant>
+std::unique_ptr<Material<Radiant>>
+MakePhong(const Radiant& ks, real_type exponent);
+
+class BasicPhong
 {
 public:
-  int Run(int argc, const char*const* argv);
+  explicit BasicPhong(real_type exponent) noexcept;
+
+  rendering::SurfaceType Surface() const noexcept;
+
+  const real_type
+  SymmetricBSDF(
+    const UnitVector3& direction_i,
+    const UnitVector3& direction_o,
+    const UnitVector3& normal
+  ) const noexcept;
+
+  const real_type
+  PDF(
+    const UnitVector3& direction_i,
+    const UnitVector3& direction_o,
+    const UnitVector3& normal
+  ) const noexcept;
+
+  BasicScatter
+  Sample(
+    const UnitVector3& direction_o,
+    const UnitVector3& normal,
+    Sampler& sampler
+  ) const;
 
 private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
+  real_type exponent_;
 };
+
+
+
+
+
+template <typename Radiant>
+std::unique_ptr<Material<Radiant>>
+MakePhong(const Radiant& ks, real_type exponent)
+{
+  return
+    std::make_unique<
+      SymmetricBasicMaterialForwarder<Radiant, BasicPhong>
+    >
+    (BasicPhong(exponent), ks);
+}
 
 }
 }

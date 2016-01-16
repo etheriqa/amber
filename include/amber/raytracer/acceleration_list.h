@@ -20,25 +20,52 @@
 
 #pragma once
 
-#include "amber/cli/forward.h"
+#include <vector>
+
+#include "amber/raytracer/acceleration.h"
 
 namespace amber {
-namespace cli {
+namespace raytracer {
 
-class Application
+template <typename T, typename Object>
+class List
+: public Acceleration<T, Object>
 {
 public:
-  int Run(int argc, const char*const* argv);
+  explicit List(std::vector<Object>&& objects) noexcept;
+
+  std::tuple<Hit<T>, const Object*>
+  Cast(const Ray<T>& ray, T distance) const noexcept;
 
 private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
+  std::vector<Object> objects_;
 };
+
+
+
+template <typename T, typename Object>
+List<T, Object>::List(std::vector<Object>&& objects) noexcept
+: objects_(std::move(objects))
+{}
+
+template <typename T, typename Object>
+std::tuple<Hit<T>, const Object*>
+List<T, Object>::Cast(const Ray<T>& ray, T distance) const noexcept
+{
+  Hit<T> closest_hit;
+  const Object* closest_object = nullptr;
+
+  for (const auto& object : objects_) {
+    const auto hit = object.Intersect(ray);
+    if (hit && hit.distance < distance) {
+      distance = hit.distance;
+      closest_hit = hit;
+      closest_object = &object;
+    }
+  }
+
+  return std::make_tuple(closest_hit, closest_object);
+}
 
 }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,41 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <tuple>
+#include <vector>
+
+#include "amber/rendering/forward.h"
+#include "amber/scene/forward.h"
+
+namespace amber {
+namespace scene {
+
+template <typename Radiant>
+class Lens
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  virtual ~Lens() {}
+
+  virtual std::vector<const Object<Radiant>*>
+  ApertureObjects() const noexcept = 0;
+
+  virtual std::tuple<const Object<Radiant>*, rendering::Leading<Radiant>, Pixel>
+  GenerateRay(const rendering::Sensor& sensor, Sampler& sampler) const = 0;
+
+  virtual PixelValue<Radiant>
+  Response(const rendering::Sensor& sensor, const Ray& ray) const noexcept = 0;
+
+  virtual const real_type
+  PDFArea(const Vector3& point) const noexcept = 0;
+
+  virtual const real_type
+  PDFDirection(
+    const rendering::Sensor& sensor,
+    const Ray& ray
+  ) const noexcept = 0;
+};
+
+}
 }

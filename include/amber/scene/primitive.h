@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/scene/forward.h"
+
+namespace amber {
+namespace scene {
+
+class Primitive
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  virtual ~Primitive() {}
+
+  virtual const Vector3 Center() const noexcept = 0;
+  virtual const AABB BoundingBox() const noexcept = 0;
+  virtual Hit Intersect(const Ray& ray) const noexcept = 0;
+  virtual const real_type SurfaceArea() const noexcept = 0;
+  virtual Ray SampleSurfacePoint(Sampler& sampler) const = 0;
+};
+
+}
 }

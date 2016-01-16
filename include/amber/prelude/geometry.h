@@ -20,25 +20,59 @@
 
 #pragma once
 
-#include "amber/cli/forward.h"
+#include "amber/prelude/vector3.h"
 
 namespace amber {
-namespace cli {
+namespace prelude {
 
-class Application
+template <typename T>
+const UnitVector3<T>
+PerfectReflection(
+  const UnitVector3<T>& incident,
+  const UnitVector3<T>& normal
+) noexcept
 {
-public:
-  int Run(int argc, const char*const* argv);
+  return PerfectReflection(incident, normal, Dot(incident, normal));
+}
 
-private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
-};
+template <typename T>
+const UnitVector3<T>
+PerfectReflection(
+  const UnitVector3<T>& incident,
+  const UnitVector3<T>& normal,
+  T signed_cos_theta
+) noexcept
+{
+  return UnitVector3<T>(2 * signed_cos_theta * normal - incident);
+}
+
+template <typename T>
+const T
+GeometryFactor(
+  const Vector3<T>& px,
+  const Vector3<T>& py,
+  const UnitVector3<T>& nx,
+  const UnitVector3<T>& ny
+) noexcept
+{
+  const auto xy = py - px;
+  const auto squared_distance = SquaredLength(xy);
+  const auto direction =
+    static_cast<UnitVector3<T>>(xy / std::sqrt(squared_distance));
+  return GeometryFactor(direction, squared_distance, nx, ny);
+}
+
+template <typename T>
+const T
+GeometryFactor(
+  const UnitVector3<T>& direction,
+  T squared_distance,
+  const UnitVector3<T>& nx,
+  const UnitVector3<T>& ny
+) noexcept
+{
+  return std::abs(Dot(direction, nx) * Dot(direction, ny) / squared_distance);
+}
 
 }
 }

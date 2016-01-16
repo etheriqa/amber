@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,38 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#include "amber/postprocess/gamma.h"
+#include "amber/prelude/image.h"
+#include "amber/prelude/vector3.h"
 
-int main(int argc, char **argv)
+namespace amber {
+namespace postprocess {
+
+Gamma::Gamma() noexcept
+: gamma_(2.2)
+{}
+
+Gamma::Gamma(hdr_value_type gamma) noexcept
+: gamma_(gamma)
+{}
+
+LDRImage
+Gamma::operator()(const HDRImage& input) const
 {
-  return amber::cli::Application().Run(argc, argv);
+  LDRImage output(input.Width(), input.Height());
+  for (pixel_size_type j = 0; j < input.Height(); j++) {
+    for (pixel_size_type i = 0; i < input.Width(); i++) {
+      const auto& hdr = input[Pixel(i, j)];
+      auto& ldr = output[Pixel(i, j)];
+      ldr = LDR(
+        255 * std::min<hdr_value_type>(1, std::pow(hdr.X(), 1 / gamma_)),
+        255 * std::min<hdr_value_type>(1, std::pow(hdr.Y(), 1 / gamma_)),
+        255 * std::min<hdr_value_type>(1, std::pow(hdr.Z(), 1 / gamma_))
+      );
+    }
+  }
+  return output;
+}
+
+}
 }

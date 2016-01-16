@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,33 +25,32 @@
 
 #include <boost/optional.hpp>
 
+#include "amber/cli/forward.h"
+
 namespace amber {
 namespace cli {
 
 struct CommandLineOption
 {
-  std::string acceleration;
-  std::double_t alpha;
-  std::double_t exposure;
-  std::size_t height;
+  real_type alpha;
+  std::string algorithm;
+  std::size_t n_discard_samples;
+  pixel_size_type height;
   bool help;
-  std::double_t initial_radius;
+  real_type initial_radius;
   std::size_t k;
   std::string output;
-  std::double_t p_large;
+  real_type p_large_step;
   std::size_t n_photons;
-  std::size_t n_seeds;
-  std::string shader;
   std::size_t spp;
-  std::size_t ssaa;
   std::size_t n_threads;
   std::size_t time;
-  std::size_t width;
+  pixel_size_type width;
   std::string reference;
 };
 
 boost::optional<CommandLineOption>
-ParseCommandLineOption(int argc, char** argv);
+ParseCommandLineOption(int argc, const char*const* argv);
 
 }
 }

@@ -18,27 +18,56 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
-
-#include "amber/cli/forward.h"
+#include "amber/prelude/sampling.h"
+#include "amber/rendering/surface.h"
+#include "amber/scene/material_lambertian.h"
 
 namespace amber {
-namespace cli {
+namespace scene {
 
-class Application
+rendering::SurfaceType
+BasicLambertian::Surface() const noexcept
 {
-public:
-  int Run(int argc, const char*const* argv);
+  return rendering::SurfaceType::Diffuse;
+}
 
-private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
-};
+const real_type
+BasicLambertian::SymmetricBSDF(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  const UnitVector3& direction_in
+) const noexcept
+{
+  const auto signed_cos_o = Dot(direction_out, normal);
+  const auto signed_cos_i = Dot(direction_in, normal);
+
+  if (signed_cos_o * signed_cos_i <= 0) {
+    return 0;
+  }
+
+  return 1 / static_cast<real_type>(kPI);
+}
+
+const real_type
+BasicLambertian::PDF(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  const UnitVector3& direction_in
+) const noexcept
+{
+  return 1 / static_cast<real_type>(kPI);
+}
+
+BasicScatter
+BasicLambertian::Sample(
+  const UnitVector3& normal,
+  const UnitVector3& direction_out,
+  Sampler& sampler
+) const
+{
+  const auto w = Dot(direction_out, normal) > 0 ? normal : -normal;
+  return BasicScatter(prelude::HemispherePSA(w, sampler), 1);
+}
 
 }
 }

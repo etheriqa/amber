@@ -20,25 +20,42 @@
 
 #pragma once
 
-#include "amber/cli/forward.h"
+#include <cmath>
+#include <cstdint>
+
+#include "amber/prelude/forward.h"
+#include "amber/raytracer/forward.h"
 
 namespace amber {
-namespace cli {
+namespace scene {
 
-class Application
-{
-public:
-  int Run(int argc, const char*const* argv);
+using real_type = std::float_t;
+using prelude::pixel_size_type;
 
-private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
-};
+using Vector2     = prelude::Vector2<real_type>;
+using Vector3     = prelude::Vector3<real_type>;
+using UnitVector3 = prelude::UnitVector3<real_type>;
+using Matrix3     = prelude::Matrix3<real_type>;
+using Matrix4     = prelude::Matrix4<real_type>;
+using AABB        = prelude::AABB<real_type>;
+using Ray         = prelude::Ray<real_type>;
+using Hit         = prelude::Hit<real_type>;
+
+using prelude::Pixel;
+template <typename Radiant> using PixelValue = prelude::PixelValue<Radiant>;
+template <typename Radiant> using Image      = prelude::Image<Radiant>;
+
+using prelude::Sampler;
+
+template <typename Radiant> class Lens;
+
+class Primitive;
+template <typename Radiant> class Material;
+template <typename Radiant> class Object;
+template <typename Radiant> class Scene;
+
+template <typename Radiant>
+using Acceleration = raytracer::Acceleration<real_type, Object<Radiant>>;
 
 }
 }

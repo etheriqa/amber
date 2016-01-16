@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,60 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <memory>
+
+#include "amber/scene/material_basic.h"
+
+namespace amber {
+namespace scene {
+
+template <typename Radiant>
+std::unique_ptr<Material<Radiant>>
+MakeLambertian(const Radiant& kd);
+
+class BasicLambertian
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  rendering::SurfaceType Surface() const noexcept;
+
+  const real_type
+  SymmetricBSDF(
+    const UnitVector3& direction_i,
+    const UnitVector3& direction_o,
+    const UnitVector3& normal
+  ) const noexcept;
+
+  const real_type
+  PDF(
+    const UnitVector3& direction_i,
+    const UnitVector3& direction_o,
+    const UnitVector3& normal
+  ) const noexcept;
+
+  BasicScatter
+  Sample(
+    const UnitVector3& direction_o,
+    const UnitVector3& normal,
+    Sampler& sampler
+  ) const;
+};
+
+
+
+
+
+template <typename Radiant>
+std::unique_ptr<Material<Radiant>>
+MakeLambertian(const Radiant& kd)
+{
+  return
+    std::make_unique<
+      SymmetricBasicMaterialForwarder<Radiant, BasicLambertian>
+    >
+    (BasicLambertian(), kd);
+}
+
+}
 }

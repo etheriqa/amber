@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,52 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <cmath>
+#include <mutex>
+
+namespace amber {
+namespace rendering {
+
+template <typename T, typename Kernel>
+class KernelSequence
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  KernelSequence(const T& initial_radius, const T& alpha) noexcept;
+
+  Kernel operator()() noexcept;
+
+private:
+  std::mutex mutex_;
+  T radius_;
+  T alpha_;
+  std::size_t i_;
+};
+
+
+
+template <typename T, typename Kernel>
+KernelSequence<T, Kernel>::KernelSequence(
+  const T& initial_radius,
+  const T& alpha
+) noexcept
+: mutex_()
+, radius_(initial_radius)
+, alpha_(alpha)
+, i_(1)
+{}
+
+template <typename T, typename Kernel>
+Kernel
+KernelSequence<T, Kernel>::operator()() noexcept
+{
+  std::lock_guard<std::mutex> lock(mutex_);
+  const auto radius = radius_;
+  radius_ *= std::sqrt((i_ + alpha_) / (i_ + 1));
+  i_++;
+  return Kernel(radius);
+}
+
+}
 }

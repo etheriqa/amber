@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <mutex>
+
+#include "amber/rendering/context.h"
+
+namespace amber {
+namespace cli {
+
+class Context
+: public rendering::Context
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  Context(std::size_t n_threads, std::size_t n_iterations) noexcept;
+
+  const std::size_t ThreadCount() const noexcept;
+  const std::size_t IterationCount() const noexcept;
+  bool Iterate() noexcept;
+
+  void Expire() noexcept;
+
+private:
+  mutable std::mutex mutex_;
+  std::size_t n_threads_;
+  std::size_t n_iterations_;
+  std::size_t n_iterations_started_;
+  bool is_expired_;
+};
+
+}
 }

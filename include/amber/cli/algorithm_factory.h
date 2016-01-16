@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include <memory>
+
+#include "amber/cli/forward.h"
+
+namespace amber {
+namespace cli {
+
+class UnknownAlgorithmError
+: public std::runtime_error
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  UnknownAlgorithmError(const std::string& name) noexcept
+  : std::runtime_error("Unknown algorithm: " + name)
+  {}
+};
+
+class AlgorithmFactory
+{
+public:
+  std::unique_ptr<rendering::Algorithm<RGB>>
+  operator()(const CommandLineOption& option) const;
+};
+
+}
 }

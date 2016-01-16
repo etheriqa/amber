@@ -1,4 +1,5 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
+//
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +19,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
+#include "amber/postprocess/forward.h"
+
+namespace amber {
+namespace postprocess {
+
+class Filmic
 {
-  return amber::cli::Application().Run(argc, argv);
+public:
+  HDRImage operator()(const HDRImage& input) const;
+  HDRImage operator()(HDRImage&& input) const;
+
+private:
+  static const HDR Map(const HDR& hdr) noexcept;
+};
+
+}
 }

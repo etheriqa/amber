@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,32 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
-{
-  return amber::cli::Application().Run(argc, argv);
+#include <cmath>
+#include <cstdint>
+
+#include "amber/prelude/forward.h"
+
+namespace amber {
+namespace postprocess {
+
+using real_type = std::float_t;
+using ldr_value_type = std::uint_fast8_t;
+using hdr_value_type = std::float_t;
+
+using Monochrome = prelude::Vector1<hdr_value_type>;
+using RGB        = prelude::Vector3<hdr_value_type>;
+
+using LDR = prelude::Vector3<ldr_value_type>;
+using HDR = prelude::Vector3<hdr_value_type>;
+
+using prelude::pixel_size_type;
+using prelude::Pixel;
+using LDRImage = prelude::Image<LDR>;
+using HDRImage = prelude::Image<HDR>;
+
+template <typename T> using Accumulator = prelude::Accumulator<T>;
+
+}
 }

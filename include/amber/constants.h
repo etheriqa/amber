@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
-{
-  return amber::cli::Application().Run(argc, argv);
+namespace amber {
+
+long double const kPI = 3.141592653589793238462643383279503;
+long double const kEPS = 1e-6;
+long double const kDiracDelta = 1;
+long double const kRussianRoulette = 0.9375;
+
 }

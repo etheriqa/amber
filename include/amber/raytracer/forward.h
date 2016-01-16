@@ -1,4 +1,4 @@
-// Copyright (c) 2015 TAKAMORI Kaede <etheriqa@gmail.com>
+// Copyright (c) 2016 TAKAMORI Kaede <etheriqa@gmail.com>
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,9 +18,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "amber/cli/application.h"
+#pragma once
 
-int main(int argc, char **argv)
-{
-  return amber::cli::Application().Run(argc, argv);
+#include "amber/prelude/forward.h"
+
+namespace amber {
+namespace raytracer {
+
+template <typename T, typename Object> class Acceleration;
+
+template <typename T> using Vector3     = prelude::Vector3<T>;
+template <typename T> using UnitVector3 = prelude::UnitVector3<T>;
+template <typename T> using Ray         = prelude::Ray<T>;
+template <typename T> using Hit         = prelude::Hit<T>;
+template <typename T> using AABB        = prelude::AABB<T>;
+
+}
 }

@@ -20,25 +20,70 @@
 
 #pragma once
 
-#include "amber/cli/forward.h"
+#include <cmath>
+#include <limits>
+
+#include "amber/prelude/vector3.h"
 
 namespace amber {
-namespace cli {
+namespace prelude {
 
-class Application
+template <typename T>
+struct Hit
 {
-public:
-  int Run(int argc, const char*const* argv);
+  Vector3<T> position;
+  UnitVector3<T> normal;
+  T distance;
 
-private:
-  const HDRImage Render(
-    const CommandLineOption& option,
-    rendering::Algorithm<RGB>& algorithm,
-    const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
-  );
+  Hit() noexcept;
+  Hit(
+    const Vector3<T>& position,
+    const Vector3<T>& normal,
+    T distance
+  ) noexcept;
+  Hit(
+    const Vector3<T>& position,
+    const UnitVector3<T>& normal,
+    T distance
+  ) noexcept;
+
+  operator bool() const noexcept;
 };
+
+
+
+template <typename T>
+Hit<T>::Hit() noexcept
+: position()
+, normal()
+, distance(std::numeric_limits<T>::quiet_NaN())
+{}
+
+template <typename T>
+Hit<T>::Hit(
+  const Vector3<T>& position,
+  const Vector3<T>& normal,
+  T distance
+) noexcept
+: Hit(position, Normalize(normal), distance)
+{}
+
+template <typename T>
+Hit<T>::Hit(
+  const Vector3<T>& position,
+  const UnitVector3<T>& normal,
+  T distance
+) noexcept
+: position(position)
+, normal(normal)
+, distance(distance)
+{}
+
+template <typename T>
+Hit<T>::operator bool() const noexcept
+{
+  return std::isfinite(distance);
+}
 
 }
 }
