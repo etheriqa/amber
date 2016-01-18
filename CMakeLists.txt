@@ -11,6 +11,13 @@ set(TARGET amber)
 # pthread
 list(APPEND LIBRARIES pthread)
 
+# Google Test
+find_package(GTest)
+if(GTEST_FOUND)
+    enable_testing()
+    include_directories(${GTEST_INCLUDE_DIRS})
+endif()
+
 # Boost
 find_package(Boost REQUIRED program_options)
 include_directories(${Boost_INCLUDE_DIRS})
