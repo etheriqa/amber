@@ -22,6 +22,7 @@
 
 #include "amber/postprocess/forward.h"
 #include "amber/rendering/forward.h"
+#include "amber/scene/forward.h"
 
 namespace amber {
 namespace cli {
@@ -37,6 +38,14 @@ using postprocess::LDR;
 using postprocess::HDR;
 using postprocess::LDRImage;
 using postprocess::HDRImage;
+
+using Primitive   = scene::Primitive;
+using RGBMaterial = scene::Material<RGB>;
+using RGBObject   = scene::Object<RGB>;
+using RGBScene    = scene::Scene<RGB>;
+
+using scene::Vector3;
+using scene::Matrix4;
 
 struct CommandLineOption;
 class Context;

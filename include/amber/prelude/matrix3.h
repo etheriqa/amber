@@ -22,6 +22,8 @@
 
 #include <limits>
 
+#include <boost/operators.hpp>
+
 #include "amber/prelude/vector3.h"
 
 namespace amber {
@@ -29,6 +31,7 @@ namespace prelude {
 
 template <typename T>
 class Matrix3
+: private boost::multipliable<Matrix3<T>>
 {
 public:
   Matrix3() noexcept;
@@ -37,6 +40,8 @@ public:
     T e21, T e22, T e23,
     T e31, T e32, T e33
   ) noexcept;
+
+  Matrix3<T>& operator*=(const Matrix3<T>& m) noexcept;
 
   const Vector3<T> operator()(const Vector3<T>& v) const noexcept;
 
@@ -76,6 +81,23 @@ Matrix3<T>::Matrix3(
 {}
 
 template <typename T>
+Matrix3<T>&
+Matrix3<T>::operator*=(const Matrix3<T>& m) noexcept
+{
+  return *this = Matrix3<T>(
+    e11_ * m.e11_ + e12_ * m.e21_ + e13_ * m.e31_,
+    e11_ * m.e12_ + e12_ * m.e22_ + e13_ * m.e32_,
+    e11_ * m.e13_ + e12_ * m.e23_ + e13_ * m.e33_,
+    e21_ * m.e11_ + e22_ * m.e21_ + e23_ * m.e31_,
+    e21_ * m.e12_ + e22_ * m.e22_ + e23_ * m.e32_,
+    e21_ * m.e13_ + e22_ * m.e23_ + e23_ * m.e33_,
+    e31_ * m.e11_ + e32_ * m.e21_ + e33_ * m.e31_,
+    e31_ * m.e12_ + e32_ * m.e22_ + e33_ * m.e32_,
+    e31_ * m.e13_ + e32_ * m.e23_ + e33_ * m.e33_
+  );
+}
+
+template <typename T>
 const Vector3<T>
 Matrix3<T>::operator()(const Vector3<T>& v) const noexcept
 {
@@ -98,13 +120,13 @@ Matrix3<T>::Inverse() const noexcept
   const auto dinv = 1 / d;
   return Matrix3<T>(
     + dinv * (e22_ * e33_ - e23_ * e32_),
-    - dinv * (e21_ * e33_ - e23_ * e31_),
-    + dinv * (e21_ * e32_ - e22_ * e31_),
     - dinv * (e12_ * e33_ - e13_ * e32_),
-    + dinv * (e11_ * e33_ - e13_ * e31_),
-    - dinv * (e11_ * e32_ - e12_ * e31_),
     + dinv * (e12_ * e23_ - e13_ * e22_),
+    - dinv * (e21_ * e33_ - e23_ * e31_),
+    + dinv * (e11_ * e33_ - e13_ * e31_),
     - dinv * (e11_ * e23_ - e13_ * e21_),
+    + dinv * (e21_ * e32_ - e22_ * e31_),
+    - dinv * (e11_ * e32_ - e12_ * e31_),
     + dinv * (e11_ * e22_ - e12_ * e21_)
   );
 }

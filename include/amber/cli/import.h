@@ -20,38 +20,23 @@
 
 #pragma once
 
-#include <cmath>
+#include <memory>
 #include <string>
-
-#include <boost/optional.hpp>
+#include <tuple>
+#include <vector>
 
 #include "amber/cli/forward.h"
 
 namespace amber {
 namespace cli {
 
-struct CommandLineOption
-{
-  real_type alpha;
-  std::string algorithm;
-  std::size_t n_discard_samples;
-  pixel_size_type height;
-  bool help;
-  real_type initial_radius;
-  std::size_t k;
-  std::string output;
-  real_type p_large_step;
-  std::size_t n_photons;
-  std::string scene;
-  std::size_t spp;
-  std::size_t n_threads;
-  std::size_t time;
-  pixel_size_type width;
-  std::string reference;
-};
-
-boost::optional<CommandLineOption>
-ParseCommandLineOption(int argc, const char*const* argv);
+std::tuple<
+  std::vector<std::unique_ptr<scene::Primitive>>,
+  std::vector<std::unique_ptr<scene::Material<RGB>>>,
+  std::vector<scene::Object<RGB>>,
+  std::unique_ptr<scene::Lens<RGB>>
+>
+ImportScene(const std::string& filename);
 
 }
 }

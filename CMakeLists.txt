@@ -28,6 +28,12 @@ find_package(OpenCV REQUIRED core highgui)
 include_directories(${OpenCV_INCLUDE_DIRS})
 list(APPEND LIBRARIES ${OpenCV_LIBS})
 
+# assimp
+find_package(assimp REQUIRED)
+include_directories(${ASSIMP_INCLUDE_DIRS})
+link_directories(${ASSIMP_LIBRARY_DIRS})
+list(APPEND LIBRARIES ${ASSIMP_LIBRARIES})
+
 include_directories(include)
 
 add_executable(${TARGET}
@@ -35,6 +41,7 @@ add_executable(${TARGET}
     src/amber/cli/application.cc
     src/amber/cli/context.cc
     src/amber/cli/image.cc
+    src/amber/cli/import.cc
     src/amber/cli/option.cc
     src/amber/etude/cornel_box.cc
     src/amber/postprocess/filmic.cc

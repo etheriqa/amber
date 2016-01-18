@@ -23,6 +23,7 @@
 #include <iomanip>
 #include <iostream>
 #include <locale>
+#include <memory>
 #include <sstream>
 #include <thread>
 
@@ -30,10 +31,12 @@
 #include "amber/cli/application.h"
 #include "amber/cli/context.h"
 #include "amber/cli/image.h"
+#include "amber/cli/import.h"
 #include "amber/cli/option.h"
 #include "amber/etude/cornel_box.h"
 #include "amber/postprocess/filmic.h"
 #include "amber/postprocess/gamma.h"
+#include "amber/raytracer/acceleration_bvh.h"
 #include "amber/rendering/algorithm.h"
 #include "amber/rendering/sensor.h"
 #include "amber/scene/scene.h"
@@ -59,11 +62,24 @@ Application::Run(int argc, const char*const* argv)
     return -1;
   }
 
-  const auto scene = etude::CornelBox(
-    0.050,
-    0.050,
-    6
-  );
+  std::unique_ptr<scene::Scene<RGB>> scene;
+  if (option->scene.empty()) {
+    scene = std::make_unique<scene::Scene<RGB>>(etude::CornelBox(
+      0.050,
+      0.050,
+      6
+    ));
+  } else {
+    auto data = ImportScene(option->scene);
+    scene = std::make_unique<scene::Scene<RGB>>(
+      scene::Scene<RGB>::Create<raytracer::BVH<real_type, scene::Object<RGB>>>(
+        std::move(std::get<0>(data)),
+        std::move(std::get<1>(data)),
+        std::move(std::get<2>(data)),
+        std::move(std::get<3>(data))
+      )
+    );
+  }
   const auto sensor = rendering::Sensor(
     option->width,
     option->height,
@@ -79,7 +95,7 @@ Application::Run(int argc, const char*const* argv)
     }).detach();
   }
 
-  const auto image = Render(*option, *algorithm, scene, sensor, context);
+  const auto image = Render(*option, *algorithm, *scene, sensor, context);
 
   {
     const auto gamma = amber::postprocess::Gamma();

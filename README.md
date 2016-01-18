@@ -12,4 +12,5 @@ Requirements
 - CMake
 - Boost
 - OpenCV
+- assimp
 - Google Test (optional)

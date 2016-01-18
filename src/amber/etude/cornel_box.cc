@@ -59,7 +59,6 @@ CornelBox(
     aperture_radius,
     aperture_n_blades
   );
-  materials.emplace_back(scene::MakeEye<RGB>());
   for (const auto& object : lens->ApertureObjects()) {
     objects.emplace_back(*object);
   }

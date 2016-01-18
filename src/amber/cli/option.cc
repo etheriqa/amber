@@ -75,6 +75,10 @@ ParseCommandLineOption(int argc, const char*const* argv)
      po::value<std::size_t>(&option.n_photons)
        ->default_value(262144),
      "a number of emitted photons")
+    ("scene",
+     po::value<std::string>(&option.scene)
+       ->default_value(""),
+     "scene filename")
     ("spp",
      po::value<std::size_t>(&option.spp)
        ->default_value(0),
