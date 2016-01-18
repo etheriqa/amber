@@ -352,7 +352,9 @@ UnifiedPathSampling<Radiant>::Thread::ConnectDensityEstimation(
       const auto& light_path = light_paths_[photon.path_index];
       const auto& light_end = light_path.begin()[photon.event_index];
 
-      if (light_end.Object() != eye_end.Object()) {
+      const auto cos_l = Dot(light_end.DirectionOut(), eye_end.Normal());
+      const auto cos_e = Dot(eye_end.DirectionOut(), eye_end.Normal());
+      if (cos_l * cos_e <= 0) {
         continue;
       }
 
