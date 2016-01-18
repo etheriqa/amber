@@ -49,6 +49,7 @@ public:
   Cast(const Ray<T>& ray, T distance) const noexcept;
 
 private:
+  static constexpr T kMaxSplit         = 15.0;
   static constexpr T kTraverseCost     = 2.0;
   static constexpr T kIntersectionCost = 1.0;
 
@@ -258,7 +259,7 @@ BVH<T, Object>::FindSplitAxis(
   );
 
   const auto n_splits =
-    std::min<std::size_t>(7, std::log2(std::distance(first, last)));
+    std::min<std::size_t>(kMaxSplit, std::log2(std::distance(first, last)));
 
   Split split;
 
