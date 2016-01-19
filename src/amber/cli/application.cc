@@ -19,6 +19,8 @@
 // SOFTWARE.
 
 #include <chrono>
+#include <csignal>
+#include <cstdlib>
 #include <future>
 #include <iomanip>
 #include <iostream>
@@ -87,15 +89,7 @@ Application::Run(int argc, const char*const* argv)
     0.036 / option->width * option->height
   );
 
-  Context context(option->n_threads, option->spp);
-  if (option->time > 0) {
-    std::thread([&](){
-      std::this_thread::sleep_for(std::chrono::seconds(option->time));
-      context.Expire();
-    }).detach();
-  }
-
-  const auto image = Render(*option, *algorithm, *scene, sensor, context);
+  const auto image = Render(*option, *algorithm, *scene, sensor);
 
   {
     const auto gamma = amber::postprocess::Gamma();
@@ -124,10 +118,30 @@ Application::Render(
   const CommandLineOption& option,
   rendering::Algorithm<RGB>& algorithm,
   const rendering::Scene<RGB>& scene,
-  const rendering::Sensor& sensor,
-  Context& context
+  const rendering::Sensor& sensor
 )
 {
+  static bool is_interrupting = false;
+  static Context context(option.n_threads, option.spp);
+
+  // timed out
+  if (option.time > 0) {
+    std::thread([&](){
+      std::this_thread::sleep_for(std::chrono::seconds(option.time));
+      context.Expire();
+    }).detach();
+  }
+
+  // caught SIGINT
+  std::signal(SIGINT, [](int){
+    if (is_interrupting) {
+      abort();
+    }
+    std::cerr << std::endl << "Interrupting ... " << std::endl;
+    is_interrupting = true;
+    context.Expire();
+  });
+
   auto image = std::async(
     std::launch::async,
     [&](){ return algorithm.Render(scene, sensor, context); }

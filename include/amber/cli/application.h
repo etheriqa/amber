@@ -35,8 +35,7 @@ private:
     const CommandLineOption& option,
     rendering::Algorithm<RGB>& algorithm,
     const rendering::Scene<RGB>& scene,
-    const rendering::Sensor& sensor,
-    Context& context
+    const rendering::Sensor& sensor
   );
 };
 

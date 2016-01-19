@@ -8,6 +8,7 @@ amber
 Requirements
 ------------
 
+- Unix-like system (for now; we will support Windows system before long)
 - C++14 compatible compiler
 - CMake
 - Boost
