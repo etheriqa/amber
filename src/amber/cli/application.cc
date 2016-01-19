@@ -72,7 +72,10 @@ Application::Run(int argc, const char*const* argv)
       6
     ));
   } else {
+    std::cerr << "Loading scene ... ";
     auto data = ImportScene(option->scene);
+    std::cerr << "done." << std::endl;
+    std::cerr << "Building scene ... ";
     scene = std::make_unique<scene::Scene<RGB>>(
       scene::Scene<RGB>::Create<raytracer::BVH<real_type, scene::Object<RGB>>>(
         std::move(std::get<0>(data)),
@@ -81,6 +84,7 @@ Application::Run(int argc, const char*const* argv)
         std::move(std::get<3>(data))
       )
     );
+    std::cerr << "done." << std::endl;
   }
   const auto sensor = rendering::Sensor(
     option->width,
@@ -97,14 +101,14 @@ Application::Run(int argc, const char*const* argv)
 
     {
       const auto filename = option->output + ".png";
-      std::cerr << "exporting " << filename << " (tonemapped) ... ";
+      std::cerr << "Exporting " << filename << " (tonemapped) ... ";
       amber::cli::ExportPNG(gamma(filmic(image)), filename);
       std::cerr << "done." << std::endl;
     }
 
     {
       const auto filename = option->output + ".exr";
-      std::cerr << "exporting " << filename << " (raw) ... ";
+      std::cerr << "Exporting " << filename << " (raw) ... ";
       amber::cli::ExportEXR(image, filename);
       std::cerr << "done." << std::endl;
     }
