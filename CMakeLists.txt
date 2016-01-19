@@ -76,7 +76,7 @@ target_link_libraries(${TARGET} ${LIBRARIES})
 
 # define some useful custom targets
 set(REFERENCE_IMAGE reference.exr)
-set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --initial-radius 0.008)
+set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --initial-radius 0.016)
 set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --spp 16)
 if(EXISTS ${REFERENCE_IMAGE})
     set(AMBER_COMMAND_OPTION ${AMBER_COMMAND_OPTION} --reference ${REFERENCE_IMAGE})

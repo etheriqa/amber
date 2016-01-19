@@ -57,7 +57,7 @@ ParseCommandLineOption(int argc, const char*const* argv)
     ("help", "print this message")
     ("initial-radius",
      po::value<real_type>(&option.initial_radius)
-       ->default_value(static_cast<real_type>(0.001)),
+       ->default_value(static_cast<real_type>(0.016)),
      "a parameter of the initial radius used in the density estimation algorithms")
     ("k",
      po::value<std::size_t>(&option.k)
