@@ -109,7 +109,7 @@ ParseCommandLineOption(int argc, const char*const* argv)
 
   po::notify(vm);
 
-  if (vm.count("help") || !vm.count("algorithm")) {
+  if (vm.count("help")) {
     std::cerr << "amber: a global illumination renderer" << std::endl;
     std::cerr << std::endl;
     std::cerr << description << std::endl;

@@ -68,7 +68,7 @@ AlgorithmFactory::operator()(const CommandLineOption& option) const
     );
   }
 
-  if (option.algorithm == "ups") {
+  if (option.algorithm == "ups" || option.algorithm.empty()) {
     return rendering::MakeRGBUnifiedPathSampling(
       option.initial_radius,
       option.alpha
