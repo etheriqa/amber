@@ -34,8 +34,8 @@ template <typename T> class UnitVector3;
 template <typename T> class Matrix3;
 template <typename T> class Matrix4;
 template <typename T> class AABB;
-template <typename T> struct Ray;
-template <typename T> struct Hit;
+template <typename T> class Ray;
+template <typename T> class Hit;
 
 class Pixel;
 template <typename T> class PixelValue;

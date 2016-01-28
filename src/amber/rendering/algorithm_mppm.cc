@@ -187,17 +187,17 @@ MemorylessPPM<Radiant>::Thread::Render(
 
     switch (scene_.Surface(object)) {
     case SurfaceType::Light:
-      return weight * scene_.Radiance(object, hit.normal, -ray.direction);
+      return weight * scene_.Radiance(object, hit.Normal(), -ray.Direction());
       break;
     case SurfaceType::Diffuse:
       {
-        photon_map_.Search(hit.position, kernel.radius(), 1024, photons_);
+        photon_map_.Search(hit.Position(), kernel.radius(), 1024, photons_);
         Radiant contribution(0);
         for (const auto& photon : photons_) {
           const auto bsdf = scene_.BSDF(
             object,
-            hit.normal,
-            -ray.direction,
+            hit.Normal(),
+            -ray.Direction(),
             photon.DirectionOut()
           );
           contribution += photon.Weight() * bsdf;
@@ -210,7 +210,7 @@ MemorylessPPM<Radiant>::Thread::Render(
     }
 
     const auto scatter =
-      scene_.SampleLight(object, hit.normal, -ray.direction, sampler_);
+      scene_.SampleLight(object, hit.Normal(), -ray.Direction(), sampler_);
     const auto p_russian_roulette =
       std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
 
@@ -218,7 +218,7 @@ MemorylessPPM<Radiant>::Thread::Render(
       break;
     }
 
-    ray = Ray(hit.position, scatter.DirectionIn());
+    ray = Ray(hit.Position(), scatter.DirectionIn());
     weight *= scatter.Weight() / p_russian_roulette;
   }
 

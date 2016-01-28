@@ -59,9 +59,9 @@ BasicPinhole::GenerateRay(
   return std::make_tuple(
     pinhole_.get(),
     BasicEyeRay(
-      ray.origin,
+      ray.Origin(),
       Normalize(global_(Vector3(0, 0, -1))),
-      ray.direction,
+      ray.Direction(),
       1 / PDFArea(Vector3()) / PDFDirection(sensor, ray)
     ),
     std::get<Pixel>(sensor_sample)
@@ -74,7 +74,7 @@ BasicPinhole::Response(
   const Ray& ray
 ) const noexcept
 {
-  const auto direction = local_(ray.direction);
+  const auto direction = local_(ray.Direction());
   const auto point = sensor_distance_ / direction.Z() * direction;
 
   const auto response = sensor.ResponsePixel(XY(point));
@@ -96,7 +96,7 @@ BasicPinhole::PDFDirection(
   const Ray& ray
 ) const noexcept
 {
-  const auto direction = local_(ray.direction);
+  const auto direction = local_(ray.Direction());
   const auto point = sensor_distance_ / direction.Z() * direction;
 
   const auto p_area = 1 / sensor.SceneArea();

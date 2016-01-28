@@ -141,14 +141,14 @@ LightTracing<Radiant>::Thread::Render(Image<Radiant>& image)
 
     if (scene_.Surface(object) == SurfaceType::Eye) {
       const auto response =
-        scene_.Response(sensor_, hit.position, -ray.direction);
+        scene_.Response(sensor_, hit.Position(), -ray.Direction());
       if (response.Pixel()) {
         image[response.Pixel()] += weight * response.Value() / image.Size();
       }
     }
 
     const auto scatter =
-      scene_.SampleImportance(object, hit.normal, -ray.direction, sampler_);
+      scene_.SampleImportance(object, hit.Normal(), -ray.Direction(), sampler_);
 
     const auto p_russian_roulette =
       std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
@@ -157,7 +157,7 @@ LightTracing<Radiant>::Thread::Render(Image<Radiant>& image)
       break;
     }
 
-    ray = Ray(hit.position, scatter.DirectionIn());
+    ray = Ray(hit.Position(), scatter.DirectionIn());
     weight *= scatter.Weight() / p_russian_roulette;
   }
 }

@@ -26,33 +26,39 @@ namespace amber {
 namespace prelude {
 
 template <typename T>
-struct Ray
+class Ray
 {
-  Vector3<T> origin;
-  UnitVector3<T> direction;
-
+public:
   Ray() noexcept;
   Ray(const Vector3<T>& origin, const Vector3<T>& direction) noexcept;
   Ray(const Vector3<T>& origin, const UnitVector3<T>& direction) noexcept;
+
+  const Vector3<T>& Origin() const noexcept { return origin_; }
+  const UnitVector3<T>& Direction() const noexcept { return direction_; }
+
+private:
+  Vector3<T> origin_;
+  UnitVector3<T> direction_;
 };
 
 
 
 template <typename T>
 Ray<T>::Ray() noexcept
-: origin()
-, direction()
+: origin_()
+, direction_()
 {}
 
 template <typename T>
 Ray<T>::Ray(const Vector3<T>& origin, const Vector3<T>& direction) noexcept
-: Ray(origin, Normalize(direction))
+: origin_(origin)
+, direction_(Normalize(direction))
 {}
 
 template <typename T>
 Ray<T>::Ray(const Vector3<T>& origin, const UnitVector3<T>& direction) noexcept
-: origin(origin)
-, direction(direction)
+: origin_(origin)
+, direction_(direction)
 {}
 
 }

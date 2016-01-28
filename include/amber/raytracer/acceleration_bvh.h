@@ -347,8 +347,8 @@ BVH<T, Object>::Node::Cast(const Ray<T>& ray, T distance) const noexcept
 
     std::for_each(first_, last_, [&](const auto& object){
       const auto hit = object.Intersect(ray);
-      if (hit && hit.distance < distance) {
-        distance = hit.distance;
+      if (hit && hit.Distance() < distance) {
+        distance = hit.Distance();
         closest_hit = hit;
         closest_object = &object;
       }
@@ -388,13 +388,13 @@ BVH<T, Object>::Node::Cast(const Ray<T>& ray, T distance) const noexcept
   if (!near_hit) {
     return far->Cast(ray, distance);
   }
-  if (near_hit.distance < std::max(left_in, right_in)) {
+  if (near_hit.Distance() < std::max(left_in, right_in)) {
     return std::make_tuple(near_hit, near_object);
   }
 
   Hit<T> far_hit;
   const Object* far_object = nullptr;
-  std::tie(far_hit, far_object) = far->Cast(ray, near_hit.distance);
+  std::tie(far_hit, far_object) = far->Cast(ray, near_hit.Distance());
   if (!far_hit) {
     return std::make_tuple(near_hit, near_object);
   } else {

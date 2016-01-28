@@ -753,36 +753,36 @@ GenerateLightSubpath(
       break;
     }
 
-    const auto direction_out = -ray.direction;
+    const auto direction_out = -ray.Direction();
     const auto scatter =
-      scene.SampleImportance(object, hit.normal, direction_out, sampler);
+      scene.SampleImportance(object, hit.Normal(), direction_out, sampler);
     const auto direction_in = scatter.DirectionIn();
 
     // forward transport = importance transport (in this context)
     const auto p_forward =
-      scene.PDFImportance(object, hit.normal, direction_out, direction_in);
+      scene.PDFImportance(object, hit.Normal(), direction_out, direction_in);
     const auto p_russian_roulette_forward =
       std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
 
     // backward transport = light transport (in this context)
     const auto p_backward =
-      scene.PDFLight(object, hit.normal, direction_in, direction_out);
+      scene.PDFLight(object, hit.Normal(), direction_in, direction_out);
     const auto bsdf_backward =
-      scene.BSDF(object, hit.normal, direction_in, direction_out);
+      scene.BSDF(object, hit.Normal(), direction_in, direction_out);
     const auto p_russian_roulette_backward =
       std::min<real_type>(kRussianRoulette, Max(bsdf_backward / p_backward));
 
     const auto geometry_factor = prelude::GeometryFactor(
       direction_out,
-      hit.distance * hit.distance,
+      hit.Distance() * hit.Distance(),
       normal,
-      hit.normal
+      hit.Normal()
     );
 
     inserter = SubpathEvent<Radiant>(
       object,
-      hit.position,
-      hit.normal,
+      hit.Position(),
+      hit.Normal(),
       direction_out,
       weight,
       geometry_factor,
@@ -794,8 +794,8 @@ GenerateLightSubpath(
       break;
     }
 
-    ray = Ray(hit.position, direction_in);
-    normal = hit.normal;
+    ray = Ray(hit.Position(), direction_in);
+    normal = hit.Normal();
     weight *= scatter.Weight() / p_russian_roulette_forward;
   }
 }
@@ -849,36 +849,36 @@ GenerateEyeSubpath(
       break;
     }
 
-    const auto direction_out = -ray.direction;
+    const auto direction_out = -ray.Direction();
     const auto scatter =
-      scene.SampleLight(object, hit.normal, direction_out, sampler);
+      scene.SampleLight(object, hit.Normal(), direction_out, sampler);
     const auto direction_in = scatter.DirectionIn();
 
     // forward transport = light transport (in this context)
     const auto p_forward =
-      scene.PDFLight(object, hit.normal, direction_out, direction_in);
+      scene.PDFLight(object, hit.Normal(), direction_out, direction_in);
     const auto p_russian_roulette_forward =
       std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
 
     // backward transport = importance transport (in this context)
     const auto p_backward =
-      scene.PDFImportance(object, hit.normal, direction_in, direction_out);
+      scene.PDFImportance(object, hit.Normal(), direction_in, direction_out);
     const auto bsdf_backward =
-      scene.AdjointBSDF(object, hit.normal, direction_in, direction_out);
+      scene.AdjointBSDF(object, hit.Normal(), direction_in, direction_out);
     const auto p_russian_roulette_backward =
       std::min<real_type>(kRussianRoulette, Max(bsdf_backward / p_backward));
 
     const auto geometry_factor = prelude::GeometryFactor(
       direction_out,
-      hit.distance * hit.distance,
+      hit.Distance() * hit.Distance(),
       normal,
-      hit.normal
+      hit.Normal()
     );
 
     inserter = SubpathEvent<Radiant>(
       object,
-      hit.position,
-      hit.normal,
+      hit.Position(),
+      hit.Normal(),
       direction_out,
       weight,
       geometry_factor,
@@ -890,8 +890,8 @@ GenerateEyeSubpath(
       break;
     }
 
-    ray = Ray(hit.position, direction_in);
-    normal = hit.normal;
+    ray = Ray(hit.Position(), direction_in);
+    normal = hit.Normal();
     weight *= scatter.Weight() / p_russian_roulette_forward;
   }
 
@@ -964,7 +964,7 @@ Connect(
       scene.Radiance(
         light_endpoint->Object(),
         light_endpoint->Normal(),
-        shadow_ray.direction
+        shadow_ray.Direction()
       ) /
       scene.LightPDFArea(light_endpoint->Object());
   } else {
@@ -975,7 +975,7 @@ Connect(
         light_endpoint->Object(),
         light_endpoint->Normal(),
         light_endpoint->DirectionOut(),
-        shadow_ray.direction
+        shadow_ray.Direction()
       );
   }
 
@@ -986,7 +986,7 @@ Connect(
       scene.Response(
         sensor,
         eye_endpoint->Position(),
-        -shadow_ray.direction
+        -shadow_ray.Direction()
       ) /
       static_cast<Radiant>(scene.EyePDFArea(eye_endpoint->Position()));
   } else {
@@ -997,7 +997,7 @@ Connect(
         eye_endpoint->Object(),
         eye_endpoint->Normal(),
         eye_endpoint->DirectionOut(),
-        -shadow_ray.direction
+        -shadow_ray.Direction()
       );
   }
 

@@ -100,17 +100,17 @@ Triangle::Intersect(const Ray& ray) const noexcept
   const auto E1 = v1_ - v0_;
   const auto E2 = v2_ - v0_;
 
-  const auto P = Cross(ray.direction, E2);
+  const auto P = Cross(ray.Direction(), E2);
   const auto det = Dot(P, E1);
 
-  const auto T = ray.origin - v0_;
+  const auto T = ray.Origin() - v0_;
   const auto u = Dot(P, T) / det;
   if (u > 1 || u < 0) {
     return Hit();
   }
 
   const auto Q = Cross(T, E1);
-  const auto v = Dot(Q, ray.direction) / det;
+  const auto v = Dot(Q, ray.Direction()) / det;
   if (v > 1 || v < 0) {
     return Hit();
   }

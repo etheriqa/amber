@@ -95,9 +95,9 @@ LightSet<Radiant>::GenerateRay(Sampler& sampler) const
   return std::make_tuple(
     &object,
     rendering::Leading<Radiant>(
-      ray.origin,
-      ray.direction,
-      prelude::HemispherePSA(ray.direction, sampler),
+      ray.Origin(),
+      ray.Direction(),
+      prelude::HemispherePSA(ray.Direction(), sampler),
       object.Irradiance() / PDFArea(object)
     )
   );

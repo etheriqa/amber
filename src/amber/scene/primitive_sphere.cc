@@ -76,8 +76,8 @@ Hit
 Sphere::Intersect(const Ray& ray) const noexcept
 {
   const auto a = static_cast<real_type>(1);
-  const auto b = -2 * Dot(center_ - ray.origin, ray.direction);
-  const auto c = SquaredLength(center_ - ray.origin) - radius_ * radius_;
+  const auto b = -2 * Dot(center_ - ray.Origin(), ray.Direction());
+  const auto c = SquaredLength(center_ - ray.Origin()) - radius_ * radius_;
 
   const auto solutions = prelude::SolveQuadratic(a, b, c);
   if (!solutions) {
@@ -89,16 +89,16 @@ Sphere::Intersect(const Ray& ray) const noexcept
 
   if (alpha > kEPS) {
     return Hit(
-      ray.origin + alpha * ray.direction,
-      ray.origin + alpha * ray.direction - center_,
+      ray.Origin() + alpha * ray.Direction(),
+      ray.Origin() + alpha * ray.Direction() - center_,
       alpha
     );
   }
 
   if (beta > kEPS) {
     return Hit(
-      ray.origin + beta * ray.direction,
-      ray.origin + beta * ray.direction - center_,
+      ray.Origin() + beta * ray.Direction(),
+      ray.Origin() + beta * ray.Direction() - center_,
       beta
     );
   }

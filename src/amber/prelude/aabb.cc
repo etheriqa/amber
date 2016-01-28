@@ -36,10 +36,10 @@ Intersect(
   std::float_t t_min = 0;
 
   const auto ray_origin =
-    _mm_setr_ps(ray.origin.X(), ray.origin.Y(), ray.origin.Z(), 0);
+    _mm_setr_ps(ray.Origin().X(), ray.Origin().Y(), ray.Origin().Z(), 0);
   const auto inverse_ray_direction = _mm_div_ps(
     _mm_setr_ps(1, 1, 1, 1),
-    _mm_setr_ps(ray.direction.X(), ray.direction.Y(), ray.direction.Z(), 1)
+    _mm_setr_ps(ray.Direction().X(), ray.Direction().Y(), ray.Direction().Z(), 1)
   );
   const auto aabb_min =
     _mm_setr_ps(bb.Min().X(), bb.Min().Y(), bb.Min().Z(), 0);
@@ -72,10 +72,10 @@ Intersect(
   std::double_t t_min = 0;
 
   const auto ray_origin =
-    _mm256_setr_pd(ray.origin.X(), ray.origin.Y(), ray.origin.Z(), 0);
+    _mm256_setr_pd(ray.Origin().X(), ray.Origin().Y(), ray.Origin().Z(), 0);
   const auto inverse_ray_direction = _mm256_div_pd(
     _mm256_setr_pd(1, 1, 1, 1),
-    _mm256_setr_pd(ray.direction.X(), ray.direction.Y(), ray.direction.Z(), 1)
+    _mm256_setr_pd(ray.Direction().X(), ray.Direction().Y(), ray.Direction().Z(), 1)
   );
   const auto aabb_min =
     _mm256_setr_pd(bb.Min().X(), bb.Min().Y(), bb.Min().Z(), 0);

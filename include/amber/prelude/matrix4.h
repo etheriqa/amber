@@ -110,8 +110,8 @@ Ray<T>
 Matrix4<T>::operator()(const Ray<T>& ray) const noexcept
 {
   return Ray<T>(
-    (*this)(ray.origin),
-    static_cast<Matrix3<T>>(*this)(ray.direction)
+    (*this)(ray.Origin()),
+    static_cast<Matrix3<T>>(*this)(ray.Direction())
   );
 }
 

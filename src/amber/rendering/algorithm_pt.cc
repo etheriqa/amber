@@ -141,9 +141,9 @@ PathTracing<Radiant>::Thread::Render(const Sensor& sensor)
       break;
     }
 
-    measurement += weight * scene_.Radiance(object, hit.normal, -ray.direction);
+    measurement += weight * scene_.Radiance(object, hit.Normal(), -ray.Direction());
     const auto scatter =
-      scene_.SampleLight(object, hit.normal, -ray.direction, sampler_);
+      scene_.SampleLight(object, hit.Normal(), -ray.Direction(), sampler_);
 
     const auto p_russian_roulette =
       std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
@@ -152,7 +152,7 @@ PathTracing<Radiant>::Thread::Render(const Sensor& sensor)
       break;
     }
 
-    ray = Ray(hit.position, scatter.DirectionIn());
+    ray = Ray(hit.Position(), scatter.DirectionIn());
     weight *= scatter.Weight() / p_russian_roulette;
   }
 

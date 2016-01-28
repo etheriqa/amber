@@ -29,12 +29,9 @@ namespace amber {
 namespace prelude {
 
 template <typename T>
-struct Hit
+class Hit
 {
-  Vector3<T> position;
-  UnitVector3<T> normal;
-  T distance;
-
+public:
   Hit() noexcept;
   Hit(
     const Vector3<T>& position,
@@ -47,16 +44,25 @@ struct Hit
     T distance
   ) noexcept;
 
+  const Vector3<T>& Position() const noexcept { return position_; }
+  const UnitVector3<T>& Normal() const noexcept { return normal_; }
+  const T Distance() const noexcept { return distance_; }
+
   operator bool() const noexcept;
+
+private:
+  Vector3<T> position_;
+  UnitVector3<T> normal_;
+  T distance_;
 };
 
 
 
 template <typename T>
 Hit<T>::Hit() noexcept
-: position()
-, normal()
-, distance(std::numeric_limits<T>::quiet_NaN())
+: position_()
+, normal_()
+, distance_(std::numeric_limits<T>::quiet_NaN())
 {}
 
 template <typename T>
@@ -65,7 +71,9 @@ Hit<T>::Hit(
   const Vector3<T>& normal,
   T distance
 ) noexcept
-: Hit(position, Normalize(normal), distance)
+: position_(position)
+, normal_(Normalize(normal))
+, distance_(distance)
 {}
 
 template <typename T>
@@ -74,15 +82,15 @@ Hit<T>::Hit(
   const UnitVector3<T>& normal,
   T distance
 ) noexcept
-: position(position)
-, normal(normal)
-, distance(distance)
+: position_(position)
+, normal_(normal)
+, distance_(distance)
 {}
 
 template <typename T>
 Hit<T>::operator bool() const noexcept
 {
-  return std::isfinite(distance);
+  return std::isfinite(distance_);
 }
 
 }

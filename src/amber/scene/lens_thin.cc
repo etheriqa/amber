@@ -78,7 +78,7 @@ BasicThin::GenerateRay(const rendering::Sensor& sensor, Sampler& sampler) const
   const auto& primitive = primitives_[pos];
 
   const auto aperture_sample = primitive->SampleSurfacePoint(sampler);
-  const auto aperture_point = local_(aperture_sample.origin - origin_);
+  const auto aperture_point = local_(aperture_sample.Origin() - origin_);
 
   const auto sensor_sample = sensor.Uniform(sampler);
   const auto sensor_point =
@@ -92,15 +92,15 @@ BasicThin::GenerateRay(const rendering::Sensor& sensor, Sampler& sampler) const
   const auto factor =
     std::pow(Normalize(sensor_point - aperture_point).Z() / direction.Z(), 4);
 
-  const auto ray = Ray(aperture_sample.origin, global_(direction));
+  const auto ray = Ray(aperture_sample.Origin(), global_(direction));
 
   return std::make_tuple(
     primitive.get(),
     BasicEyeRay(
-      ray.origin,
-      aperture_sample.direction,
-      ray.direction,
-      factor / PDFArea(ray.origin) / PDFDirection(sensor, ray)
+      ray.Origin(),
+      aperture_sample.Direction(),
+      ray.Direction(),
+      factor / PDFArea(ray.Origin()) / PDFDirection(sensor, ray)
     ),
     std::get<Pixel>(sensor_sample)
   );
@@ -109,12 +109,12 @@ BasicThin::GenerateRay(const rendering::Sensor& sensor, Sampler& sampler) const
 PixelValue<real_type>
 BasicThin::Response(const rendering::Sensor& sensor, const Ray& ray) const noexcept
 {
-  const auto direction = local_(ray.direction);
+  const auto direction = local_(ray.Direction());
   if (direction.Z() >= 0) {
     return PixelValue<real_type>();
   }
 
-  const auto aperture_point = local_(ray.origin - origin_);
+  const auto aperture_point = local_(ray.Origin() - origin_);
   const auto sensor_point =
     - sensor_distance_ / focus_distance_ * aperture_point
     + sensor_distance_ / direction.Z() * direction;
@@ -141,7 +141,7 @@ BasicThin::PDFDirection(
   const Ray& ray
 ) const noexcept
 {
-  const auto direction = local_(ray.direction);
+  const auto direction = local_(ray.Direction());
   return
     sensor.Size() / sensor.SceneArea() *
     std::pow(sensor_distance_, 2) / std::pow(direction.Z(), 4);

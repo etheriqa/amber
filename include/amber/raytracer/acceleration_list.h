@@ -57,8 +57,8 @@ List<T, Object>::Cast(const Ray<T>& ray, T distance) const noexcept
 
   for (const auto& object : objects_) {
     const auto hit = object.Intersect(ray);
-    if (hit && hit.distance < distance) {
-      distance = hit.distance;
+    if (hit && hit.Distance() < distance) {
+      distance = hit.Distance();
       closest_hit = hit;
       closest_object = &object;
     }

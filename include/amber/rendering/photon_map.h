@@ -132,11 +132,11 @@ PhotonMap<Radiant>::Build(
       }
 
       if (scene.Surface(object) == SurfaceType::Diffuse) {
-        buffer.emplace_back(hit.position, -ray.direction, weight / n_photons);
+        buffer.emplace_back(hit.Position(), -ray.Direction(), weight / n_photons);
       }
 
       const auto scatter =
-        scene.SampleImportance(object, hit.normal, -ray.direction, sampler);
+        scene.SampleImportance(object, hit.Normal(), -ray.Direction(), sampler);
       const auto p_russian_roulette =
         std::min<real_type>(kRussianRoulette, Max(scatter.Weight()));
 
@@ -144,7 +144,7 @@ PhotonMap<Radiant>::Build(
         break;
       }
 
-      ray = Ray(hit.position, scatter.DirectionIn());
+      ray = Ray(hit.Position(), scatter.DirectionIn());
       weight *= scatter.Weight() / p_russian_roulette;
     }
   }

@@ -94,23 +94,23 @@ Disk::BoundingBox() const noexcept
 Hit
 Disk::Intersect(const Ray& ray) const noexcept
 {
-   const auto cos_theta = Dot(ray.direction, normal_);
+   const auto cos_theta = Dot(ray.Direction(), normal_);
    if (cos_theta == 0) {
      return Hit();
    }
 
-   const auto t = Dot(center_ - ray.origin, normal_) / cos_theta;
+   const auto t = Dot(center_ - ray.Origin(), normal_) / cos_theta;
    if (t < kEPS) {
      return Hit();
    }
 
    const auto squared_distance =
-     SquaredLength(ray.origin + t * ray.direction - center_);
+     SquaredLength(ray.Origin() + t * ray.Direction() - center_);
    if (squared_distance > radius_ * radius_) {
      return Hit();
    }
 
-   return Hit(ray.origin + t * ray.direction, normal_, t);
+   return Hit(ray.Origin() + t * ray.Direction(), normal_, t);
 }
 
 const real_type

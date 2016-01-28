@@ -100,8 +100,8 @@ Cylinder::BoundingBox() const noexcept
 Hit
 Cylinder::Intersect(const Ray& ray) const noexcept
 {
-  const auto OC = center_ - ray.origin;
-  const auto u = ray.direction - Dot(ray.direction, normal_) * normal_;
+  const auto OC = center_ - ray.Origin();
+  const auto u = ray.Direction() - Dot(ray.Direction(), normal_) * normal_;
   const auto v = OC - Dot(OC, normal_) * normal_;
 
   const auto a = SquaredLength(u);
@@ -117,22 +117,22 @@ Cylinder::Intersect(const Ray& ray) const noexcept
   const auto& beta = std::get<1>(*solutions);
 
   if (alpha > kEPS) {
-    const auto h = Dot(alpha * ray.direction - OC, normal_);
+    const auto h = Dot(alpha * ray.Direction() - OC, normal_);
     if (h >= 0 && h <= height_) {
       return Hit(
-        ray.origin + alpha * ray.direction,
-        ray.origin + alpha * ray.direction - center_ - h * normal_,
+        ray.Origin() + alpha * ray.Direction(),
+        ray.Origin() + alpha * ray.Direction() - center_ - h * normal_,
         alpha
       );
     }
   }
 
   if (beta > kEPS) {
-    const auto h = Dot(beta * ray.direction - OC, normal_);
+    const auto h = Dot(beta * ray.Direction() - OC, normal_);
     if (h >= 0 && h <= height_) {
       return Hit(
-        ray.origin + beta * ray.direction,
-        ray.origin + beta * ray.direction - center_ - h * normal_,
+        ray.Origin() + beta * ray.Direction(),
+        ray.Origin() + beta * ray.Direction() - center_ - h * normal_,
         beta
       );
     }
