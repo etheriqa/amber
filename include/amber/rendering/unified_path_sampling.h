@@ -29,7 +29,7 @@ namespace rendering {
  */
 template <typename Radiant>
 class UnifiedPathSamplingBuffer
-: public BidirectionalPathSamplingBuffer<Radiant>
+: private BidirectionalPathSamplingBuffer<Radiant>
 {
 public:
   using typename BidirectionalPathSamplingBuffer<Radiant>::SubpathConstIterator;
@@ -51,6 +51,10 @@ public:
     real_type kernel,
     bool did_virtual_perturbation
   );
+
+  /** Calculates MIS weight for the current buffer.
+   */
+  const real_type MISWeight(const MIS& mis) const noexcept;
 
 private:
   using BidirectionalPathSamplingBuffer<Radiant>::geometry_factor_;
@@ -116,6 +120,13 @@ UnifiedPathSamplingBuffer<Radiant>::Buffer(
     kernel,
     did_virtual_perturbation
   );
+}
+
+template <typename Radiant>
+const real_type
+UnifiedPathSamplingBuffer<Radiant>::MISWeight(const MIS& mis) const noexcept
+{
+  return BidirectionalPathSamplingBuffer<Radiant>::MISWeight(mis);
 }
 
 template <typename Radiant>
