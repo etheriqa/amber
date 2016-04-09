@@ -37,7 +37,7 @@ public:
 private:
   hdr_value_type key_;
 
-  static const hdr_value_type Luminance(const HDR& hdr) noexcept;
+  static hdr_value_type Luminance(const HDR& hdr) noexcept;
 };
 
 }

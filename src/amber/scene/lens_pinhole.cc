@@ -84,13 +84,13 @@ BasicPinhole::Response(
   return PixelValue<real_type>(response, 1);
 }
 
-const real_type
+real_type
 BasicPinhole::PDFArea(const Vector3& point) const noexcept
 {
   return kDiracDelta;
 }
 
-const real_type
+real_type
 BasicPinhole::PDFDirection(
   const rendering::Sensor& sensor,
   const Ray& ray

@@ -37,13 +37,13 @@ Sensor::Sensor(
 , scene_height_(scene_height)
 {}
 
-const pixel_size_type
+pixel_size_type
 Sensor::Size() const noexcept
 {
   return pixel_width_ * pixel_height_;
 }
 
-const real_type
+real_type
 Sensor::SceneArea() const noexcept
 {
   return scene_width_ * scene_height_;

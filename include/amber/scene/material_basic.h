@@ -59,14 +59,14 @@ public:
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
@@ -118,14 +118,14 @@ public:
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
@@ -207,7 +207,7 @@ BasicMaterialForwarder<Radiant, BasicMaterialForwardee>
 }
 
 template <typename Radiant, typename BasicMaterialForwardee>
-const real_type
+real_type
 BasicMaterialForwarder<Radiant, BasicMaterialForwardee>
 ::PDFLight(
   const UnitVector3& normal,
@@ -219,7 +219,7 @@ BasicMaterialForwarder<Radiant, BasicMaterialForwardee>
 }
 
 template <typename Radiant, typename BasicMaterialForwardee>
-const real_type
+real_type
 BasicMaterialForwarder<Radiant, BasicMaterialForwardee>
 ::PDFImportance(
   const UnitVector3& normal,
@@ -301,7 +301,7 @@ SymmetricBasicMaterialForwarder<Radiant, SymmetricBasicMaterialForwardee>
 }
 
 template <typename Radiant, typename SymmetricBasicMaterialForwardee>
-const real_type
+real_type
 SymmetricBasicMaterialForwarder<Radiant, SymmetricBasicMaterialForwardee>
 ::PDFLight(
   const UnitVector3& normal,
@@ -313,7 +313,7 @@ SymmetricBasicMaterialForwarder<Radiant, SymmetricBasicMaterialForwardee>
 }
 
 template <typename Radiant, typename SymmetricBasicMaterialForwardee>
-const real_type
+real_type
 SymmetricBasicMaterialForwarder<Radiant, SymmetricBasicMaterialForwardee>
 ::PDFImportance(
   const UnitVector3& normal,

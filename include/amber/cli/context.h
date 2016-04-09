@@ -33,8 +33,8 @@ class Context
 public:
   Context(std::size_t n_threads, std::size_t n_iterations) noexcept;
 
-  const std::size_t ThreadCount() const noexcept;
-  const std::size_t IterationCount() const noexcept;
+  std::size_t ThreadCount() const noexcept;
+  std::size_t IterationCount() const noexcept;
   bool Iterate() noexcept;
 
   void Expire() noexcept;

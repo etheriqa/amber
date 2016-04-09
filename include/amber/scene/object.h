@@ -43,7 +43,7 @@ public:
   const Vector3 Center() const noexcept;
   const AABB BoundingBox() const noexcept;
   Hit Intersect(const Ray& ray) const noexcept;
-  const real_type SurfaceArea() const noexcept;
+  real_type SurfaceArea() const noexcept;
   Ray SampleSurfacePoint(Sampler& sampler) const;
 
   rendering::SurfaceType Surface() const noexcept;
@@ -65,13 +65,13 @@ public:
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
-  const real_type
+  real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
-  const real_type
+  real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
@@ -96,7 +96,7 @@ private:
 };
 
 template <typename Radiant>
-const real_type
+real_type
 Power(const Object<Radiant>& object) noexcept
 {
   return Sum(object.SurfaceArea() * object.Irradiance());
@@ -141,7 +141,7 @@ Object<Radiant>::Intersect(const Ray& ray) const noexcept
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Object<Radiant>::SurfaceArea() const noexcept
 {
   return primitive_->SurfaceArea();
@@ -201,7 +201,7 @@ Object<Radiant>::AdjointBSDF(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Object<Radiant>::PDFLight(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -212,7 +212,7 @@ Object<Radiant>::PDFLight(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Object<Radiant>::PDFImportance(
   const UnitVector3& normal,
   const UnitVector3& direction_out,

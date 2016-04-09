@@ -50,8 +50,7 @@ public:
 
 private:
   class Thread;
-  using Kernel         = DiskKernel<real_type>;
-  using KernelSequence = KernelSequence<real_type, Kernel>;
+  using Kernel = DiskKernel<real_type>;
 
   real_type initial_radius_;
   real_type alpha_;
@@ -64,22 +63,21 @@ public:
   Thread(
     const Scene<Radiant>& scene,
     const Sensor& sensor,
-    KernelSequence& kernel_sequence
+    KernelSequence<real_type, Kernel>& kernel_sequence
   );
   Thread(const Thread& thread);
 
   const Image<Radiant> operator()();
 
 private:
-  using PhotonMap = PhotonMap<Radiant>;
-  using Photon    = typename PhotonMap::Photon;
+  using Photon = typename PhotonMap<Radiant>::Photon;
 
   const Scene<Radiant>& scene_;
   const Sensor& sensor_;
-  KernelSequence& kernel_sequence_;
+  KernelSequence<real_type, Kernel>& kernel_sequence_;
   MTSampler sampler_;
   std::vector<Photon> photons_;
-  PhotonMap photon_map_;
+  PhotonMap<Radiant> photon_map_;
 
   void GeneratePhotonMap();
   const Radiant Render(const Sensor& sensor, const Kernel& kernel);
@@ -110,7 +108,7 @@ MemorylessPPM<Radiant>::Render(
   Context& context
 )
 {
-  KernelSequence kernel_sequence(initial_radius_, alpha_);
+  KernelSequence<real_type, Kernel> kernel_sequence(initial_radius_, alpha_);
 
   return ParallelMean<Image<Radiant>>(
     context,
@@ -123,7 +121,7 @@ template <typename Radiant>
 MemorylessPPM<Radiant>::Thread::Thread(
   const Scene<Radiant>& scene,
   const Sensor& sensor,
-  KernelSequence& kernel_sequence
+  KernelSequence<real_type, Kernel>& kernel_sequence
 )
 : scene_(scene)
 , sensor_(sensor)

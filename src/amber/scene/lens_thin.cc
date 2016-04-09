@@ -129,13 +129,13 @@ BasicThin::Response(const rendering::Sensor& sensor, const Ray& ray) const noexc
   return PixelValue<real_type>(pixel, factor);
 }
 
-const real_type
+real_type
 BasicThin::PDFArea(const Vector3& point) const noexcept
 {
   return p_area_;
 }
 
-const real_type
+real_type
 BasicThin::PDFDirection(
   const rendering::Sensor& sensor,
   const Ray& ray

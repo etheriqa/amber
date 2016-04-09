@@ -39,7 +39,7 @@ public:
   const AABB BoundingBox() const noexcept;
   Hit Intersect(const Ray& ray) const noexcept;
 
-  const real_type SurfaceArea() const noexcept;
+  real_type SurfaceArea() const noexcept;
   Ray SampleSurfacePoint(Sampler& sampler) const;
 
 private:
@@ -55,7 +55,7 @@ MakeSphere(const Vector3& center, real_type radius) noexcept
   return std::make_unique<Sphere>(center, radius);
 }
 
-Sphere::Sphere(const Vector3& center, const real_type radius) noexcept
+Sphere::Sphere(const Vector3& center, real_type radius) noexcept
 : center_(center)
 , radius_(radius)
 {}
@@ -106,7 +106,7 @@ Sphere::Intersect(const Ray& ray) const noexcept
   return Hit();
 }
 
-const real_type
+real_type
 Sphere::SurfaceArea() const noexcept
 {
   return 4 * static_cast<real_type>(kPI) * radius_ * radius_;

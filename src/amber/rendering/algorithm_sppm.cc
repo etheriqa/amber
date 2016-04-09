@@ -50,8 +50,7 @@ public:
 
 private:
   class Thread;
-  using Kernel         = DiskKernel<real_type>;
-  using LocalStatistic = LocalStatistic<real_type>;
+  using Kernel = DiskKernel<real_type>;
 
   real_type initial_radius_;
   real_type alpha_;
@@ -65,23 +64,22 @@ public:
     const Scene<Radiant>& scene,
     const Sensor& sensor,
     real_type alpha,
-    std::vector<LocalStatistic>& statistics
+    std::vector<LocalStatistic<real_type>>& statistics
   );
   Thread(const Thread& thread);
 
   const Image<Radiant> operator()();
 
 private:
-  using PhotonMap = PhotonMap<Radiant>;
-  using Photon    = typename PhotonMap::Photon;
+  using Photon = typename PhotonMap<Radiant>::Photon;
 
   const Scene<Radiant>& scene_;
   const Sensor& sensor_;
   real_type alpha_;
-  std::vector<LocalStatistic>& statistics_;
+  std::vector<LocalStatistic<real_type>>& statistics_;
   MTSampler sampler_;
   std::vector<Photon> photons_;
-  PhotonMap photon_map_;
+  PhotonMap<Radiant> photon_map_;
 
   void GeneratePhotonMap();
   const Radiant Render(const Sensor& sensor, const Kernel& kernel);
@@ -112,7 +110,7 @@ StochasticPPM<Radiant>::Render(
   Context& context
 )
 {
-  std::vector<LocalStatistic> statistics;
+  std::vector<LocalStatistic<real_type>> statistics;
   statistics.reserve(sensor.Size());
   for (pixel_size_type i = 0; i < sensor.Size(); i++) {
     statistics.emplace_back(initial_radius_);
@@ -130,7 +128,7 @@ StochasticPPM<Radiant>::Thread::Thread(
   const Scene<Radiant>& scene,
   const Sensor& sensor,
   real_type alpha,
-  std::vector<LocalStatistic>& statistic
+  std::vector<LocalStatistic<real_type>>& statistic
 )
 : scene_(scene)
 , sensor_(sensor)
@@ -157,7 +155,7 @@ StochasticPPM<Radiant>::Thread::operator()()
   for (pixel_size_type y = 0; y < image.Height(); y++) {
     for (pixel_size_type x = 0; x < image.Width(); x++) {
       auto& statistic = statistics_[x + y * image.Width()];
-      std::lock_guard<LocalStatistic> lock(statistic);
+      std::lock_guard<LocalStatistic<real_type>> lock(statistic);
       const auto kernel = statistic.Kernel();
       image[Pixel(x, y)] += Render(sensor_.Bind(Pixel(x, y)), kernel);
     }

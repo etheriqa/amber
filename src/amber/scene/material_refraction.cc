@@ -37,7 +37,7 @@ BasicRefraction::Surface() const noexcept
   return rendering::SurfaceType::Specular;
 }
 
-const real_type
+real_type
 BasicRefraction::BSDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -69,7 +69,7 @@ BasicRefraction::BSDF(
   }
 }
 
-const real_type
+real_type
 BasicRefraction::AdjointBSDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -101,7 +101,7 @@ BasicRefraction::AdjointBSDF(
   }
 }
 
-const real_type
+real_type
 BasicRefraction::PDFLight(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -138,7 +138,7 @@ BasicRefraction::PDFLight(
   }
 }
 
-const real_type
+real_type
 BasicRefraction::PDFImportance(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -262,13 +262,13 @@ BasicRefraction::SampleImportance(
   }
 }
 
-const real_type
+real_type
 BasicRefraction::Fresnel(real_type ior) noexcept
 {
   return std::pow((ior - 1) / (ior + 1), 2);
 }
 
-const real_type
+real_type
 BasicRefraction::Schlick(real_type r0, real_type cos_theta) noexcept
 {
   return r0 + (1 - r0) * std::pow(1 - cos_theta, 5);

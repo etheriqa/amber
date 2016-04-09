@@ -33,7 +33,7 @@ public:
   virtual const Vector3 Center() const noexcept = 0;
   virtual const AABB BoundingBox() const noexcept = 0;
   virtual Hit Intersect(const Ray& ray) const noexcept = 0;
-  virtual const real_type SurfaceArea() const noexcept = 0;
+  virtual real_type SurfaceArea() const noexcept = 0;
   virtual Ray SampleSurfacePoint(Sampler& sampler) const = 0;
 };
 

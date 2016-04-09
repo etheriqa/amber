@@ -50,10 +50,10 @@ public:
   PixelValue<real_type>
   Response(const rendering::Sensor& sensor, const Ray& ray) const noexcept;
 
-  const real_type
+  real_type
   PDFArea(const Vector3& point) const noexcept;
 
-  const real_type
+  real_type
   PDFDirection(const rendering::Sensor& sensor, const Ray& ray) const noexcept;
 
 private:

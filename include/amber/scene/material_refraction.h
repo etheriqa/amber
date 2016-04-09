@@ -38,28 +38,28 @@ public:
 
   rendering::SurfaceType Surface() const noexcept;
 
-  const real_type
+  real_type
   BSDF(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   AdjointBSDF(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
@@ -83,8 +83,8 @@ public:
 private:
   real_type ior_, r0_;
 
-  static const real_type Fresnel(real_type ior) noexcept;
-  static const real_type Schlick(real_type r0, real_type cos_alpha) noexcept;
+  static real_type Fresnel(real_type ior) noexcept;
+  static real_type Schlick(real_type r0, real_type cos_alpha) noexcept;
 };
 
 

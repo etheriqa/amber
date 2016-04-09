@@ -44,10 +44,10 @@ public:
   virtual PixelValue<Radiant>
   Response(const rendering::Sensor& sensor, const Ray& ray) const noexcept = 0;
 
-  virtual const real_type
+  virtual real_type
   PDFArea(const Vector3& point) const noexcept = 0;
 
-  virtual const real_type
+  virtual real_type
   PDFDirection(
     const rendering::Sensor& sensor,
     const Ray& ray

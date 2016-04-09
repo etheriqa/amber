@@ -36,7 +36,7 @@ BasicPhong::Surface() const noexcept
   return rendering::SurfaceType::Diffuse;
 }
 
-const real_type
+real_type
 BasicPhong::SymmetricBSDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -60,7 +60,7 @@ BasicPhong::SymmetricBSDF(
     std::pow(cos_alpha, exponent_);
 }
 
-const real_type
+real_type
 BasicPhong::PDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,

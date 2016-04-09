@@ -26,8 +26,8 @@ namespace rendering {
 class Context
 {
 public:
-  virtual const std::size_t ThreadCount() const noexcept = 0;
-  virtual const std::size_t IterationCount() const noexcept = 0;
+  virtual std::size_t ThreadCount() const noexcept = 0;
+  virtual std::size_t IterationCount() const noexcept = 0;
   virtual bool Iterate() noexcept = 0;
 };
 

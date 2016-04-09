@@ -35,8 +35,8 @@ public:
   Pixel() noexcept;
   Pixel(pixel_size_type x, pixel_size_type y) noexcept;
 
-  const pixel_size_type X() const noexcept { return x_; }
-  const pixel_size_type Y() const noexcept { return y_; }
+  pixel_size_type X() const noexcept { return x_; }
+  pixel_size_type Y() const noexcept { return y_; }
 
   operator bool() const noexcept;
 

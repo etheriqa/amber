@@ -53,8 +53,8 @@ public:
 
   /** Queries.
    */
-  const pixel_size_type Size() const noexcept;
-  const real_type SceneArea() const noexcept;
+  pixel_size_type Size() const noexcept;
+  real_type SceneArea() const noexcept;
   Pixel ResponsePixel(const Vector2& point) const noexcept;
 
   /** Binds the sample space to a specific pixel.

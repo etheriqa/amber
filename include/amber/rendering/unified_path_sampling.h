@@ -54,7 +54,7 @@ public:
 
   /** Calculates MIS weight for the current buffer.
    */
-  const real_type MISWeight(const MIS& mis) const noexcept;
+  real_type MISWeight(const MIS& mis) const noexcept;
 
 private:
   using BidirectionalPathSamplingBuffer<Radiant>::geometry_factor_;
@@ -123,7 +123,7 @@ UnifiedPathSamplingBuffer<Radiant>::Buffer(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 UnifiedPathSamplingBuffer<Radiant>::MISWeight(const MIS& mis) const noexcept
 {
   return BidirectionalPathSamplingBuffer<Radiant>::MISWeight(mis);

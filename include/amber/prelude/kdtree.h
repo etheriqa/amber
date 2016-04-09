@@ -214,7 +214,7 @@ KDTree<T, U>::SearchKDTree(
   const auto& node = nodes_[pos];
   const auto split = converter_(node.value);
 
-  T split_distance;
+  T split_distance = 0;
   switch (node.axis) {
   case Axis::X:
     split_distance = split.X() - point.X();

@@ -37,7 +37,7 @@ class Sampler
 public:
   using result_type = std::double_t;
 
-  virtual const result_type operator()() = 0;
+  virtual result_type operator()() = 0;
 };
 
 template <typename Engine>
@@ -50,7 +50,7 @@ public:
 
   explicit GenericSampler(seed_type seed);
 
-  const result_type operator()();
+  result_type operator()();
 
 private:
   Engine engine_;
@@ -148,7 +148,7 @@ GenericSampler<Engine>::GenericSampler(seed_type seed)
 template <typename Engine>
 auto
 GenericSampler<Engine>::operator()()
--> const result_type
+-> result_type
 {
   return std::uniform_real_distribution<result_type>(0, 1)(engine_);
 }

@@ -31,7 +31,7 @@ BasicLambertian::Surface() const noexcept
   return rendering::SurfaceType::Diffuse;
 }
 
-const real_type
+real_type
 BasicLambertian::SymmetricBSDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -48,7 +48,7 @@ BasicLambertian::SymmetricBSDF(
   return 1 / static_cast<real_type>(kPI);
 }
 
-const real_type
+real_type
 BasicLambertian::PDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,

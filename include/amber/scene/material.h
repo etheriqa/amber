@@ -58,14 +58,14 @@ public:
     const UnitVector3& direction_in
   ) const noexcept = 0;
 
-  virtual const real_type
+  virtual real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept = 0;
 
-  virtual const real_type
+  virtual real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,

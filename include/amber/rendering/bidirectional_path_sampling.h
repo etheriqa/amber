@@ -72,9 +72,9 @@ public:
   const UnitVector3 Normal() const noexcept;
   const UnitVector3 DirectionOut() const noexcept;
   const Radiant Weight() const noexcept;
-  const real_type GeometryFactor() const noexcept;
-  const real_type BackwardPDF() const noexcept;
-  const real_type ForwardPDF() const noexcept;
+  real_type GeometryFactor() const noexcept;
+  real_type BackwardPDF() const noexcept;
+  real_type ForwardPDF() const noexcept;
 
 private:
   ObjectPointer object_;
@@ -109,7 +109,7 @@ public:
 
   /** Queries.
    */
-  const path_size_type Size() const noexcept;
+  path_size_type Size() const noexcept;
 
 private:
   Container events_;
@@ -142,7 +142,7 @@ public:
 
   /** Calculates MIS weight for the current buffer.
    */
-  const real_type MISWeight(const MIS& mis) const noexcept;
+  real_type MISWeight(const MIS& mis) const noexcept;
 
 protected:
   std::vector<real_type> geometry_factor_;
@@ -199,7 +199,7 @@ protected:
 /** Calculates the geometry factor between two vertices.
  */
 template <typename Radiant>
-const real_type
+real_type
 GeometryFactor(
   const SubpathEvent<Radiant>& x,
   const SubpathEvent<Radiant>& y
@@ -357,21 +357,21 @@ SubpathEvent<Radiant>::Weight() const noexcept
 }
 
 template <typename Radiant>
-const real_type
+real_type
 SubpathEvent<Radiant>::GeometryFactor() const noexcept
 {
   return geometry_factor_;
 }
 
 template <typename Radiant>
-const real_type
+real_type
 SubpathEvent<Radiant>::BackwardPDF() const noexcept
 {
   return p_backward_;
 }
 
 template <typename Radiant>
-const real_type
+real_type
 SubpathEvent<Radiant>::ForwardPDF() const noexcept
 {
   return p_forward_;
@@ -406,7 +406,7 @@ Subpath<Radiant>::operator BackInsertIterator()
 }
 
 template <typename Radiant>
-const path_size_type
+path_size_type
 Subpath<Radiant>::Size() const noexcept
 {
   return events_.size();
@@ -446,7 +446,7 @@ BidirectionalPathSamplingBuffer<Radiant>
 }
 
 template <typename Radiant>
-const real_type
+real_type
 BidirectionalPathSamplingBuffer<Radiant>
 ::MISWeight(const MIS& mis) const noexcept
 {
@@ -681,14 +681,14 @@ BidirectionalPathSamplingBuffer<Radiant>
   const auto t = std::distance(eye_first, eye_last);
   const auto n_techniques = s + t + 1;
 
-  for (std::size_t i = 1; i + 1 < s; i++) {
+  for (path_size_type i = 1; i + 1 < static_cast<path_size_type>(s); i++) {
     if (scene.Surface(light_first[i].Object()) != SurfaceType::Diffuse) {
       p_technique_[i] = 0;
       p_technique_[i + 1] = 0;
     }
   }
 
-  for (std::size_t i = 1; i + 1 < t; i++) {
+  for (path_size_type i = 1; i + 1 < static_cast<path_size_type>(t); i++) {
     if (scene.Surface(eye_first[i].Object()) != SurfaceType::Diffuse) {
       p_technique_[n_techniques - i - 1] = 0;
       p_technique_[n_techniques - i - 2] = 0;
@@ -697,7 +697,7 @@ BidirectionalPathSamplingBuffer<Radiant>
 }
 
 template <typename Radiant>
-const real_type
+real_type
 GeometryFactor(
   const SubpathEvent<Radiant>& x,
   const SubpathEvent<Radiant>& y

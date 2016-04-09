@@ -32,7 +32,7 @@ BasicSpecular::Surface() const noexcept
   return rendering::SurfaceType::Specular;
 }
 
-const real_type
+real_type
 BasicSpecular::SymmetricBSDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,
@@ -49,7 +49,7 @@ BasicSpecular::SymmetricBSDF(
   return kDiracDelta;
 }
 
-const real_type
+real_type
 BasicSpecular::PDF(
   const UnitVector3& normal,
   const UnitVector3& direction_out,

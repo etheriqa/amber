@@ -50,12 +50,12 @@ public:
 
   /** Probability that a given point on the aperture is sampled.
    */
-  virtual const real_type
+  virtual real_type
   EyePDFArea(const Vector3& point) const = 0;
 
   /** Probability that a given direction from the aperture is sampled.
    */
-  virtual const real_type
+  virtual real_type
   EyePDFDirection(
     const Sensor& sensor,
     const Ray& ray
@@ -63,12 +63,12 @@ public:
 
   /** Probability that a given light source is sampled.
    */
-  virtual const real_type
+  virtual real_type
   LightPDFArea(const ObjectPointer& object) const = 0;
 
   /** Probability that a given direction from the light source is sampled.
    */
-  virtual const real_type
+  virtual real_type
   LightPDFDirection(
     const ObjectPointer& object,
     const Ray& ray
@@ -119,7 +119,7 @@ public:
 
   /** Sampling probability for light transport.
    */
-  virtual const real_type
+  virtual real_type
   PDFLight(
     const ObjectPointer& object,
     const UnitVector3& normal,
@@ -129,7 +129,7 @@ public:
 
   /** Sampling probability for importance transport.
    */
-  virtual const real_type
+  virtual real_type
   PDFImportance(
     const ObjectPointer& object,
     const UnitVector3& normal,

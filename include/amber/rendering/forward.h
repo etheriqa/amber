@@ -72,7 +72,7 @@ template <typename T> using KDTree = prelude::KDTree<real_type, T>;
 using postprocess::Monochrome;
 using postprocess::RGB;
 
-using MIS = std::function<const real_type(const std::vector<real_type>&)>;
+using MIS = std::function<real_type(const std::vector<real_type>&)>;
 
 }
 }

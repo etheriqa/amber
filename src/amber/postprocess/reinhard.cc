@@ -68,7 +68,7 @@ Reinhard::operator()(HDRImage&& input) const
   return input;
 }
 
-const hdr_value_type
+hdr_value_type
 Reinhard::Luminance(const HDR& hdr) noexcept
 {
   return Dot(HDR(0.27, 0.67, 0.06), hdr);

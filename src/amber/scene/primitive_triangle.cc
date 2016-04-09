@@ -40,7 +40,7 @@ public:
   const AABB BoundingBox() const noexcept;
   Hit Intersect(const Ray& ray) const noexcept;
 
-  const real_type SurfaceArea() const noexcept;
+  real_type SurfaceArea() const noexcept;
   Ray SampleSurfacePoint(Sampler& sampler) const;
 
 private:
@@ -127,7 +127,7 @@ Triangle::Intersect(const Ray& ray) const noexcept
   return Hit(v0_ + u * E1 + v * E2, normal_, t);
 }
 
-const real_type
+real_type
 Triangle::SurfaceArea() const noexcept
 {
   return Length(Cross(v1_ - v0_, v2_ - v0_)) / 2;

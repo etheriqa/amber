@@ -51,8 +51,7 @@ public:
 
 private:
   class Thread;
-  using Kernel         = DiskKernel<real_type>;
-  using KernelSequence = KernelSequence<real_type, Kernel>;
+  using Kernel = DiskKernel<real_type>;
 
   real_type initial_radius_;
   real_type alpha_;
@@ -65,7 +64,7 @@ public:
   Thread(
     const Scene<Radiant>& scene,
     const Sensor& sensor,
-    KernelSequence& kernel_sequence
+    KernelSequence<real_type, Kernel>& kernel_sequence
   );
   Thread(const Thread& thread);
 
@@ -77,7 +76,7 @@ private:
 
   const Scene<Radiant>& scene_;
   const Sensor& sensor_;
-  KernelSequence& kernel_sequence_;
+  KernelSequence<real_type, Kernel>& kernel_sequence_;
   MTSampler sampler_;
   std::vector<Subpath<Radiant>> light_paths_;
   std::vector<Photon> photons_;
@@ -112,7 +111,7 @@ private:
     const Kernel& kernel
   );
 
-  const real_type MISWeight(
+  real_type MISWeight(
     const Subpath<Radiant>& light_path,
     const Subpath<Radiant>& eye_path,
     path_size_type s,
@@ -164,7 +163,7 @@ UnifiedPathSampling<Radiant>::Render(
   Context& context
 )
 {
-  KernelSequence kernel_sequence(initial_radius_, alpha_);
+  KernelSequence<real_type, Kernel> kernel_sequence(initial_radius_, alpha_);
 
   return ParallelMean<Image<Radiant>>(
     context,
@@ -177,7 +176,7 @@ template <typename Radiant>
 UnifiedPathSampling<Radiant>::Thread::Thread(
   const Scene<Radiant>& scene,
   const Sensor& sensor,
-  KernelSequence& kernel_sequence
+  KernelSequence<real_type, Kernel>& kernel_sequence
 )
 : scene_(scene)
 , sensor_(sensor)
@@ -376,7 +375,7 @@ UnifiedPathSampling<Radiant>::Thread::ConnectDensityEstimation(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 UnifiedPathSampling<Radiant>::Thread::MISWeight(
   const Subpath<Radiant>& light_path,
   const Subpath<Radiant>& eye_path,

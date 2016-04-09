@@ -62,14 +62,14 @@ public:
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFLight(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
     const UnitVector3& direction_in
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFImportance(
     const UnitVector3& normal,
     const UnitVector3& direction_out,
@@ -161,7 +161,7 @@ DiffuseLight<Radiant>::AdjointBSDF(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 DiffuseLight<Radiant>::PDFLight(
   const UnitVector3&,
   const UnitVector3&,
@@ -172,7 +172,7 @@ DiffuseLight<Radiant>::PDFLight(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 DiffuseLight<Radiant>::PDFImportance(
   const UnitVector3&,
   const UnitVector3&,

@@ -45,7 +45,7 @@ public:
   const AABB BoundingBox() const noexcept;
   Hit Intersect(const Ray& ray) const noexcept;
 
-  const real_type SurfaceArea() const noexcept;
+  real_type SurfaceArea() const noexcept;
   Ray SampleSurfacePoint(Sampler& sampler) const;
 
 private:
@@ -141,7 +141,7 @@ Cylinder::Intersect(const Ray& ray) const noexcept
   return Hit();
 }
 
-const real_type
+real_type
 Cylinder::SurfaceArea() const noexcept
 {
   return 2 * static_cast<real_type>(kPI) * radius_ * height_;

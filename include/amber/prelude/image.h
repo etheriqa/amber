@@ -46,9 +46,9 @@ public:
   T& operator[](const Pixel& pixel);
   const T& operator[](const Pixel& pixel) const;
 
-  const pixel_size_type Width() const noexcept { return width_; }
-  const pixel_size_type Height() const noexcept { return height_; }
-  const pixel_size_type Size() const noexcept { return width_ * height_; }
+  pixel_size_type Width() const noexcept { return width_; }
+  pixel_size_type Height() const noexcept { return height_; }
+  pixel_size_type Size() const noexcept { return width_ * height_; }
 
   void Clear() noexcept;
 

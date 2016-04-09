@@ -31,14 +31,14 @@ Context::Context(std::size_t n_threads, std::size_t n_iterations) noexcept
 , is_expired_(false)
 {}
 
-const std::size_t
+std::size_t
 Context::ThreadCount() const noexcept
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return n_threads_;
 }
 
-const std::size_t
+std::size_t
 Context::IterationCount() const noexcept
 {
   std::lock_guard<std::mutex> lock(mutex_);

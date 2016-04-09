@@ -21,7 +21,6 @@
 #include <iostream>
 #include <thread>
 
-#pragma GCC diagnostic ignored "-Wunused-local-typedef" // for program_options
 #include <boost/program_options.hpp>
 
 #include "amber/cli/option.h"

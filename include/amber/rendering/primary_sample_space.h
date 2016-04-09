@@ -35,8 +35,8 @@ public:
 
   explicit PrimarySampleSpace(seed_type seed);
 
-  const result_type operator()();
-  const result_type operator[](std::size_t pos);
+  result_type operator()();
+  result_type operator[](std::size_t pos);
   void SetLargeStep();
   void Accept() noexcept;
   void Reject() noexcept;
@@ -56,7 +56,7 @@ private:
 
   Sample GenerateSample();
   Sample MutateSample(const Sample& sample);
-  const result_type Mutate(result_type value);
+  result_type Mutate(result_type value);
 };
 
 template <typename BaseSampler>
@@ -105,7 +105,7 @@ class PrimarySampleSpacePair<BaseSampler>::Reference
 : public Sampler
 {
 public:
-  const result_type operator()();
+  result_type operator()();
 
 private:
   friend class PrimarySampleSpacePair;
@@ -132,7 +132,7 @@ PrimarySampleSpace<BaseSampler>::PrimarySampleSpace(seed_type seed)
 template <typename BaseSampler>
 auto
 PrimarySampleSpace<BaseSampler>::operator()()
--> const result_type
+-> result_type
 {
   const auto position = pos_++;
 
@@ -163,7 +163,7 @@ PrimarySampleSpace<BaseSampler>::operator()()
 template <typename BaseSampler>
 auto
 PrimarySampleSpace<BaseSampler>::operator[](std::size_t pos)
--> const result_type
+-> result_type
 {
   while (pos >= proposals_.size()) {
     operator()();
@@ -236,7 +236,7 @@ PrimarySampleSpace<BaseSampler>::MutateSample(const Sample& sample)
 template <typename BaseSampler>
 auto
 PrimarySampleSpace<BaseSampler>::Mutate(result_type value)
--> const result_type
+-> result_type
 {
   const auto s1 = static_cast<result_type>(1) / 1024;
   const auto s2 = static_cast<result_type>(1) / 64;
@@ -347,7 +347,7 @@ PrimarySampleSpacePair<BaseSampler>::Reference::Reference(
 template <typename BaseSampler>
 auto
 PrimarySampleSpacePair<BaseSampler>::Reference::operator()()
--> const result_type
+-> result_type
 {
   const auto value = (*pss_)[pos_];
   pos_ += 2;

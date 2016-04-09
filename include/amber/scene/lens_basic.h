@@ -66,10 +66,10 @@ public:
     const Ray& ray
   ) const noexcept;
 
-  const real_type
+  real_type
   PDFArea(const Vector3& point) const noexcept;
 
-  const real_type
+  real_type
   PDFDirection(const rendering::Sensor& sensor, const Ray& ray) const noexcept;
 
 private:
@@ -159,7 +159,7 @@ BasicLensForwarder<Radiant, BasicLensForwardee>
 }
 
 template <typename Radiant, typename BasicLensForwardee>
-const real_type
+real_type
 BasicLensForwarder<Radiant, BasicLensForwardee>
 ::PDFArea(const Vector3& point) const noexcept
 {
@@ -167,7 +167,7 @@ BasicLensForwarder<Radiant, BasicLensForwardee>
 }
 
 template <typename Radiant, typename BasicLensForwardee>
-const real_type
+real_type
 BasicLensForwarder<Radiant, BasicLensForwardee>
 ::PDFDirection(const rendering::Sensor& sensor, const Ray& ray) const noexcept
 {

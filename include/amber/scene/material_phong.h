@@ -38,14 +38,14 @@ public:
 
   rendering::SurfaceType Surface() const noexcept;
 
-  const real_type
+  real_type
   SymmetricBSDF(
     const UnitVector3& direction_i,
     const UnitVector3& direction_o,
     const UnitVector3& normal
   ) const noexcept;
 
-  const real_type
+  real_type
   PDF(
     const UnitVector3& direction_i,
     const UnitVector3& direction_o,

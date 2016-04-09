@@ -60,19 +60,19 @@ public:
   std::tuple<rendering::ObjectPointer, Hit>
   Cast(const Ray& ray) const;
 
-  const real_type
+  real_type
   EyePDFArea(const Vector3& point) const;
 
-  const real_type
+  real_type
   EyePDFDirection(
     const rendering::Sensor& sensor,
     const Ray& ray
   ) const;
 
-  const real_type
+  real_type
   LightPDFArea(const rendering::ObjectPointer& object) const;
 
-  const real_type
+  real_type
   LightPDFDirection(
     const rendering::ObjectPointer& object,
     const Ray& ray
@@ -111,7 +111,7 @@ public:
     const UnitVector3& direction_in
   ) const;
 
-  const real_type
+  real_type
   PDFLight(
     const rendering::ObjectPointer& object,
     const UnitVector3& normal,
@@ -119,7 +119,7 @@ public:
     const UnitVector3& direction_in
   ) const;
 
-  const real_type
+  real_type
   PDFImportance(
     const rendering::ObjectPointer& object,
     const UnitVector3& normal,
@@ -244,14 +244,14 @@ Scene<Radiant>::Cast(const Ray& ray) const
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::EyePDFArea(const Vector3& point) const
 {
   return lens_->PDFArea(point);
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::EyePDFDirection(
   const rendering::Sensor& sensor,
   const Ray& ray
@@ -261,14 +261,14 @@ Scene<Radiant>::EyePDFDirection(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::LightPDFArea(const rendering::ObjectPointer& object) const
 {
   return light_set_.PDFArea(Dereference(object));
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::LightPDFDirection(
   const rendering::ObjectPointer& object,
   const Ray& ray
@@ -331,7 +331,7 @@ Scene<Radiant>::AdjointBSDF(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::PDFLight(
   const rendering::ObjectPointer& object,
   const UnitVector3& normal,
@@ -343,7 +343,7 @@ Scene<Radiant>::PDFLight(
 }
 
 template <typename Radiant>
-const real_type
+real_type
 Scene<Radiant>::PDFImportance(
   const rendering::ObjectPointer& object,
   const UnitVector3& normal,

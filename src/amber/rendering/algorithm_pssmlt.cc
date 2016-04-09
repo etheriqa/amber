@@ -102,7 +102,7 @@ public:
     SparseImage<Radiant>&& light_image
   ) noexcept;
 
-  const real_type Contribution() const noexcept { return contribution_; }
+  real_type Contribution() const noexcept { return contribution_; }
   void AddWeight(real_type weight) noexcept { weight_ += weight; }
   void Render(Image<Radiant>& image) noexcept;
 

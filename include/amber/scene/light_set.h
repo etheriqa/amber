@@ -40,10 +40,10 @@ public:
   std::tuple<const Object<Radiant>*, rendering::Leading<Radiant>>
   GenerateRay(Sampler& sampler) const;
 
-  const real_type
+  real_type
   PDFArea(const Object<Radiant>& object) const noexcept;
 
-  const real_type
+  real_type
   PDFDirection(
     const Object<Radiant>& object,
     const Ray& ray
@@ -104,7 +104,7 @@ LightSet<Radiant>::GenerateRay(Sampler& sampler) const
 }
 
 template <typename Radiant>
-const real_type
+real_type
 LightSet<Radiant>::PDFArea(const Object<Radiant>& object) const noexcept
 {
   return Sum(object.Irradiance()) / powers_.back();
@@ -112,7 +112,7 @@ LightSet<Radiant>::PDFArea(const Object<Radiant>& object) const noexcept
 
 
 template <typename Radiant>
-const real_type
+real_type
 LightSet<Radiant>::PDFDirection(
   const Object<Radiant>& object,
   const Ray& ray
