@@ -13,9 +13,6 @@ addons:
       - clang-3.7
       - libboost1.55-all-dev
       - libopencv-dev
-env:
-  - LTO=ON
-  - LTO=OFF
 before_script:
   - if [ "$CXX" = "g++" ]; then export CXX=/usr/bin/g++-5; fi
   - if [ "$CXX" = "clang++" ]; then export CXX=/usr/bin/clang++-3.7; fi
