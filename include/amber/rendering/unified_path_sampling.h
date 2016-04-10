@@ -126,7 +126,8 @@ template <typename Radiant>
 real_type
 UnifiedPathSamplingBuffer<Radiant>::MISWeight(const MIS& mis) const noexcept
 {
-  return BidirectionalPathSamplingBuffer<Radiant>::MISWeight(mis);
+  const auto weight = BidirectionalPathSamplingBuffer<Radiant>::MISWeight(mis);
+  return std::isfinite(weight) ? weight : 0;
 }
 
 template <typename Radiant>
@@ -142,8 +143,8 @@ UnifiedPathSamplingBuffer<Radiant>::ExtendTechniqueProbability(
   bool did_virtual_perturbation
 )
 {
-  const auto s = std::distance(light_first, light_last) + 1;
-  const auto t = std::distance(eye_first, eye_last);
+  const size_t s = std::distance(light_first, light_last) + 1;
+  const size_t t = std::distance(eye_first, eye_last);
   const auto k = s + t - 2;
   const auto n_mc_techniques = k + 2;
   const auto n_de_techniques = k - 1;
@@ -183,12 +184,12 @@ UnifiedPathSamplingBuffer<Radiant>::ExtendTechniqueProbability(
     );
   }
 
-  for (path_size_type i = 0; i < n_de_techniques; i++) {
+  for (size_t i = 0; i < n_de_techniques; i++) {
     const auto p_x_i = p_importance_[i] * geometry_factor_[i];
     if (did_virtual_perturbation || s != i + 2) {
       p_technique_[n_mc_techniques + i] *= p_x_i;
     } else {
-      for (path_size_type j = 0; j < n_techniques; j++) {
+      for (size_t j = 0; j < n_techniques; j++) {
         if (j == n_mc_techniques + i) {
           continue;
         } else if (p_x_i == 0) {
@@ -200,7 +201,7 @@ UnifiedPathSamplingBuffer<Radiant>::ExtendTechniqueProbability(
     }
   }
 
-  for (path_size_type i = 1; i + 1 + did_virtual_perturbation< s; i++) {
+  for (path_size_type i = 1; i + 1 + did_virtual_perturbation < s; i++) {
     if (scene.Surface(light_first[i].Object()) != SurfaceType::Diffuse) {
       p_technique_[i] = 0;
       p_technique_[i + 1] = 0;
